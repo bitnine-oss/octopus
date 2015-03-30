@@ -60,16 +60,13 @@ limitations under the License.
           </fileSet>
         </fileSets>
       </sources>
-      <binaries>
-        <outputDirectory>share/octopus</outputDirectory>
-        <includeDependencies>false</includeDependencies>
-        <unpack>false</unpack>
-      </binaries>
     </moduleSet>
 
     <moduleSet>
       <useAllReactorProjects>true</useAllReactorProjects>
       <includes>
+        <include>${project.groupId}:octopus-catalog</include>
+        <include>${project.groupId}:octopus-common</include>
         <include>${project.groupId}:octopus-core</include>
       </includes>
       <binaries>

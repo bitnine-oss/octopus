@@ -24,48 +24,20 @@ limitations under the License.
     <relativePath>../octopus-project</relativePath>
   </parent>
 
-  <artifactId>octopus-assembly</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>octopus-catalog</artifactId>
 
-  <name>Octopus Assembly</name>
-  <description>Octopus Assembly</description>
+  <name>Octopus Catalog</name>
+  <description>Octopus Catalog</description>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>octopus-catalog</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>octopus-common</artifactId>
     </dependency>
+
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>octopus-core</artifactId>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <finalName>octopus-${project.version}</finalName>
-          <appendAssemblyId>false</appendAssemblyId>
-          <descriptors>
-            <descriptor>src/assembly/bin.xml</descriptor>
-          </descriptors>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>
