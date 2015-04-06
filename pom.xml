@@ -146,9 +146,9 @@ limitations under the License.
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/protodef/octopus.git</connection>
-    <developerConnection>scm:git:https://github.com/protodef/octopus.git</developerConnection>
+    <connection>scm:git:https://github.com/bitnine-oss/octopus.git</connection>
+    <developerConnection>scm:git:https://github.com/bitnine-oss/octopus.git</developerConnection>
     <tag>HEAD</tag>
-    <url>https://github.com/protodef/octopus</url>
+    <url>https://github.com/bitnine-oss/octopus</url>
   </scm>
 </project>
