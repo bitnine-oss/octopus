@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.master;
 
+import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.util.StringUtils;
 
 import org.apache.commons.logging.Log;
@@ -91,7 +92,7 @@ public class OctopusMaster extends CompositeService
         CompositeServiceShutdownHook hook = new CompositeServiceShutdownHook(master);
         ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
-        Configuration conf = new Configuration();
+        Configuration conf = new OctopusConfiguration();
         master.init(conf);
         master.start();
         LOG.info("started");
