@@ -18,11 +18,14 @@ import org.apache.hadoop.conf.Configuration;
 
 public class OctopusConfiguration extends Configuration
 {
-    public OctopusConfiguration()
+    static
     {
         Configuration.addDefaultResource("octopus-default.xml");
         Configuration.addDefaultResource("octopus-site.xml");
+    }
 
+    public OctopusConfiguration()
+    {
         super();
     }
 }
