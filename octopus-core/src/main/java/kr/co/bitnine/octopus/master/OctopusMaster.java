@@ -15,18 +15,18 @@
 package kr.co.bitnine.octopus.master;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.frame.SessionServer;
 import kr.co.bitnine.octopus.util.StringUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ShutdownHookManager;
 
 public class OctopusMaster extends CompositeService
 {
-    public static final int SHUTDOWN_HOOK_PRIORITY = 0;
+    public static final int SHUTDOWN_HOOK_PRIORITY = 30;
 
     private static final Log LOG = LogFactory.getLog(OctopusMaster.class);
 
@@ -38,49 +38,25 @@ public class OctopusMaster extends CompositeService
     @Override
     protected void serviceInit(Configuration conf) throws Exception
     {
-        addIfService(
-                new AbstractService(OctopusMaster.class.getSimpleName())
-                {
-                    private final Runnable spin = new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try {
-                                while (!Thread.interrupted()) {
-                                    Thread.sleep(5 * 1000);
-                                    LOG.info("spinning");
-                                }
-                            } catch (InterruptedException e) {
-                                LOG.info("interrupted");
-                            }
-                        }
-                    };
-
-                    private Thread thr = null;
-
-                    @Override
-                    protected void serviceStart() throws Exception
-                    {
-                        thr = new Thread(spin);
-                        thr.start();
-                        LOG.info("spin started");
-
-                        super.serviceStart();
-                    }
-
-                    @Override
-                    protected void serviceStop() throws Exception
-                    {
-                        thr.interrupt();
-                        thr.join();
-                        LOG.info("spin stopped");
-
-                        super.serviceStop();
-                    }
-                });
+        SessionServer sessServer = new SessionServer();
+        addService(sessServer);
 
         super.serviceInit(conf);
+    }
+
+    @Override
+    public String getName()
+    {
+        return "OctopusMaster";
+    }
+
+    private void initAndStart(Configuration conf)
+    {
+        CompositeServiceShutdownHook hook = new CompositeServiceShutdownHook(this);
+        ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
+
+        init(conf);
+        start();
     }
 
     public static void main(String[] args)
@@ -88,13 +64,6 @@ public class OctopusMaster extends CompositeService
         StringUtils.startupShutdownMessage(OctopusMaster.class, args, LOG);
 
         OctopusMaster master = new OctopusMaster();
-
-        CompositeServiceShutdownHook hook = new CompositeServiceShutdownHook(master);
-        ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
-
-        Configuration conf = new OctopusConfiguration();
-        master.init(conf);
-        master.start();
-        LOG.info("started");
+        master.initAndStart(new OctopusConfiguration());
     }
 }
