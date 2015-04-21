@@ -21,4 +21,15 @@ does not already exist, create it.
 -->
 
 <configuration>
+
+  <property>
+    <name>master.server.address</name>
+    <value>0.0.0.0:58000</value>
+  </property>
+
+  <property>
+    <name>master.session.max</name>
+    <value>5</value>
+  </property>
+
 </configuration>
