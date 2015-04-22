@@ -42,19 +42,33 @@ public class BackendProtocol
         normalPhase();
     }
 
-    // FIXME: get arguments
-    public void sendErrorResponse() throws IOException
+    public void emitErrorReport(ErrorData edata) throws IOException
     {
-        Message msg = new Message.Builder('E')
+        char type;
+        ErrorData.Severity severity = edata.getSeverity();
+
+        switch (severity) {
+            case PANIC:
+            case FATAL:
+            case ERROR:
+                type = 'E'; // ErrorResponse
+                break;
+            default:
+                type = 'N'; // NoticeResponse
+        }
+
+        Message.Builder builder = new Message.Builder(type)
                 .putChar('S')
-                .putCString("ERROR")
+                .putCString(severity.toString())
                 .putChar('C')
-                .putCString("08P01")
+                .putCString(edata.getSQLState())
                 .putChar('M')
-                .putCString("protocol_violation")
-                .putChar('\0')
-                .build();
-        msgStream.putMessage(msg);
+                .putCString(edata.getMessage());
+
+        // TODO: add optional fields
+
+        builder.putChar('\0');
+        msgStream.putMessage(builder.build());
     }
 
     private void startupPhase() throws IOException
@@ -97,13 +111,13 @@ public class BackendProtocol
                 .build();
         msgStream.putMessage(msg);
 
-        msg = msgStream.getMessage();
+        msg = msgStream.getMessage(); // TODO: EOFException, no password
         if (msg.getType() != 'p')
             throw new ProtocolViolationException("PasswordMessage expected (type='" + msg.getType() + "')");
         String password = msg.getCString();
         if (!msgListener.passwordMessage(this, password)) {
-            // FIXME
-            sendErrorResponse();
+            ErrorData edata = new ErrorData(ErrorData.Severity.FATAL);
+            emitErrorReport(edata);
             throw new IOException("authentication failed");
         }
 
@@ -128,7 +142,8 @@ public class BackendProtocol
                 break;
             } else {
                 LOG.warn("message(type='" + msg.getType() + "') received, discard");
-                sendErrorResponse();
+                ErrorData edata = new ErrorData(ErrorData.Severity.ERROR);
+                emitErrorReport(edata);
             }
         }
     }

@@ -16,6 +16,7 @@ package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.pgproto.BackendListener;
 import kr.co.bitnine.octopus.pgproto.BackendProtocol;
+import kr.co.bitnine.octopus.pgproto.ErrorData;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -60,7 +61,8 @@ public class Session implements Runnable
     public void reject()
     {
         try {
-            proto.sendErrorResponse(); // FIXME
+            ErrorData edata = new ErrorData(ErrorData.Severity.FATAL);
+            proto.emitErrorReport(edata); // FIXME
             clientChannel.close();
         } catch (IOException e) { }
     }
@@ -79,7 +81,7 @@ public class Session implements Runnable
         @Override
         public boolean passwordMessage(BackendProtocol proto, String password)
         {
-            // FIXME
+            // FIXME: error report ErrorData FATAL
             return password.equals("bitnine");
         }
     }
