@@ -31,6 +31,7 @@ limitations under the License.
 
   <modules>
     <module>octopus-common</module>
+    <module>octopus-schema</module>
     <module>octopus-catalog</module>
     <module>octopus-core</module>
     <module>octopus-maven-plugin</module>
