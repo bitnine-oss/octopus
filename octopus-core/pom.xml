@@ -64,5 +64,12 @@ limitations under the License.
       <artifactId>calcite-core</artifactId>
       <version>1.2.0-incubating</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.calcite</groupId>
+      <artifactId>calcite-core</artifactId>
+      <type>test-jar</type>
+      <version>1.2.0-incubating</version>
+    </dependency>
   </dependencies>
 </project>
