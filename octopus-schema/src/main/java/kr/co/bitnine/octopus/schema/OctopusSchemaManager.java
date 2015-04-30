@@ -16,25 +16,12 @@ package kr.co.bitnine.octopus.schema;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.util.*;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
-import org.apache.metamodel.data.DataSet;
-import org.apache.metamodel.data.DataSetTableModel;
-import org.apache.metamodel.jdbc.JdbcDataContext;
-import org.apache.metamodel.query.FromItem;
-import org.apache.metamodel.query.JoinType;
-import org.apache.metamodel.query.Query;
-import org.apache.metamodel.schema.Relationship;
-import org.apache.metamodel.schema.Schema;
-import org.apache.metamodel.schema.Column;
-import org.apache.metamodel.schema.TableType;
 
 /* extract schema from source databases and store the metadata in Octopus Metastore */
 public class OctopusSchemaManager {
@@ -51,7 +38,6 @@ public class OctopusSchemaManager {
            and extract meta data information from data sources */
 
         osm.loadDBInfoFile("kskim");
-        //osm.extractAndStoreSchemaInformation();
     }
 
 
@@ -69,12 +55,7 @@ public class OctopusSchemaManager {
     }
 
     protected void loadDBInfoFile(String user) {
-        // 설정 파일의 위치 디렉토리
-
         String filename = user + "_dbinfo.xml";
-
-        filename = "/home/kisung/kskim_dbinfo.xml";
-
         metastore = new MetaStore();
 
         try {
@@ -86,6 +67,8 @@ public class OctopusSchemaManager {
             for (HierarchicalConfiguration conf_db : databases) {
                 System.out.println("database");
                 String type = conf_db.getString("type");
+
+                /* JDBC type */
                 if (type.equals("jdbc")) {
                     HierarchicalConfiguration connection
                             = conf_db.configurationAt("connection");
