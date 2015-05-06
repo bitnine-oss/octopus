@@ -34,8 +34,16 @@ public class MetaStore {
         for (org.apache.metamodel.schema.Table tbl : schema.getTables()) {
             Table table = new Table(tbl);
             db.insertTable(tbl.getName(), table);
+            tables.put(tbl.getName(), table);
         }
         databases.put(name, db);
     }
 
+    /* for test */
+    public void insertDatabase(String name, Database db) {
+        databases.put(name, db);
+        for (Table table : db.getTables()) {
+            tables.put(table.getName(), table);
+        }
+    }
 }
