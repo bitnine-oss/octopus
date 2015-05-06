@@ -13,6 +13,11 @@ public class Table extends MutableTable {
     private HashMap<String, Column> _columns = new HashMap<String, Column>();
     protected String _name;
 
+    /* for test */
+    public Table (String name) {
+        _name = name;
+    }
+
     public Table (org.apache.metamodel.schema.Table tbl) {
         _name = tbl.getName();
 

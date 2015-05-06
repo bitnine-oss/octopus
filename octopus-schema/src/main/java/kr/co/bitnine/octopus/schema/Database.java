@@ -1,5 +1,7 @@
 package kr.co.bitnine.octopus.schema;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 /**
@@ -27,6 +29,11 @@ public class Database {
     /* Connection information */
     protected DBConnInfo _dbc;
 
+    public Database (String name)
+    {
+        _name = name;
+    }
+
     /* for JDBC connection */
     public Database (String name, String type, DBConnInfo dbc)
     {
@@ -35,11 +42,19 @@ public class Database {
         _dbc = dbc;
     }
 
+    public void insertTable(Table tbl) {
+        _tables.put(tbl.getName(), tbl);
+    }
+
     public void insertTable(String name, Table tbl) {
         _tables.put(name, tbl);
     }
 
     public String getName() {
         return _name;
+    }
+
+    public Collection<Table> getTables() {
+        return _tables.values();
     }
 }
