@@ -19,6 +19,7 @@ import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -39,9 +41,10 @@ public class SessionServer extends AbstractService
     private static final long EXECUTOR_KEEPALIVE_DEFAULT = 60;
     private static final long EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT = 5;
 
-    private volatile boolean running = false;
-    private Listener listener = null;
+    private HashMap<Integer, Session> sessions = null;
     private ThreadPoolExecutor executor = null;
+    private Listener listener = null;
+    private volatile boolean running = false;
 
     public SessionServer()
     {
@@ -53,7 +56,7 @@ public class SessionServer extends AbstractService
     {
         super.serviceInit(conf);
 
-        listener = new Listener();
+        sessions = new HashMap<Integer, Session>();
 
         executor = new ThreadPoolExecutor(
                 0,
@@ -61,6 +64,8 @@ public class SessionServer extends AbstractService
                 EXECUTOR_KEEPALIVE_DEFAULT,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>());
+
+        listener = new Listener();
     }
 
     @Override
@@ -83,7 +88,7 @@ public class SessionServer extends AbstractService
         listener = null;
 
         executor.shutdownNow();
-        boolean terminated = executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);
+        boolean terminated = executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);;
         if (!terminated)
             LOG.warn("there are remaining sessions still running");
         executor = null;
@@ -100,13 +105,28 @@ public class SessionServer extends AbstractService
             setName("SessionServer Listener");
 
             acceptChannel = ServerSocketChannel.open();
-            InetSocketAddress addr = NetUtils.createSocketAddr(getConfig().get("master.server.address"));
-            acceptChannel.bind(addr, 0);
+            InetSocketAddress bindAddr = NetUtils.createSocketAddr(getConfig().get("master.server.address"));
+            acceptChannel.bind(bindAddr);
         }
 
         @Override
         public void run()
         {
+            Session.Callback sessCallback = new Session.Callback()
+            {
+                @Override
+                public void onClose(Session session)
+                {
+                    unregisterSession(session);
+                }
+
+                @Override
+                public void onCancelRequest(int secretKey)
+                {
+                    cancelSession(secretKey);
+                }
+            };
+
             while (running) {
                 SocketChannel clientChannel = null;
                 try {
@@ -118,18 +138,19 @@ public class SessionServer extends AbstractService
                 if (clientChannel == null)
                     continue;
 
-                String clientAddr = "/unknown";
+                String clientAddress = "/unknown";
                 try {
-                    clientAddr = clientChannel.getRemoteAddress().toString();
+                    clientAddress = clientChannel.getRemoteAddress().toString();
                 } catch (IOException e) { }
-                LOG.debug("connection from " + clientAddr + " is accepted");
+                LOG.debug("connection from " + clientAddress + " is accepted");
 
-                Session sess = new Session(clientChannel);
+                Session session = new Session(clientChannel, sessCallback);
+                registerSession(session);
                 try {
-                    executor.execute(sess);
+                    executor.execute(session);
                 } catch (RejectedExecutionException e) {
-                    LOG.warn("session full: connection from " + clientAddr + " is rejected");
-                    sess.reject();
+                    LOG.warn("session full: connection from " + clientAddress + " is rejected");
+                    session.reject();
                 }
             }
 
@@ -137,5 +158,30 @@ public class SessionServer extends AbstractService
                 acceptChannel.close();
             } catch (IOException e) { }
         }
+    }
+
+    private void registerSession(Session session)
+    {
+        synchronized(sessions) {
+            sessions.put(session.getSecretKey(), session);
+        }
+    }
+
+    private void unregisterSession(Session session)
+    {
+        synchronized(sessions) {
+            sessions.remove(session.getSecretKey());
+        }
+    }
+
+    private void cancelSession(int secretKey)
+    {
+        Session sess;
+        synchronized(sessions) {
+            sess = sessions.get(secretKey);
+        }
+
+        if (sess != null)
+            sess.cancel();
     }
 }

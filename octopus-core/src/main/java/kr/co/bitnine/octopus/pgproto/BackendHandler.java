@@ -14,10 +14,18 @@
 
 package kr.co.bitnine.octopus.pgproto;
 
+import java.io.IOException;
 import java.util.Properties;
 
-public interface BackendListener
+public interface BackendHandler
 {
-    void startupMessage(BackendProtocol proto, Properties params);
-    boolean passwordMessage(BackendProtocol proto, String password);
+    void onStartupMessage(Properties params);
+    void onCancelRequest(int cancelKey);
+
+    boolean onPasswordMessage(String password);
+
+    int onAuthenticationOk();
+
+    void onQuery(String query);
+    void onParse(String name, String query, int[] oids) throws IOException;
 }

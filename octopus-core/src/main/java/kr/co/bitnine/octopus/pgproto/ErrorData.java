@@ -28,9 +28,9 @@ public class ErrorData
         PANIC       // abort system
     }
 
-    public static String SUCCESSFUL_COMPLETION = "00000"; // default when severity <= NOTICE
-    public static String WARNING = "01000"; // default when severity == WARNING
-    public static String INTERNAL_ERROR = "XX000"; // default when severity >= ERROR
+    public static String SUCCESSFUL_COMPLETION = "00000";   // default when severity <= NOTICE
+    public static String WARNING = "01000";                 // default when severity == WARNING
+    public static String INTERNAL_ERROR = "XX000";          // default when severity >= ERROR
 
     private Severity severity;
     private String sqlState;
@@ -55,19 +55,19 @@ public class ErrorData
         this(severity, null);
 
         switch (severity) {
-            case DEBUG:
-            case LOG:
-            case INFO:
-            case NOTICE:
-                setSQLState(SUCCESSFUL_COMPLETION);
-                break;
-            case WARNING:
-                setSQLState(WARNING);
-                break;
-            case ERROR:
-            case FATAL:
-            case PANIC:
-                setSQLState(INTERNAL_ERROR);
+        case DEBUG:
+        case LOG:
+        case INFO:
+        case NOTICE:
+            setSQLState(SUCCESSFUL_COMPLETION);
+            break;
+        case WARNING:
+            setSQLState(WARNING);
+            break;
+        case ERROR:
+        case FATAL:
+        case PANIC:
+            setSQLState(INTERNAL_ERROR);
         }
     }
 
