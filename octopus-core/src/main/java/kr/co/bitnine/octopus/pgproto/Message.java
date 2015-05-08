@@ -22,7 +22,7 @@ public class Message
 {
     private char type;
     private byte[] body;
-    private ByteBuffer buf = null;
+    private ByteBuffer buf;
 
     public Message(byte[] body)
     {
@@ -33,6 +33,7 @@ public class Message
     {
         this.type = type;
         this.body = body;
+        this.buf = ByteBuffer.wrap(body);
     }
 
     public char getType()
@@ -81,29 +82,28 @@ public class Message
 
         public Message build()
         {
-            byte[] bytes = Arrays.copyOf(buf.array(), buf.position());
-            return new Message(type, bytes);
+            byte[] body = Arrays.copyOf(buf.array(), buf.position());
+            return new Message(type, body);
         }
     }
 
-    public char getChar()
+    public int peekInt()
     {
-        if (buf == null)
-            buf = ByteBuffer.wrap(body);
-        return (char)buf.get();
+        return buf.getInt(buf.position());
+    }
+
+    public short getShort()
+    {
+        return buf.getShort();
     }
 
     public int getInt()
     {
-        if (buf == null)
-            buf = ByteBuffer.wrap(body);
         return buf.getInt();
     }
 
     public String getCString()
     {
-        if (buf == null)
-            buf = ByteBuffer.wrap(body);
         return ByteBufferUtil.getCString(buf);
     }
 }

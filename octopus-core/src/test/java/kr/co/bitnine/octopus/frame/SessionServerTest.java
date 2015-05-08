@@ -52,9 +52,18 @@ public class SessionServerTest
         info.setProperty("user", "octopus");
         info.setProperty("password", "bitnine");
 
-        Connection db = DriverManager.getConnection(url, info);
-        assertFalse(db.isClosed());
-        db.close();
+        Connection conn = DriverManager.getConnection(url, info);
+        assertFalse(conn.isClosed());
+/*
+        String query = "SELECT name FROM bitnine";
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+        while (rs.next()) {
+            String name = rs.getString("name");
+            System.out.println("name: " + name);
+        }
+ */
+        conn.close();
 
         server.stop();
     }

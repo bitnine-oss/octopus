@@ -2,9 +2,8 @@ package kr.co.bitnine.octopus.queryengine;
 
 import kr.co.bitnine.octopus.schema.Database;
 import kr.co.bitnine.octopus.schema.MetaStore;
-import static org.junit.Assert.assertFalse;
-
 import kr.co.bitnine.octopus.schema.Table;
+
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -13,13 +12,11 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Planner;
-import org.junit.Before;
-import org.junit.Test;
 import org.apache.calcite.tools.Frameworks;
 
-/**
- * Created by kisung on 15. 5. 1.
- */
+import org.junit.Before;
+import org.junit.Test;
+
 public class QueryEngineTest {
 
     MetaStore metastore;

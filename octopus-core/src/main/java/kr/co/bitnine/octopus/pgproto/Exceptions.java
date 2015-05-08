@@ -20,37 +20,17 @@ public class Exceptions
 {
     public static class ProtocolViolationException extends IOException
     {
-        public ProtocolViolationException()
-        {
-            super();
-        }
-
         public ProtocolViolationException(String message)
         {
             super(message);
-        }
-
-        public ProtocolViolationException(String message, Throwable cause)
-        {
-            super(message, cause);
         }
     }
 
     public static class UnsupportedProtocolException extends IOException
     {
-        public UnsupportedProtocolException()
-        {
-            super();
-        }
-
         public UnsupportedProtocolException(String message)
         {
             super(message);
-        }
-
-        public UnsupportedProtocolException(String message, Throwable cause)
-        {
-            super(message, cause);
         }
     }
 }

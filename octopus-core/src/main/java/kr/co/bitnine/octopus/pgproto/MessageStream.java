@@ -26,27 +26,16 @@ public class MessageStream
     private static final int SEND_BUFFER_SIZE_DEFAULT = 8 * 1024;
     private static final int RECV_BUFFER_SIZE_DEFAULT = 8 * 1024;
 
-    private final SocketChannel sockChannel;
-    private final ByteBuffer sendBuffer;
-    private final ByteBuffer recvBuffer;
+    private final SocketChannel socketChannel;
+    private final ByteBuffer sendBuffer = ByteBuffer.allocate(SEND_BUFFER_SIZE_DEFAULT);
+    private final ByteBuffer recvBuffer = ByteBuffer.allocate(RECV_BUFFER_SIZE_DEFAULT);
 
-    public MessageStream(SocketChannel sockChannel)
+    public MessageStream(SocketChannel socketChannel)
     {
-        this.sockChannel = sockChannel;
-        sendBuffer = ByteBuffer.allocate(SEND_BUFFER_SIZE_DEFAULT);
-        recvBuffer = ByteBuffer.allocate(RECV_BUFFER_SIZE_DEFAULT);
-        recvBuffer.flip(); // make this buffer has no remaining elements
-    }
+        this.socketChannel = socketChannel;
 
-    private byte[] getMessageBody() throws IOException
-    {
-        int len = getInt();
-        /* length count includes itself */
-        if (len < Constants.INTEGER_BYTES)
-            throw new ProtocolViolationException("initial message length: " + len);
-        byte[] body = new byte[len - Constants.INTEGER_BYTES];
-        getBytes(body);
-        return body;
+        // make receive buffer has no remaining elements
+        recvBuffer.flip();
     }
 
     public Message getInitialMessage() throws IOException
@@ -62,14 +51,25 @@ public class MessageStream
         return new Message(type, body);
     }
 
-    public void putMessage(Message msg) throws IOException
+    public void putMessage(Message message) throws IOException
     {
-        char type = msg.getType();
+        char type = message.getType();
         putChar(type);
-        byte[] body = msg.getBody();
+        byte[] body = message.getBody();
         putInt(Constants.INTEGER_BYTES + body.length);
         putBytes(body);
         flush();
+    }
+
+    private byte[] getMessageBody() throws IOException
+    {
+        int len = getInt();
+        /* length count includes itself */
+        if (len < Constants.INTEGER_BYTES)
+            throw new ProtocolViolationException("initial message length: " + len);
+        byte[] body = new byte[len - Constants.INTEGER_BYTES];
+        getBytes(body);
+        return body;
     }
 
     private char getChar() throws IOException
@@ -149,7 +149,7 @@ public class MessageStream
          * there is at least one byte remaining in the buffer then
          * read() will block until at least one byte is read.
          */
-        int ret = sockChannel.read(recvBuffer);
+        int ret = socketChannel.read(recvBuffer);
         if (ret == -1)
             throw new EOFException();
 
@@ -161,7 +161,7 @@ public class MessageStream
         sendBuffer.flip();
 
         while (sendBuffer.hasRemaining())
-            sockChannel.write(sendBuffer);
+            socketChannel.write(sendBuffer);
 
         sendBuffer.clear();
     }

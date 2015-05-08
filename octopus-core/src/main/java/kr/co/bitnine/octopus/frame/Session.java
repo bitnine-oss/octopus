@@ -14,8 +14,12 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.pgproto.BackendListener;
+import static kr.co.bitnine.octopus.pgproto.Exceptions.*;
+
+import kr.co.bitnine.octopus.pgproto.BackendHandler;
 import kr.co.bitnine.octopus.pgproto.BackendProtocol;
+import kr.co.bitnine.octopus.pgproto.ErrorData;
+import kr.co.bitnine.octopus.pgproto.MessageStream;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -24,63 +28,123 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Properties;
+import java.util.Random;
 
 public class Session implements Runnable
 {
     private static final Log LOG = LogFactory.getLog(Session.class);
 
     private final SocketChannel clientChannel;
-    private final BackendProtocol proto;
+    private final int secretKey;
 
-    private String user;
-    private String database;
-    private String clientEncoding;
+    public interface Callback
+    {
+        void onClose(Session session);
+        void onCancelRequest(int secretKey);
+    }
 
-    public Session(SocketChannel clientChannel)
+    private Callback callback;
+
+    private final MessageStream messageStream;
+    private final BackendProtocol protocol;
+
+    public Session(SocketChannel clientChannel, Callback callback)
     {
         this.clientChannel = clientChannel;
-        proto = new BackendProtocol(clientChannel, new SessionBackendListener());
+        secretKey = new Random(this.hashCode()).nextInt();
 
-        user = null;
-        database = null;
-        clientEncoding = null;
+        this.callback = callback;
+
+        messageStream = new MessageStream(clientChannel);
+        protocol = new BackendProtocol(new SessionBackendHandler());
+    }
+
+    public int getSecretKey()
+    {
+        return secretKey;
     }
 
     @Override
     public void run()
     {
         try {
-            proto.execute();
+            protocol.execute(messageStream);
         } catch (Exception e) {
             LOG.error(ExceptionUtils.getStackTrace(e));
-            // TODO: cleanup session
         }
+
+        close();
     }
 
     public void reject()
     {
         try {
-            proto.sendErrorResponse(); // FIXME
-            clientChannel.close();
+            // FIXME
+            ErrorData edata = new ErrorData(ErrorData.Severity.FATAL);
+            protocol.emitErrorReport(edata);
         } catch (IOException e) { }
+
+        close();
     }
 
-    private class SessionBackendListener implements BackendListener
+    private void close()
+    {
+        try {
+            clientChannel.close();
+        } catch (IOException e) { }
+
+        callback.onClose(this);
+    }
+
+    public void cancel()
+    {
+        // TODO
+    }
+
+    private final String CLIENT_PARAM_USER = "user";
+    private final String CLIENT_PARAM_DATABASE = "database";
+    private final String CLIENT_PARAM_ENCODING = "client_encoding";
+
+    private Properties clientParams;
+
+    private class SessionBackendHandler implements BackendHandler
     {
         @Override
-        public void startupMessage(BackendProtocol proto, Properties params)
+        public void onStartupMessage(Properties params)
         {
-            // FIXME
-            user = params.getProperty("user");
-            database = params.getProperty("database");
-            clientEncoding = params.getProperty("client_encoding");
+            clientParams = params;
         }
 
         @Override
-        public boolean passwordMessage(BackendProtocol proto, String password)
+        public void onCancelRequest(int secretKey)
         {
-            // FIXME
+            callback.onCancelRequest(secretKey);
+        }
+
+        @Override
+        public boolean onPasswordMessage(String password)
+        {
+            // FIXME: error report ErrorData FATAL
             return password.equals("bitnine");
+        }
+
+        @Override
+        public int onAuthenticationOk()
+        {
+            return secretKey;
+        }
+
+        @Override
+        public void onQuery(String query)
+        {
+            // TODO
+        }
+
+        @Override
+        public void onParse(String name, String query, int[] oids) throws IOException
+        {
+            if (!name.isEmpty())
+                throw new UnsupportedProtocolException("named prepared statement is not supported");
         }
     }
 }
