@@ -15,14 +15,14 @@
 package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
-
 import kr.co.bitnine.octopus.util.NetUtils;
-import org.apache.hadoop.conf.Configuration;
 
 import static org.junit.Assert.assertFalse;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.hadoop.conf.Configuration;
 
 import java.net.InetSocketAddress;
 import java.sql.Connection;
