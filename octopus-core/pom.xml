@@ -52,17 +52,10 @@ limitations under the License.
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.apache.calcite</groupId>
       <artifactId>calcite-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.apache.calcite</groupId>
-      <artifactId>calcite-core</artifactId>
-      <type>test-jar</type>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.metamodel</groupId>
       <artifactId>MetaModel-full</artifactId>

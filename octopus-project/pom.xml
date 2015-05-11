@@ -68,19 +68,11 @@ limitations under the License.
         <version>${hadoop.version}</version>
         <scope>provided</scope>
       </dependency>
-
       <dependency>
         <groupId>org.apache.calcite</groupId>
         <artifactId>calcite-core</artifactId>
         <version>1.2.0-incubating</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.calcite</groupId>
-        <artifactId>calcite-core</artifactId>
-        <version>1.2.0-incubating</version>
-        <type>test-jar</type>
-      </dependency>
-
       <dependency>
         <groupId>org.apache.metamodel</groupId>
         <artifactId>MetaModel-full</artifactId>

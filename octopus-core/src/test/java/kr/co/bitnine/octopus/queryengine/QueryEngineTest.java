@@ -9,7 +9,6 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.Frameworks;
@@ -43,8 +42,7 @@ public class QueryEngineTest {
         final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
         final FrameworkConfig config = Frameworks.newConfigBuilder()
                 .parserConfig(SqlParser.Config.DEFAULT)
-                .defaultSchema(
-                        CalciteAssert.addSchema(rootSchema, CalciteAssert.SchemaSpec.HR))
+                .defaultSchema(rootSchema)
                 .build();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse("select * from T1, T2");
@@ -55,7 +53,7 @@ public class QueryEngineTest {
             for (SqlNode node : select.getSelectList()) {
                 System.out.println(node.toString());
             }
-            System.out.println("from: " + select.getFrom());
+//            System.out.println("from: " + select.getFrom());
         }
     }
 }
