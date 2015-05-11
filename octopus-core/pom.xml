@@ -35,12 +35,10 @@ limitations under the License.
       <artifactId>octopus-common</artifactId>
     </dependency>
 
-      <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>octopus-schema</artifactId>
-          <version>0.1.0-SNAPSHOT</version>
-      </dependency>
-
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+    </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
@@ -66,10 +64,19 @@ limitations under the License.
     </dependency>
 
     <dependency>
+      <groupId>org.apache.metamodel</groupId>
+      <artifactId>MetaModel-full</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>ojdbc6</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>

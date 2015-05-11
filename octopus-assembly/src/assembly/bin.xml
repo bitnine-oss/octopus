@@ -65,7 +65,6 @@ limitations under the License.
     <moduleSet>
       <useAllReactorProjects>true</useAllReactorProjects>
       <includes>
-        <include>${project.groupId}:octopus-catalog</include>
         <include>${project.groupId}:octopus-common</include>
         <include>${project.groupId}:octopus-core</include>
       </includes>

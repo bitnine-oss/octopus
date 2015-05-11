@@ -37,11 +37,6 @@ limitations under the License.
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>octopus-catalog</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
         <artifactId>octopus-common</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -51,6 +46,11 @@ limitations under the License.
         <version>${project.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>1.10</version>
+      </dependency>
       <dependency>
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging</artifactId>
@@ -82,6 +82,12 @@ limitations under the License.
       </dependency>
 
       <dependency>
+        <groupId>org.apache.metamodel</groupId>
+        <artifactId>MetaModel-full</artifactId>
+        <version>4.3.3</version>
+      </dependency>
+
+      <dependency>
         <groupId>log4j</groupId>
         <artifactId>log4j</artifactId>
         <version>1.2.17</version>
@@ -93,6 +99,11 @@ limitations under the License.
         <scope>test</scope>
       </dependency>
 
+      <dependency>
+        <groupId>com.oracle</groupId>
+        <artifactId>ojdbc6</artifactId>
+        <version>11.1.0.7.0</version>
+      </dependency>
       <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
