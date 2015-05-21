@@ -14,83 +14,77 @@
 
 package kr.co.bitnine.octopus.schema;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.*;
-
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.metamodel.DataContext;
-import org.apache.metamodel.DataContextFactory;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-/* extract schema from source databases and store the metadata in Octopus Metastore */
-public class OctopusSchemaManager {
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.List;
 
-    private MetaStore metastore;
+/**
+ * Extracts metadata from source databases
+ * and store the metadata in Octopus MetaStore
+ */
+public class OctopusSchemaManager
+{
+    private static final Log LOG = LogFactory.getLog(OctopusSchemaManager.class);
 
-    public static void main(String[] args) {
-        OctopusSchemaManager osm = new OctopusSchemaManager();
-        /* Read octopus configuration file */
+    private final String DBINFO_SUFFIX = "-dbinfo.xml";
 
-        /* Initialize Octopus-catalog */
+    private final MetaStore metastore;
+    private final String username;
 
-        /* Read data source input file
-           and extract meta data information from data sources */
-
-        osm.loadDBInfoFile("kskim");
-    }
-
-
-    protected Connection getConnection(String driver, String connectionString) {
-        Connection connection;
-
-        try {
-            Class.forName(driver);
-            connection = DriverManager.getConnection(connectionString);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to create JDBC connection", e);
-        }
-
-        return connection;
-    }
-
-    protected void loadDBInfoFile(String user) {
-        String filename = user + "_dbinfo.xml";
+    public OctopusSchemaManager(String username)
+    {
         metastore = new MetaStore();
+        this.username = username;
+    }
+
+    public void load() throws Exception
+    {
+        String filename = username + DBINFO_SUFFIX;
 
         try {
             XMLConfiguration config = new XMLConfiguration(filename);
+            config.setSchemaValidation(true);
+            config.validate();
 
-            List<HierarchicalConfiguration> databases
-                    = config.configurationsAt("database");
+            List<HierarchicalConfiguration> databases = config.configurationsAt("database");
+            for (HierarchicalConfiguration database : databases) {
+                String name = database.getString("name", null);
+                String type = database.getString("type");
+                HierarchicalConfiguration conn = database.configurationAt("connection");
 
-            for (HierarchicalConfiguration conf_db : databases) {
-                System.out.println("database");
-                String type = conf_db.getString("type");
-
-                /* JDBC type */
-                if (type.equals("jdbc")) {
-                    HierarchicalConfiguration connection
-                            = conf_db.configurationAt("connection");
-                    String name, driver, connectionString;
-
-                    name = connection.getString("name");
-                    driver = connection.getString("driver");
-                    connectionString = connection.getString("connectionString");
-
-                    Database.DBConnInfo dbconninfo = new Database.DBConnInfo(driver, connectionString);
-
-                    /* try to connect to the database using the connect info. */
-                    DataContext dc = DataContextFactory.createJdbcDataContext(
-                            getConnection(driver, connectionString));
-
-                    metastore.insertDatabase(name, type, dbconninfo, dc);
+                switch (type) {
+                case "jdbc":
+                    loadJdbc(conn, name);
+                    break;
+                default:
+                    throw new RuntimeException("invalid type");
                 }
             }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (ConfigurationException e) {
+            LOG.error(ExceptionUtils.getStackTrace(e));
+            throw new Exception(e);
         }
     }
 
+    private void loadJdbc(HierarchicalConfiguration connection, String name) throws Exception
+    {
+        String driver = connection.getString("driver");
+        String url = connection.getString("connectionString");
+
+        Database db = new Database(getConnection(driver, url));
+        metastore.add(name, db);
+    }
+
+    private Connection getConnection(String driver, String url) throws Exception
+    {
+        Class.forName(driver);
+        return DriverManager.getConnection(url);
+    }
 }

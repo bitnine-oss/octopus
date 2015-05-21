@@ -14,57 +14,67 @@
 
 package kr.co.bitnine.octopus.schema;
 
-import java.util.Collection;
-import java.util.HashMap;
+import com.google.common.collect.ImmutableMap;
+import org.apache.metamodel.DataContext;
+import org.apache.metamodel.DataContextFactory;
+import org.apache.metamodel.schema.Schema;
 
-public class Database {
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Map;
 
-    static public class DBConnInfo {
-        /* for JDBC connection */
+public class Database
+{
+    private final DataContext dataContext;
 
-        protected String _driver;
-        protected String _connectionString;
+    public Database(Connection connection)
+    {
+        DataContext dc = DataContextFactory.createJdbcDataContext(connection);
+        this.dataContext = dc;
+    }
 
-        public DBConnInfo(String driver, String connectionString) {
-            _driver = driver;
-            _connectionString = connectionString;
+    private org.apache.calcite.schema.Schema schema = null;
+
+    public org.apache.calcite.schema.Schema getSchema()
+    {
+        if (schema == null) {
+            schema = new org.apache.calcite.schema.impl.AbstractSchema() {
+                private final ImmutableMap<String, org.apache.calcite.schema.Schema> subSchemaMap;
+
+                {
+                    ImmutableMap.Builder<String, org.apache.calcite.schema.Schema> builder = ImmutableMap.builder();
+                    for (OctopusSchema schema : getSchemas()) {
+                        String name = schema.getName();
+                        if (name == null)
+                            name = "__DEFAULT"; // FIXME
+                        builder.put(name, schema);
+                    }
+                    subSchemaMap = builder.build();
+                }
+
+                @Override
+                public boolean isMutable()
+                {
+                    return false;
+                }
+
+                @Override
+                protected Map<String, org.apache.calcite.schema.Schema> getSubSchemaMap()
+                {
+                    return subSchemaMap;
+                }
+            };
         }
+
+        return schema;
     }
 
-    private HashMap<String, Table> _tables = new HashMap<String, Table>();
-
-    protected String _name;
-    protected String _type;
-
-    /* Connection information */
-    protected DBConnInfo _dbc;
-
-    public Database (String name)
+    public OctopusSchema[] getSchemas()
     {
-        _name = name;
-    }
+        ArrayList<OctopusSchema> schemas = new ArrayList();
+        for (Schema schema : dataContext.getSchemas())
+            schemas.add(new OctopusSchema(schema));
 
-    /* for JDBC connection */
-    public Database (String name, String type, DBConnInfo dbc)
-    {
-        _name = name;
-        _type = type;
-        _dbc = dbc;
-    }
-
-    public void insertTable(Table tbl) {
-        _tables.put(tbl.getName(), tbl);
-    }
-
-    public void insertTable(String name, Table tbl) {
-        _tables.put(name, tbl);
-    }
-
-    public String getName() {
-        return _name;
-    }
-
-    public Collection<Table> getTables() {
-        return _tables.values();
+        return schemas.toArray(new OctopusSchema[schemas.size()]);
     }
 }
