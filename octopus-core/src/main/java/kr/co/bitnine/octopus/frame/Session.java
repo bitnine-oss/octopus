@@ -16,6 +16,8 @@ package kr.co.bitnine.octopus.frame;
 
 import static kr.co.bitnine.octopus.pgproto.Exceptions.*;
 
+import kr.co.bitnine.octopus.schema.*;
+
 import kr.co.bitnine.octopus.pgproto.BackendHandler;
 import kr.co.bitnine.octopus.pgproto.BackendProtocol;
 import kr.co.bitnine.octopus.pgproto.ErrorData;
