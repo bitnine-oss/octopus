@@ -78,5 +78,49 @@ limitations under the License.
       <groupId>com.oracle</groupId>
       <artifactId>ojdbc6</artifactId>
     </dependency>
+    <dependency>
+      <groupId>javax.jdo</groupId>
+      <artifactId>jdo-api</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-core</artifactId>
+      <version>4.0.0-release</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-api-jdo</artifactId>
+      <version>4.0.0-release</version>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
+      <version>4.0.0-release</version>
+      <type>pom</type>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+      <groupId>org.datanucleus</groupId>
+       <artifactId>datanucleus-maven-plugin</artifactId>
+       <version>4.0.0-release</version>
+       <configuration>
+         <log4jConfiguration>src/test/resources/log4j.properties</log4jConfiguration>
+         <verbose>true</verbose>
+       </configuration>
+       <executions>
+         <execution>
+           <phase>process-classes</phase>
+           <goals>
+             <goal>enhance</goal>
+           </goals>
+         </execution>
+       </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

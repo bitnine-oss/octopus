@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.schema;
 
+import kr.co.bitnine.octopus.schema.model.MUser;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -21,9 +22,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManager;
+import javax.jdo.PersistenceManagerFactory;
+import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Extracts metadata from source databases
@@ -42,6 +48,35 @@ public class OctopusSchemaManager
     {
         metastore = new MetaStore();
         this.username = username;
+
+        Properties prop = new Properties();
+        prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+//        prop.setProperty("javax.jdo.option.ConnectionURL", "jdbc:postgresql://localhost:5436/octopus");
+//        prop.setProperty("javax.jdo.option.ConnectionDriverName", "org.postgresql.Driver");
+//        prop.setProperty("javax.jdo.option.ConnectionUserName", "kisung");
+//        prop.setProperty("javax.jdo.option.ConnectionPassword", "bitnine123");
+        prop.setProperty("datanucleus.ConnectionURL", "jdbc:postgresql://localhost:5436/octopus");
+        prop.setProperty("datanucleus.ConnectionDriverName", "org.postgresql.Driver");
+        prop.setProperty("datanucleus.ConnectionUserName", "kisung");
+        prop.setProperty("datanucleus.ConnectionPassword", "bitnine123");
+        prop.setProperty("datanucleus.schema.autoCreateAll", "true");
+
+        PersistenceManagerFactory pmf = JDOHelper.getPersistenceManagerFactory(prop);
+        PersistenceManager pm = pmf.getPersistenceManager();
+
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+            MUser user = new MUser();
+            pm.makePersistent(user);
+            tx.commit();
+        }
+        finally {
+            if (tx.isActive())
+                tx.rollback();
+            pm.close();
+        }
+
     }
 
     public void load() throws Exception
