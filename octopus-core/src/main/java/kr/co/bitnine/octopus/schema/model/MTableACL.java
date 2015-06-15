@@ -9,21 +9,10 @@ public class MTableACL {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
-    long tableID;
-
-    @Persistent
-    long grantorUserID;
-
-    @Persistent
-    long userID; /* grantee */
-
-    @Persistent
+    MTable table;
+    MUser grantorUser;
+    MUser user; /* grantee */
     int grantOption;
-
-    @Persistent
     int privilege;
-
-    @Persistent
-    long roleID;
+    MRole role;
 }

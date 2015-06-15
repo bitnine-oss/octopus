@@ -11,9 +11,6 @@ public class MTableAlias {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
-    long table_ID;
-
-    @Persistent
+    MTable table;
     String alias;
 }

@@ -10,16 +10,7 @@ public class MColumn {
     @PrimaryKey
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
-
-    @Persistent
     String name;
-
-    @Persistent
     int type;
-
-    @Persistent
     String description;
-
-    @Persistent
-    long table_ID;
 }

@@ -11,21 +11,10 @@ public class MColumnACL {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
-    long columnID;
-
-    @Persistent
-    long grantorUserID;
-
-    @Persistent
-    long userID; /* grantee */
-
-    @Persistent
+    MColumn column;
+    MUser grantorUser;
+    MUser userID; /* grantee */
     int grantOption;
-
-    @Persistent
     int privilege;
-
-    @Persistent
-    long roleID;
+    MRole roleID;
 }

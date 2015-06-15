@@ -11,9 +11,6 @@ public class MUser {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long id;
 
-    @Persistent
     String name;
-
-    @Persistent
     String password;
 }
