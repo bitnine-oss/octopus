@@ -4,6 +4,7 @@ import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
+import java.util.Collection;
 
 @PersistenceCapable
 public class MDataSource {
@@ -11,18 +12,12 @@ public class MDataSource {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
     String name;
-
-    @Persistent
     int type;
-
-    @Persistent
     String jdbc_driver;
-
-    @Persistent
     String jdbc_connectionString;
-
-    @Persistent
     String description;
+
+    @Persistent(mappedBy = "datasource")
+    Collection<MTable> tables;
 }

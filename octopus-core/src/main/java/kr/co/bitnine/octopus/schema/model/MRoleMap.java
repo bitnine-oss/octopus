@@ -9,12 +9,7 @@ public class MRoleMap {
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
-    long grantorID;
-
-    @Persistent
-    long roldID;
-
-    @Persistent
-    long userID;
+    MUser grantor;
+    MRole rold;
+    MUser user;
 }

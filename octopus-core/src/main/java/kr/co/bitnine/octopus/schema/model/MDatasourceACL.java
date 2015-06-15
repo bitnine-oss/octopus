@@ -11,21 +11,10 @@ public class MDatasourceACL {
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    @Persistent
-    long datasourceID;
-
-    @Persistent
-    long grantorUserID;
-
-    @Persistent
-    long userID; /* grantee */
-
-    @Persistent
+    MDataSource datasource;
+    MUser grantorUser;
+    MUser user; /* grantee */
     int grantOption;
-
-    @Persistent
     int privilege;
-
-    @Persistent
-    long roleID;
+    MRole role;
 }
