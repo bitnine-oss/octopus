@@ -62,6 +62,24 @@ limitations under the License.
     </dependency>
 
     <dependency>
+      <groupId>javax.jdo</groupId>
+      <artifactId>jdo-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-api-jdo</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
+      <type>pom</type>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
@@ -77,28 +95,6 @@ limitations under the License.
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>ojdbc6</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>javax.jdo</groupId>
-      <artifactId>jdo-api</artifactId>
-      <version>3.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.datanucleus</groupId>
-      <artifactId>datanucleus-core</artifactId>
-      <version>4.0.0-release</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.datanucleus</groupId>
-      <artifactId>datanucleus-api-jdo</artifactId>
-      <version>4.0.0-release</version>
-    </dependency>
-    <dependency>
-      <groupId>org.datanucleus</groupId>
-      <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
-      <version>4.0.0-release</version>
-      <type>pom</type>
     </dependency>
   </dependencies>
 
