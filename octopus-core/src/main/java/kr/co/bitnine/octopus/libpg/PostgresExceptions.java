@@ -12,15 +12,14 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.pgproto;
+package kr.co.bitnine.octopus.libpg;
 
-public class Constants
+public abstract class PostgresExceptions
 {
-    private Constants()
+    public static void report(MessageStream messageStream, PostgresException postgresException) throws Exception
     {
+        messageStream.putMessage(postgresException.toMessage());
+        if (postgresException.isError())
+            throw postgresException;
     }
-
-    /* Byte.BYTES, Integer.BYTES since Java 8 */
-    public static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
-    public static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
 }

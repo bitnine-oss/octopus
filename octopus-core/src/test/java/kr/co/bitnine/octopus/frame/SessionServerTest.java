@@ -27,6 +27,8 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Properties;
 
 public class SessionServerTest
@@ -54,7 +56,7 @@ public class SessionServerTest
 
         Connection conn = DriverManager.getConnection(url, info);
         assertFalse(conn.isClosed());
-/*
+
         String query = "SELECT name FROM bitnine";
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(query);
@@ -62,7 +64,7 @@ public class SessionServerTest
             String name = rs.getString("name");
             System.out.println("name: " + name);
         }
- */
+
         conn.close();
 
         server.stop();

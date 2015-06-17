@@ -12,20 +12,23 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.pgproto;
+package kr.co.bitnine.octopus.libpg;
 
-import java.io.IOException;
-import java.util.Properties;
-
-public interface BackendHandler
+public enum TransactionStatus
 {
-    void onStartupMessage(Properties params);
-    void onCancelRequest(int cancelKey);
+    IDLE('I'),          // not in transaction
+    TRANSACTION('T'),   // in transaction
+    ERROR('E');         // in failed transaction
 
-    boolean onPasswordMessage(String password);
+    private final char indicator;
 
-    int onAuthenticationOk();
+    TransactionStatus(char indicator)
+    {
+        this.indicator = indicator;
+    }
 
-    void onQuery(String query);
-    void onParse(String name, String query, int[] oids) throws IOException;
+    public char getIndicator()
+    {
+        return indicator;
+    }
 }
