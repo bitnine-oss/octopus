@@ -13,4 +13,9 @@ public class MTableAlias {
 
     MTable table;
     String alias;
+
+    public MTableAlias(MTable table, String alias) {
+        this.table = table;
+        this.alias = alias;
+    }
 }

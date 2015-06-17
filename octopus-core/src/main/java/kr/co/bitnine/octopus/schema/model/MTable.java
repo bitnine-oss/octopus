@@ -16,7 +16,21 @@ public class MTable {
     int type;
     String description;
     String schema_name;
+    MDataSource datasource;
 
     @Persistent(mappedBy = "table")
     Collection<MColumn> columns;
+
+    public MTable(String name, int type, String description, String schema_name, MDataSource mds)
+    {
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.schema_name = schema_name;
+        this.datasource = mds;
+    }
+
+    public int getColumnCnt() {
+        return columns.size();
+    }
 }
