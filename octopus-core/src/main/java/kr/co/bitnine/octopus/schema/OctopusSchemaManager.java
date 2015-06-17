@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.schema;
 
 import kr.co.bitnine.octopus.schema.model.MUser;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -90,5 +91,10 @@ public class OctopusSchemaManager
     {
         Class.forName(driver);
         return DriverManager.getConnection(url);
+    }
+
+    public SchemaPlus getSchema()
+    {
+        return metastore.getSchema();
     }
 }

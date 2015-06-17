@@ -19,7 +19,6 @@ import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 
@@ -56,7 +55,7 @@ public class SessionServer extends AbstractService
     {
         super.serviceInit(conf);
 
-        sessions = new HashMap<Integer, Session>();
+        sessions = new HashMap();
 
         executor = new ThreadPoolExecutor(
                 0,
@@ -98,9 +97,9 @@ public class SessionServer extends AbstractService
 
     private class Listener extends Thread
     {
-        private ServerSocketChannel acceptChannel;
+        private final ServerSocketChannel acceptChannel;
 
-        public Listener() throws IOException
+        Listener() throws IOException
         {
             setName("SessionServer Listener");
 
@@ -112,8 +111,7 @@ public class SessionServer extends AbstractService
         @Override
         public void run()
         {
-            Session.Callback sessCallback = new Session.Callback()
-            {
+            Session.EventHandler sessEvtHandler = new Session.EventHandler() {
                 @Override
                 public void onClose(Session session)
                 {
@@ -121,9 +119,9 @@ public class SessionServer extends AbstractService
                 }
 
                 @Override
-                public void onCancelRequest(int secretKey)
+                public void onCancel(int sessionId)
                 {
-                    cancelSession(secretKey);
+                    cancelSession(sessionId);
                 }
             };
 
@@ -144,7 +142,7 @@ public class SessionServer extends AbstractService
                 } catch (IOException e) { }
                 LOG.debug("connection from " + clientAddress + " is accepted");
 
-                Session session = new Session(clientChannel, sessCallback);
+                Session session = new Session(clientChannel, sessEvtHandler);
                 registerSession(session);
                 try {
                     executor.execute(session);
@@ -163,22 +161,22 @@ public class SessionServer extends AbstractService
     private void registerSession(Session session)
     {
         synchronized(sessions) {
-            sessions.put(session.getSecretKey(), session);
+            sessions.put(session.getId(), session);
         }
     }
 
     private void unregisterSession(Session session)
     {
         synchronized(sessions) {
-            sessions.remove(session.getSecretKey());
+            sessions.remove(session.getId());
         }
     }
 
-    private void cancelSession(int secretKey)
+    private void cancelSession(int sessionId)
     {
         Session sess;
         synchronized(sessions) {
-            sess = sessions.get(secretKey);
+            sess = sessions.get(sessionId);
         }
 
         if (sess != null)

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.pgproto;
+package kr.co.bitnine.octopus.libpg;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -59,22 +59,36 @@ public class Message
 
         public Builder putChar(char c)
         {
-            ByteBufferUtil.enlargeByteBuffer(buf, Constants.BYTE_BYTES);
-            buf.put((byte)c);
+            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.BYTE_BYTES);
+            buf.put((byte) c);
+            return this;
+        }
+
+        public Builder putShort(short h)
+        {
+            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.SHORT_BYTES);
+            buf.putShort(h);
             return this;
         }
 
         public Builder putInt(int i)
         {
-            ByteBufferUtil.enlargeByteBuffer(buf, Constants.INTEGER_BYTES);
+            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.INTEGER_BYTES);
             buf.putInt(i);
+            return this;
+        }
+
+        public Builder putBytes(byte[] bytes)
+        {
+            ByteBuffers.enlargeByteBuffer(buf, bytes.length);
+            buf.put(bytes);
             return this;
         }
 
         public Builder putCString(String s)
         {
             byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
-            ByteBufferUtil.enlargeByteBuffer(buf, bytes.length);
+            ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
             putChar('\0');
             return this;
@@ -87,9 +101,19 @@ public class Message
         }
     }
 
+    public static Builder builder(char type)
+    {
+        return new Builder(type);
+    }
+
     public int peekInt()
     {
         return buf.getInt(buf.position());
+    }
+
+    public char getChar()
+    {
+        return (char) buf.get();
     }
 
     public short getShort()
@@ -102,8 +126,15 @@ public class Message
         return buf.getInt();
     }
 
+    public byte[] getBytes(int length)
+    {
+        byte[] bytes = new byte[length];
+        buf.get(bytes);
+        return bytes;
+    }
+
     public String getCString()
     {
-        return ByteBufferUtil.getCString(buf);
+        return ByteBuffers.getCString(buf);
     }
 }

@@ -12,25 +12,20 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.pgproto;
+package kr.co.bitnine.octopus.libpg;
 
-import java.io.IOException;
-
-public class Exceptions
+public abstract class PostgresConstants
 {
-    public static class ProtocolViolationException extends IOException
-    {
-        public ProtocolViolationException(String message)
-        {
-            super(message);
-        }
-    }
+    /* Byte.BYTES, Integer.BYTES since Java 8 */
+    static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
+    static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
+    static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
 
-    public static class UnsupportedProtocolException extends IOException
+    public static final int CANCEL_REQUEST_CODE = (1234 << 16) | 5678;
+    public static final int SSL_REQUEST_CODE = (1234 << 16) | 5679;
+
+    public static int PROTOCOL_VERSION(int major, int minor)
     {
-        public UnsupportedProtocolException(String message)
-        {
-            super(message);
-        }
+        return (major << 16) | minor;
     }
 }

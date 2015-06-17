@@ -12,15 +12,15 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.pgproto;
+package kr.co.bitnine.octopus.libpg;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public class ByteBufferUtil
+abstract class ByteBuffers
 {
-    public static String getCString(ByteBuffer buf)
+    static String getCString(ByteBuffer buf)
     {
         int end;
         for (end = buf.position(); end < buf.limit(); end++) {
@@ -41,7 +41,7 @@ public class ByteBufferUtil
 
     private static int BYTEBUFFER_CAPACITY_MAX = 1 << 30;
 
-    public static ByteBuffer enlargeByteBuffer(ByteBuffer buf, int needed)
+    static ByteBuffer enlargeByteBuffer(ByteBuffer buf, int needed)
     {
         assert !buf.isDirect();
 

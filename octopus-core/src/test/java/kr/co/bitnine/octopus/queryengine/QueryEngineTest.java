@@ -64,16 +64,10 @@ public class QueryEngineTest
         Database db = new Database(conn);
         metastore.add("SQLITE", db);
 
+        QueryEngine queryEngine = new QueryEngine(metastore.getSchema());
+
         conn.close();
 
-        FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(metastore.getSchema())
-                .build();
-        Planner planner = Frameworks.getPlanner(config);
-
-        SqlNode parse = planner.parse("SELECT * FROM SQLITE.__DEFAULT.BITNINE");
-        System.out.println(parse);
-
-        planner.validate(parse);
+        queryEngine.executeQuery("SELECT * FROM SQLITE.__DEFAULT.BITNINE");
     }
 }

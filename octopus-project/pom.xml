@@ -71,12 +71,35 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.calcite</groupId>
         <artifactId>calcite-core</artifactId>
-        <version>1.2.0-incubating</version>
+        <version>1.3.0-incubating</version>
       </dependency>
       <dependency>
         <groupId>org.apache.metamodel</groupId>
         <artifactId>MetaModel-full</artifactId>
         <version>4.3.3</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.jdo</groupId>
+        <artifactId>jdo-api</artifactId>
+        <version>3.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-core</artifactId>
+        <version>4.0.0-release</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-api-jdo</artifactId>
+        <version>4.0.0-release</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
+        <version>4.0.0-release</version>
+        <type>pom</type>
       </dependency>
 
       <dependency>

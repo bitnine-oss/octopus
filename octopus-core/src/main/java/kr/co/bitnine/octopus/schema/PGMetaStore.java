@@ -1,7 +1,5 @@
 package kr.co.bitnine.octopus.schema;
 
-import kr.co.bitnine.octopus.pgproto.Exceptions;
-
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Properties;
