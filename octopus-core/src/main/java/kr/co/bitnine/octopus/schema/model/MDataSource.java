@@ -20,4 +20,13 @@ public class MDataSource {
 
     @Persistent(mappedBy = "datasource")
     Collection<MTable> tables;
+
+    public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString, String description)
+    {
+        this.name = name;
+        this.type = type;
+        this.jdbc_driver = jdbc_driver;
+        this.jdbc_connectionString = jdbc_connectionString;
+        this.description = description;
+    }
 }

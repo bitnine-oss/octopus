@@ -13,4 +13,13 @@ public class MColumn {
     String name;
     int type;
     String description;
+    MTable table;
+
+    public MColumn(String name, int type, String description, MTable table)
+    {
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.table = table;
+    }
 }
