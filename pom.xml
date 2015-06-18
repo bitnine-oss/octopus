@@ -27,6 +27,7 @@ limitations under the License.
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <antlr.version>4.5</antlr.version>
   </properties>
 
   <modules>
@@ -113,6 +114,16 @@ limitations under the License.
           <groupId>${project.groupId}</groupId>
           <artifactId>octopus-maven-plugin</artifactId>
           <version>${project.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.datanucleus</groupId>
+          <artifactId>datanucleus-maven-plugin</artifactId>
+          <version>4.0.0-release</version>
+        </plugin>
+        <plugin>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-maven-plugin</artifactId>
+          <version>${antlr.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
