@@ -14,8 +14,6 @@
 
 package kr.co.bitnine.octopus.schema;
 
-import kr.co.bitnine.octopus.schema.model.MUser;
-import org.apache.calcite.schema.SchemaPlus;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -23,14 +21,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import javax.jdo.JDOHelper;
-import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
-import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Extracts metadata from source databases
@@ -92,9 +85,10 @@ public class OctopusSchemaManager
         Class.forName(driver);
         return DriverManager.getConnection(url);
     }
-
+/*
     public SchemaPlus getSchema()
     {
         return metastore.getSchema();
     }
+ */
 }
