@@ -25,14 +25,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Random;
 
-public class Session implements Runnable
+class Session implements Runnable
 {
     private static final Log LOG = LogFactory.getLog(Session.class);
 
     private final SocketChannel clientChannel;
     private final int sessionId; // secret key
 
-    public interface EventHandler
+    interface EventHandler
     {
         void onClose(Session session);
         void onCancel(int sessionId);
@@ -41,7 +41,7 @@ public class Session implements Runnable
 
     private final MessageStream messageStream;
 
-    public Session(SocketChannel clientChannel, EventHandler eventHandler)
+    Session(SocketChannel clientChannel, EventHandler eventHandler)
     {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
@@ -51,7 +51,7 @@ public class Session implements Runnable
         messageStream = new MessageStream(clientChannel);
     }
 
-    public int getId()
+    int getId()
     {
         return sessionId;
     }
@@ -85,7 +85,7 @@ public class Session implements Runnable
         close();
     }
 
-    public void reject()
+    void reject()
     {
         try {
             PostgresException pge = new PostgresException(
@@ -103,6 +103,8 @@ public class Session implements Runnable
     private final String CLIENT_PARAM_ENCODING = "client_encoding";
 
     private Properties clientParams;
+    private ParsedStatement parsedStatement = null;
+    private ExecutableStatement executableStatement = null;
 
     private void handleCancelRequest(Message imsg)
     {
@@ -290,20 +292,20 @@ public class Session implements Runnable
  */
     private void handleParse(Message msg) throws Exception
     {
-        String name = msg.getCString();
+        String stmtName = msg.getCString();
         String query = msg.getCString();
         short numParam = msg.getShort();
         int[] oids = (numParam > 0 ? new int[numParam] : null);
         for (short i = 0; i < numParam; i++)
             oids[i] = msg.getInt();
 
-        LOG.debug("name=" + name + ", query='" + query + "'");
+        LOG.debug("stmtName=" + stmtName + ", query='" + query + "'");
         if (LOG.isDebugEnabled()) {
             for (short i = 0; i < numParam; i++)
                 LOG.debug("OID[" + i + "]=" + oids[i]);
         }
 
-        if (!name.isEmpty()) {
+        if (!stmtName.isEmpty()) {
             PostgresException pge = new PostgresException(
                     PostgresException.Severity.FATAL,
                     PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
@@ -311,7 +313,8 @@ public class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        // TODO: prepare
+        // parse
+        parsedStatement = new ParsedStatement(query, oids);
 
         // ParseComplete
         messageStream.putMessage(Message.builder('1').build());
@@ -325,21 +328,21 @@ public class Session implements Runnable
         LOG.debug("bind (portalName=" + portalName + ", stmtName=" + stmtName + ")");
 
         short numParamFormat = msg.getShort();
-        short[] paramFormat = new short[numParamFormat];
+        short[] paramFormats = new short[numParamFormat];
         for (short i = 0; i < numParamFormat; i++)
-            paramFormat[i] = msg.getShort();
+            paramFormats[i] = msg.getShort();
 
         short numParamValue = msg.getShort();
-        byte[][] paramValue = new byte[numParamValue][];
+        byte[][] paramValues = new byte[numParamValue][];
         for (short i = 0; i < numParamValue; i++) {
             int paramLen = msg.getInt(); // -1 indicates NULL parameter
-            paramValue[i] = (paramLen > -1 ? msg.getBytes(paramLen) : null);
+            paramValues[i] = (paramLen > -1 ? msg.getBytes(paramLen) : null);
         }
 
         short numResult = msg.getShort();
-        short[] resultFormat = new short[numResult];
+        short[] resultFormats = new short[numResult];
         for (short i = 0; i < numResult; i++)
-            resultFormat[i] = msg.getShort();
+            resultFormats[i] = msg.getShort();
 
         if (!portalName.isEmpty() || !stmtName.isEmpty()) {
             PostgresException pge = new PostgresException(
@@ -349,7 +352,9 @@ public class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        // TODO: bind
+        // bind
+        executableStatement = new ExecutableStatement(parsedStatement);
+        executableStatement.bind(paramFormats, paramValues, resultFormats);
 
         // BindComplete
         messageStream.putMessage(Message.builder('2').build());
@@ -427,7 +432,7 @@ public class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
-    private void close()
+    void close()
     {
         try {
             clientChannel.close();
@@ -436,7 +441,7 @@ public class Session implements Runnable
         eventHandler.onClose(this);
     }
 
-    public void cancel()
+    void cancel()
     {
         // TODO
     }

@@ -142,13 +142,13 @@ public class SessionServer extends AbstractService
                 } catch (IOException e) { }
                 LOG.debug("connection from " + clientAddress + " is accepted");
 
-                Session session = new Session(clientChannel, sessEvtHandler);
-                registerSession(session);
+                Session sess = new Session(clientChannel, sessEvtHandler);
+                registerSession(sess);
                 try {
-                    executor.execute(session);
+                    executor.execute(sess);
                 } catch (RejectedExecutionException e) {
                     LOG.warn("session full: connection from " + clientAddress + " is rejected");
-                    session.reject();
+                    sess.reject();
                 }
             }
 
