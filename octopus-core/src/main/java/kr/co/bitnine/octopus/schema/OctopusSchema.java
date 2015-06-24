@@ -15,6 +15,8 @@
 package kr.co.bitnine.octopus.schema;
 
 import com.google.common.collect.ImmutableMap;
+import kr.co.bitnine.octopus.schema.model.MDataSource;
+import kr.co.bitnine.octopus.schema.model.MTable;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 
@@ -25,12 +27,12 @@ public class OctopusSchema extends AbstractSchema
     private final String name;
     private ImmutableMap<String, Table> tableMap;
 
-    public OctopusSchema(org.apache.metamodel.schema.Schema schema)
+    public OctopusSchema(MDataSource datasource)
     {
-        name = schema.getName();
+        name = datasource.getName();
 
         ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
-        for (org.apache.metamodel.schema.Table table : schema.getTables()) {
+        for (MTable table : datasource.getTables()) {
             String name = table.getName();
             OctopusTable octopusTable = new OctopusTable(table);
             builder.put(name, octopusTable);

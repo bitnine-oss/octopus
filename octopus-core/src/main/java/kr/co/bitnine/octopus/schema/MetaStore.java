@@ -30,7 +30,9 @@ import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Schema;
 
+import javax.activation.DataSource;
 import javax.jdo.*;
+import javax.xml.crypto.Data;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
@@ -66,11 +68,11 @@ public class MetaStore
         pm = pmf.getPersistenceManager();
     }
 
-    public void add(String name, Database database)
-    {
-        rootSchema.add(name, database.getSchema());
+    public void add(String name, MDataSource dataSource) {
+        rootSchema.add(name, new OctopusSchema(dataSource));
     }
 
+    /* return Calcite schema object */
     public SchemaPlus getSchema()
     {
         return rootSchema;
@@ -91,6 +93,14 @@ public class MetaStore
         return results.get(0);
     }
 
+    public List<MDataSource> getDatasources()
+    {
+        Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MDATASOURCE\"");
+        query.setClass(MDataSource.class);
+        List<MDataSource> results = (List<MDataSource>) query.execute();
+        return results;
+    }
+
     public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, String description) throws Exception {
         // Get schema information using Metamodel
 
@@ -109,15 +119,18 @@ public class MetaStore
             // read schema, table, column information and make corresponding model classes
             for (Schema schema : dc.getSchemas()) {
                 String schemaName = schema.getName();
+                System.out.println("schema:" + schemaName);
 
                 for (org.apache.metamodel.schema.Table table : schema.getTables()) {
                     String tableName = table.getName();
+                    System.out.println("table:" + tableName);
 
                     MTable mtable = new MTable(tableName, 0, "", schemaName, mds);
                     pm.makePersistent(mtable);
 
                     for (org.apache.metamodel.schema.Column col : table.getColumns()) {
                         String colName = col.getName();
+                        System.out.println("col:" + colName);
 
                         int jdbcType = col.getType().getJdbcType();
                         SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
@@ -127,6 +140,10 @@ public class MetaStore
                 }
             }
             tx.commit();
+        }
+        catch (Exception e) {
+            System.out.println("Error");
+            e.printStackTrace();
         }
         finally {
             if (tx.isActive())

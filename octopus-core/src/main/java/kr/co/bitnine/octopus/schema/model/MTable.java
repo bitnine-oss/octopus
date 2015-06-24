@@ -4,7 +4,9 @@ import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @PersistenceCapable
 public class MTable {
@@ -33,4 +35,14 @@ public class MTable {
     public int getColumnCnt() {
         return columns.size();
     }
+
+    public List<MColumn> getColumns()
+    {
+        return new ArrayList<MColumn>(columns);
+    }
+
+    public String getName() {
+        return name;
+    }
 }
+

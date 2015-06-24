@@ -14,6 +14,8 @@
 
 package kr.co.bitnine.octopus.schema;
 
+import kr.co.bitnine.octopus.schema.model.MColumn;
+import kr.co.bitnine.octopus.schema.model.MTable;
 import org.apache.calcite.rel.type.*;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.impl.AbstractTable;
@@ -25,20 +27,22 @@ public class OctopusTable extends AbstractTable
     private Schema.TableType tableType;
     private RelProtoDataType protoRowType;
 
-    public OctopusTable(org.apache.metamodel.schema.Table table)
+    public OctopusTable(MTable table)
     {
         try {
-            tableType = Schema.TableType.valueOf(table.getType().name());
+            //tableType = Schema.TableType.valueOf(table.getType().name());
+            tableType = Schema.TableType.TABLE; // FIXME
         } catch (IllegalArgumentException e) {
             tableType = Schema.TableType.TABLE;
         }
 
         RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         RelDataTypeFactory.FieldInfoBuilder fieldInfo = typeFactory.builder();
-        for (org.apache.metamodel.schema.Column col : table.getColumns()) {
+        for (MColumn col : table.getColumns()) {
             String name = col.getName();
 
-            int jdbcType = col.getType().getJdbcType();
+            //int jdbcType = col.getType().getJdbcType();
+            int jdbcType = col.getType(); //FIXME
             SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
             RelDataType sqlType = typeFactory.createSqlType(typeName);
 

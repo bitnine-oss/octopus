@@ -62,7 +62,7 @@ public class QueryEngineTest
         Connection conn = DriverManager.getConnection(SQLITE_URL);
 
         Database db = new Database(conn);
-        metastore.add("SQLITE", db);
+        //metastore.add("SQLITE", db);
 
         QueryEngine queryEngine = new QueryEngine(metastore.getSchema());
 

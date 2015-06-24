@@ -44,6 +44,7 @@ public class OctopusSchemaManagerTest {
     {
         Connection conn = DriverManager.getConnection(SQLITE_URL);
 
+        /*
         Database db = new Database(conn);
         OctopusSchema[] schemas = db.getSchemas();
 
@@ -60,5 +61,6 @@ public class OctopusSchemaManagerTest {
         org.apache.calcite.schema.Schema ss = s.getSubSchema("__DEFAULT");
         for (String name : ss.getTableNames())
             System.out.println("table: " + name);
+            */
     }
 }

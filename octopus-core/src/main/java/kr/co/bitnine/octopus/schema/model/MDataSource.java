@@ -29,4 +29,12 @@ public class MDataSource {
         this.jdbc_connectionString = jdbc_connectionString;
         this.description = description;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public Collection<MTable> getTables() {
+        return tables;
+    }
 }

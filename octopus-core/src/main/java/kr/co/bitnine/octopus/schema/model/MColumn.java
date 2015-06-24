@@ -22,4 +22,12 @@ public class MColumn {
         this.description = description;
         this.table = table;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getType() {
+        return type;
+    }
 }
