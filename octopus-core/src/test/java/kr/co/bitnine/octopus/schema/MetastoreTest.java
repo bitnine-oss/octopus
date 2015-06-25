@@ -15,7 +15,8 @@ import java.sql.Statement;
 public class MetastoreTest {
     private static final String SQLITE_URL = "jdbc:sqlite:file:testdb?mode=memory";
     //private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:file:metastore?mode=memory";
-    private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:metastore";
+    //private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:metastore";
+    private static final String METASTORE_SQLITE_URL = "jdbc:postgresql://localhost:5432/octopus";
 
     private Connection initialConnection;
 
@@ -42,9 +43,9 @@ public class MetastoreTest {
     {
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.connection.URL", METASTORE_SQLITE_URL);
-        conf.set("metastore.connection.drivername", "org.sqlite.JDBC");
-        conf.set("metastore.connection.username", "");
-        conf.set("metastore.connection.password", "");
+        conf.set("metastore.connection.drivername", "org.postgresql.Driver");
+        conf.set("metastore.connection.username", "postgres");
+        conf.set("metastore.connection.password", "bitnine123");
         MetaStore metaStore = new MetaStore(conf);
         metaStore.addDataSource("sqlite", "org.sqlite.JDBC", SQLITE_URL, "sqlite database");
 

@@ -46,6 +46,7 @@ public class OctopusTable extends AbstractTable
             SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
             RelDataType sqlType = typeFactory.createSqlType(typeName);
 
+            System.out.println("column:" + name + " type:" +sqlType);
             fieldInfo.add(name, sqlType);
         }
         protoRowType = RelDataTypeImpl.proto(fieldInfo.build());

@@ -30,10 +30,12 @@ public class OctopusSchema extends AbstractSchema
     public OctopusSchema(MDataSource datasource)
     {
         name = datasource.getName();
+        System.out.println("octopus schema: " + name);
 
         ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
         for (MTable table : datasource.getTables()) {
             String name = table.getName();
+            System.out.println("Octopus table: " + name);
             OctopusTable octopusTable = new OctopusTable(table);
             builder.put(name, octopusTable);
         }

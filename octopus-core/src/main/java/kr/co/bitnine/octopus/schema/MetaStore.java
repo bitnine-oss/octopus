@@ -36,6 +36,7 @@ import javax.xml.crypto.Data;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -69,7 +70,38 @@ public class MetaStore
     }
 
     public void add(String name, MDataSource dataSource) {
-        rootSchema.add(name, new OctopusSchema(dataSource));
+        rootSchema.add(name,
+                new org.apache.calcite.schema.impl.AbstractSchema() {
+                    private final ImmutableMap<String, org.apache.calcite.schema.Schema> subSchemaMap;
+
+                    {
+                        ImmutableMap.Builder<String, org.apache.calcite.schema.Schema> builder = ImmutableMap.builder();
+
+//                        List<OctopusSchema> schemas = new List<OctopusSchema>();
+//                        schemas.add(new OctopusSchema(dataSource));
+
+                        for (OctopusSchema schema : schemas) {
+                            String name = schema.getName();
+                            if (name == null)
+                                name = "__DEFAULT"; // FIXME
+                            builder.put(name, schema);
+                        }
+
+                        subSchemaMap = builder.build();
+                    }
+
+                    @Override
+                    public boolean isMutable()
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    protected Map<String, org.apache.calcite.schema.Schema> getSubSchemaMap()
+                    {
+                        return subSchemaMap;
+                    }
+                } );
     }
 
     /* return Calcite schema object */
@@ -140,6 +172,7 @@ public class MetaStore
                 }
             }
             tx.commit();
+            add(name, mds);
         }
         catch (Exception e) {
             System.out.println("Error");
@@ -149,5 +182,6 @@ public class MetaStore
             if (tx.isActive())
                 tx.rollback();
         }
+
     }
 }
