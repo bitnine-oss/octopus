@@ -37,6 +37,7 @@ public class Database
 
     public org.apache.calcite.schema.Schema getSchema()
     {
+        /*
         if (schema == null) {
             schema = new org.apache.calcite.schema.impl.AbstractSchema() {
                 private final ImmutableMap<String, org.apache.calcite.schema.Schema> subSchemaMap;
@@ -65,10 +66,12 @@ public class Database
                 }
             };
         }
+        */
 
         return schema;
     }
 
+    /*
     public OctopusSchema[] getSchemas()
     {
         ArrayList<OctopusSchema> schemas = new ArrayList();
@@ -77,4 +80,5 @@ public class Database
 
         return schemas.toArray(new OctopusSchema[schemas.size()]);
     }
+    */
 }

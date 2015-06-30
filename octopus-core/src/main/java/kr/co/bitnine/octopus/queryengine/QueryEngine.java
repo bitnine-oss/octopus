@@ -46,7 +46,6 @@ public class QueryEngine
     {
         unnamedSql = null;
         unnamedOids = null;
-        planner.reset();
 
         SqlNode parse = planner.parse(sql);
         LOG.debug(parse);
@@ -54,6 +53,7 @@ public class QueryEngine
         SqlNode validated = planner.validate(parse);
 
         // TODO: interpret rel, return results
+        //planner.reset();
     }
 
     public void prepare(String sql, int[] oids)

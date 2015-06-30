@@ -6,12 +6,12 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
 @PersistenceCapable
-public class MTableACL {
+public class MSchemaACL {
     @PrimaryKey
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    MTable table;
+    MSchema schema;
     MUser grantorUser;
     MUser user; /* grantee */
     int grantOption;

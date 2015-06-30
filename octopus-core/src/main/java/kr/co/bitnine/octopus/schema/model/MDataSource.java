@@ -19,7 +19,7 @@ public class MDataSource {
     String description;
 
     @Persistent(mappedBy = "datasource")
-    Collection<MTable> tables;
+    Collection<MSchema> schemas;
 
     public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString, String description)
     {
@@ -28,5 +28,13 @@ public class MDataSource {
         this.jdbc_driver = jdbc_driver;
         this.jdbc_connectionString = jdbc_connectionString;
         this.description = description;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Collection<MSchema> getSchemas() {
+        return schemas;
     }
 }
