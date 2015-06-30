@@ -44,6 +44,7 @@ import java.util.*;
 public class MetaStore
 {
     private PersistenceManager pm;
+    private PersistenceManagerFactory pmf;
     private final SchemaPlus rootSchema = Frameworks.createRootSchema(false);
 
     public MetaStore () {
@@ -53,6 +54,7 @@ public class MetaStore
     public void finalize() {
         System.out.println("Metastore delete");
         pm.close();
+        pmf.close();
     }
 
     public MetaStore (Configuration conf) {
@@ -67,8 +69,10 @@ public class MetaStore
         prop.setProperty("datanucleus.schema.autoCreateAll", "true");
         /* this property is added for Sqlite */
         prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
+        prop.setProperty("datanucleus.connectionPoolingType", "None");
+        prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
 
-        PersistenceManagerFactory pmf = JDOHelper.getPersistenceManagerFactory(prop);
+        pmf = JDOHelper.getPersistenceManagerFactory(prop);
         pm = pmf.getPersistenceManager();
     }
 

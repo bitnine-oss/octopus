@@ -48,6 +48,7 @@ public class MetastoreTest {
         conf.set("metastore.connection.drivername", "org.sqlite.JDBC");
         conf.set("metastore.connection.username", "");
         conf.set("metastore.connection.password", "");
+
         MetaStore metaStore = new MetaStore(conf);
         metaStore.addDataSource("sqlite", "org.sqlite.JDBC", SQLITE_URL, initialConnection, "sqlite database");
 
