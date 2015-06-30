@@ -9,39 +9,27 @@ import java.util.Collection;
 import java.util.List;
 
 @PersistenceCapable
-public class MTable {
+public class MSchema {
     @PrimaryKey
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
     String name;
-    int type;
-    String description;
-    String schema_name;
-    MSchema schema;
+    MDataSource datasource;
 
-    @Persistent(mappedBy = "table")
-    Collection<MColumn> columns;
+    @Persistent(mappedBy = "schema")
+    Collection<MTable> tables;
 
-    public MTable(String name, int type, String description, MSchema schema)
-    {
+    public MSchema(String name, MDataSource datasource) {
         this.name = name;
-        this.type = type;
-        this.description = description;
-        this.schema = schema;
+        this.datasource = datasource;
     }
 
-    public int getColumnCnt() {
-        return columns.size();
-    }
-
-    public List<MColumn> getColumns()
-    {
-        return new ArrayList<MColumn>(columns);
+    public List<MTable> getTables() {
+        return new ArrayList<MTable>(tables);
     }
 
     public String getName() {
         return name;
     }
 }
-

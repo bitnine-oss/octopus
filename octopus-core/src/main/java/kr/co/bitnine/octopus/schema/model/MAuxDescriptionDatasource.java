@@ -6,15 +6,12 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
 @PersistenceCapable
-public class MTableACL {
+public class MAuxDescriptionDatasource {
     @PrimaryKey
     @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
     long ID;
 
-    MTable table;
-    MUser grantorUser;
-    MUser user; /* grantee */
-    int grantOption;
-    int privilege;
-    MRole role;
+    MDataSource dataSource;
+    String description;
+    MUser user; /* user who makes the description */
 }
