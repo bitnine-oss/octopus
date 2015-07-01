@@ -52,14 +52,12 @@ public class MetaStore
     }
 
     public void finalize() {
-        System.out.println("Metastore delete");
         pm.close();
         pmf.close();
     }
 
     public MetaStore (Configuration conf) {
         /* initialize datanucleus */
-        /* TODO: get information from octopus-site.xml */
         Properties prop = new Properties();
         prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
         prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
@@ -124,6 +122,7 @@ public class MetaStore
         Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MTABLE\" WHERE \"NAME\" = '" + table +"'");
         query.setClass(MTable.class);
         List<MTable> results = (List<MTable>) query.execute();
+        /* fixme: not found exception */
         return results.get(0);
     }
 
@@ -155,21 +154,18 @@ public class MetaStore
                 String schemaName = schema.getName();
                 if (schemaName == null)
                     schemaName = "__DEFAULT"; // FIXME
-                System.out.println("schema:" + schemaName);
 
                 MSchema mschema = new MSchema(schemaName, mds);
                 pm.makePersistent(mschema);
 
                 for (org.apache.metamodel.schema.Table table : schema.getTables()) {
                     String tableName = table.getName();
-                    System.out.println("table:" + tableName);
 
                     MTable mtable = new MTable(tableName, 0, "", mschema);
                     pm.makePersistent(mtable);
 
                     for (org.apache.metamodel.schema.Column col : table.getColumns()) {
                         String colName = col.getName();
-                        System.out.println("col:" + colName);
 
                         int jdbcType = col.getType().getJdbcType();
                         SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
@@ -182,7 +178,6 @@ public class MetaStore
             tx.commit();
         }
         catch (Exception e) {
-            System.out.println("Error");
             e.printStackTrace();
         }
         finally {
@@ -191,7 +186,6 @@ public class MetaStore
                 tx.rollback();
             }
         }
-
     }
 
     public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, String description) throws Exception {
@@ -200,4 +194,23 @@ public class MetaStore
         addDataSource(name, jdbc_driver, jdbc_connectionString, conn, description);
     }
 
+    public MDataSource getDatasource(String datasource) {
+        Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MDATASOURCE\" WHERE \"NAME\" = '" + datasource +"'");
+        query.setClass(MDataSource.class);
+        List<MDataSource> results = (List<MDataSource>) query.execute();
+        /* fixme: not found exception */
+        return results.get(0);
+    }
+
+    /* find a datasource having the specified table */
+    /*
+    public MDataSource getDatasource(String schema, String tablename) {
+        Query query = pm.newQuery("javax.jdo.query.SQL",
+                                  "SELECT count(*) FROM \"MDATASOURCE\" WHERE \"NAME\" = '" + datasource +"'");
+        query.setClass(MDataSource.class);
+        List<MDataSource> results = (List<MDataSource>) query.execute();
+        // fixme: not found exception
+        return results.get(0);
+    }
+    */
 }
