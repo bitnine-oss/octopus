@@ -48,7 +48,7 @@ public class QueryEngineTest
         metastoreConnection = DriverManager.getConnection(METASTORE_SQLITE_URL);
 
         Statement stmt = initialConnection.createStatement();
-        stmt.executeUpdate("CREATE TABLE BITNINE (id INTEGER, name STRING)");
+        stmt.executeUpdate("CREATE TABLE BITNINE (ID INTEGER, NAME STRING)");
         stmt.executeUpdate("INSERT INTO BITNINE VALUES(9, 'jsyang')");
     }
 
@@ -74,6 +74,7 @@ public class QueryEngineTest
 
         QueryEngine queryEngine = new QueryEngine(metaStore.getSchema());
 
-        queryEngine.executeQuery("SELECT * FROM SQLITE.__DEFAULT.BITNINE");
+        //queryEngine.executeQuery("SELECT id FROM SQLITE.__DEFAULT.BITNINE");
+        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
     }
 }

@@ -35,7 +35,6 @@ public class OctopusSchema extends AbstractSchema
         ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
         for (MTable table : schema.getTables()) {
             String name = table.getName();
-            System.out.println("table name: " + name);
             OctopusTable octopusTable = new OctopusTable(table);
             builder.put(name, octopusTable);
         }

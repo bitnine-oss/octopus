@@ -37,4 +37,12 @@ public class MDataSource {
     public Collection<MSchema> getSchemas() {
         return schemas;
     }
+
+    public String getDriver() {
+        return jdbc_driver;
+    }
+
+    public String getConnectionString() {
+        return jdbc_connectionString;
+    }
 }
