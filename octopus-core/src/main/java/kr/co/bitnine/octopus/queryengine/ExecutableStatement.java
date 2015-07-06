@@ -12,31 +12,28 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.frame;
+package kr.co.bitnine.octopus.queryengine;
 
-import java.util.Arrays;
+import kr.co.bitnine.octopus.queryengine.ParsedStatement;
 
 /*
- * prepared statement
+ * portal
  */
-class ParsedStatement
+public class ExecutableStatement
 {
-    private String query;
-    private int[] oids;
+    private ParsedStatement parsedStatement;
+    private boolean binded;
 
-    ParsedStatement(String query, int[] oids)
+    public ExecutableStatement(ParsedStatement parsedStatement)
     {
-        this.query = query;
-        this.oids = oids;
+        this.parsedStatement = parsedStatement;
+        binded = false;
     }
 
-    String getQuery()
+    public boolean bind(short[] paramFormats, byte[][] paramValues, short[] resultFormats)
     {
-        return query;
-    }
+        binded = true;
 
-    int[] getOids()
-    {
-        return Arrays.copyOf(oids, oids.length);
+        return true;
     }
 }

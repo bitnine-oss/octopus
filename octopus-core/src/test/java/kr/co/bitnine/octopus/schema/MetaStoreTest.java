@@ -12,7 +12,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-public class MetastoreTest {
+public class MetaStoreTest
+{
     private static final String SQLITE_URL = "jdbc:sqlite:file:testdb?mode=memory";
     private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:file:metastore?mode=memory&cache=shared";
 
