@@ -129,7 +129,7 @@ public class QueryEngine
     {
         // TODO: translate each table name to fully qualified table name
         TableNameTranslator tnt = new TableNameTranslator(metaStore);
-        tnt.toFQN(validatedQuery);
+        tnt.toDSN(validatedQuery);
 
         // TODO: interpret rel, return results
     }
