@@ -128,8 +128,8 @@ public class QueryEngine
     public void executeByPassQuery(SqlNode validatedQuery)
     {
         // TODO: translate each table name to fully qualified table name
-        TableNameTranslator tnt = new TableNameTranslator();
-        tnt.toFQN(validated);
+        TableNameTranslator tnt = new TableNameTranslator(metaStore);
+        tnt.toFQN(validatedQuery);
 
         // TODO: interpret rel, return results
     }

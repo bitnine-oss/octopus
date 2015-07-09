@@ -10,7 +10,7 @@ public class TestDb
 {
     private static final String DRIVER_NAME = "org.sqlite.JDBC";
     private static final String METASTORE_URL = "jdbc:sqlite:file:metastore?mode=memory&cache=shared";
-    private static final String TESTDB_URL = "jdbc:sqlite:file:testdb?mode=memory&cache=shared";
+    private static final String TESTDB_URL = "jdbc:sqlite:file:testdb?mode=memory";
 
     private Connection metastoreConnection;
     private Connection initialConnection;
@@ -46,6 +46,11 @@ public class TestDb
     public Connection getTestDbConnection() throws Exception
     {
         return DriverManager.getConnection(TESTDB_URL);
+    }
+
+    public Connection getInitialConnection()
+    {
+        return initialConnection;
     }
 
     public void destroy() throws Exception

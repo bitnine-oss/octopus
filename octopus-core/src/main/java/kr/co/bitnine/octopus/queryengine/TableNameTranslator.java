@@ -25,6 +25,11 @@ public class TableNameTranslator {
        this.metaStore = metastore;
     }
 
+    /* translate FQN to DSN (datasource name) */
+    public void toDSN(SqlNode query) {
+
+    }
+
     public void toFQN(SqlNode query) {
         SqlNode accept = query.accept(
                 new SqlBasicVisitor<SqlNode>() {

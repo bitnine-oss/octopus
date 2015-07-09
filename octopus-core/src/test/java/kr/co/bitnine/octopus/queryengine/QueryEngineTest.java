@@ -50,17 +50,14 @@ public class QueryEngineTest
 
         MetaStore.init(conf);
         MetaStore metaStore = MetaStore.get();
-        Connection conn = testDb.getTestDbConnection();
-        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), conn, "test database");
-/*
+        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
+
         QueryEngine queryEngine = new QueryEngine(metaStore);
         ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
         queryEngine.execute(es, 0);
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
- */
-        conn.close();
         metaStore.destroy();
     }
 }
