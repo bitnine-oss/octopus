@@ -75,6 +75,6 @@ public class QueryEngineTest
         QueryEngine queryEngine = new QueryEngine(metaStore.getSchema());
 
         //queryEngine.executeQuery("SELECT id FROM SQLITE.__DEFAULT.BITNINE");
-        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
+        queryEngine.executeQuery("SELECT ID AS C1 FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
     }
 }

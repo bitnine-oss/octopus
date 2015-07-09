@@ -52,7 +52,8 @@ public class QueryEngine
         final Set<String> dsSet = new HashSet<String>();
         query.accept(
                 new SqlShuttle() {
-                    @Override public SqlNode visit(SqlIdentifier identifier) {
+                    @Override
+                    public SqlNode visit(SqlIdentifier identifier) {
                         // check whether this is fully qualified table name
                         if (identifier.names.size() == 3) {
                             dsSet.add(identifier.names.get(0));
@@ -79,6 +80,9 @@ public class QueryEngine
         SqlNode validated = planner.validate(parse);
 
         // TODO: interpret rel, return results
+
+        TableNameTranslator tnt = new TableNameTranslator();
+        tnt.toFQN(validated);
 
         if (isByPassQuery(validated)) {
 
