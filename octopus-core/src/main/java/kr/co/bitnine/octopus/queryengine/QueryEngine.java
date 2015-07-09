@@ -11,8 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package kr.co.bitnine.octopus.queryengine;
 
+import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.sql.OctopusSql;
+import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
+import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
+import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
@@ -20,33 +26,85 @@ import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
+import java.sql.ResultSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class QueryEngine
 {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
-    // unnamed portal?
-    private String unnamedSql;
-    private int[] unnamedOids;
-
-    Planner planner;
+    MetaStore metaStore;
 
     DataSourceManager dsm;
 
-    public QueryEngine(SchemaPlus rootSchema)
+    public QueryEngine(MetaStore metaStore)
     {
+        this.metaStore = metaStore;
+
+/*
         FrameworkConfig config = Frameworks.newConfigBuilder()
                 .defaultSchema(rootSchema)
                 .build();
 
         planner = Frameworks.getPlanner(config);
+ */
     }
+
+    public ParsedStatement parse(String query, int[] oids) throws Exception
+    {
+        // DDL
+
+        List<OctopusSqlCommand> commands = null;
+        try {
+            commands = OctopusSql.parse(query);
+        } catch (RecognitionException e) {
+            LOG.info(ExceptionUtils.getStackTrace(e));
+        }
+
+        if (commands != null)
+            return new ParsedStatement(commands);
+
+        // DML
+
+        SchemaPlus rootSchema = metaStore.getCurrentSchema();
+
+        FrameworkConfig config = Frameworks.newConfigBuilder()
+                .defaultSchema(rootSchema)
+                .build();
+        Planner planner = Frameworks.getPlanner(config);
+
+        SqlNode parse = planner.parse(query);
+        LOG.debug(parse);
+
+        SqlNode validated = planner.validate(parse);
+
+        return new ParsedStatement(validated, oids);
+    }
+
+    public ExecutableStatement bind(ParsedStatement parsedStatement, short[] paramFormats, byte[][] paramValues, short[] resultFormats)
+    {
+        return new ExecutableStatement(parsedStatement, paramFormats, paramValues, resultFormats);
+    }
+
+    private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
+        @Override
+        public void createUser(String name, String password) throws Exception
+        {
+            metaStore.createUser(name, password);
+        }
+
+        @Override
+        public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
+        {
+            System.out.println("name=" + datasourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+        }
+    };
 
     public boolean isByPassQuery(SqlNode query) {
         final Set<String> dsSet = new HashSet<String>();
@@ -66,59 +124,31 @@ public class QueryEngine
         return (dsSet.size() == 1);
     }
 
-    public void executeQuery(String sql) throws Exception
+    public void executeByPassQuery(SqlNode validatedQuery)
     {
-        unnamedSql = null;
-        unnamedOids = null;
-
-        SqlNode parse = planner.parse(sql);
-        LOG.debug(parse);
-
-        /* TODO: translate each table name to fully qualified table name */
-
-        SqlNode validated = planner.validate(parse);
-
+        // TODO: translate each table name to fully qualified table name
         // TODO: interpret rel, return results
-
-        if (isByPassQuery(validated)) {
-
-
-        }
-        else {
-            // query on multiple datasources
-            // TODO: throw not-implemented feature
-        }
-
-        //planner.reset();
     }
 
-    public void executeByPassQuery(SqlNode plan) {
+    public ResultSet execute(ExecutableStatement executableStatement, int numRows) throws Exception
+    {
+        ParsedStatement ps = executableStatement.getParsedStatement();
+        if (ps.isDdl()) {
+            for (OctopusSqlCommand c : ps.getDdlCommands())
+                OctopusSql.run(c, ddlRunner);
+
+            return null;
+        }
+
+        SqlNode validatedQuery = ps.getValidatedQuery();
+        if (!isByPassQuery(validatedQuery))
+            throw new Exception("only by-pass query is supported");
+
+        executeByPassQuery(validatedQuery);
+        return null; // FIXME
     }
 
     public void prepare(String sql, int[] oids)
     {
-        unnamedSql = sql;
-        unnamedOids = oids;
-    }
-
-    public void bind(short[] paramFormat, byte[][] paramValue, short[] resultFormat) throws Exception
-    {
-        if (unnamedSql == null || unnamedOids == null)
-            throw new IOException("prepared statement does not exist");
-
-        planner.reset();
-
-        SqlNode parse = planner.parse(unnamedSql);
-        LOG.debug(parse);
-
-        SqlNode validated = planner.validate(parse);
-    }
-
-    public void execute(int numRows) throws IOException
-    {
-        if (unnamedSql == null || unnamedOids == null)
-            throw new IOException("prepared statement does not exist");
-
-        // TODO: interpret rel, return results
     }
 }

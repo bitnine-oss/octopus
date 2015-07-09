@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kr.co.bitnine.octopus.schema.model;
 
 import javax.jdo.annotations.IdGeneratorStrategy;
@@ -9,7 +23,7 @@ import java.util.Collection;
 @PersistenceCapable
 public class MDataSource {
     @PrimaryKey
-    @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
     long ID;
 
     String name;
@@ -18,7 +32,7 @@ public class MDataSource {
     String jdbc_connectionString;
     String description;
 
-    @Persistent(mappedBy = "datasource")
+    @Persistent(mappedBy="datasource")
     Collection<MSchema> schemas;
 
     public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString, String description)
@@ -30,19 +44,23 @@ public class MDataSource {
         this.description = description;
     }
 
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
-    public Collection<MSchema> getSchemas() {
+    public Collection<MSchema> getSchemas()
+    {
         return schemas;
     }
 
-    public String getDriver() {
+    public String getDriver()
+    {
         return jdbc_driver;
     }
 
-    public String getConnectionString() {
+    public String getConnectionString()
+    {
         return jdbc_connectionString;
     }
 }

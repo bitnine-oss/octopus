@@ -115,7 +115,7 @@ limitations under the License.
         <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-maven-plugin</artifactId>
         <configuration>
-          <log4jConfiguration>src/test/resources/log4j.properties</log4jConfiguration>
+          <log4jConfiguration>${basedir}/src/test/resources/log4j.properties</log4jConfiguration>
           <verbose>true</verbose>
           <fork>false</fork>
         </configuration>

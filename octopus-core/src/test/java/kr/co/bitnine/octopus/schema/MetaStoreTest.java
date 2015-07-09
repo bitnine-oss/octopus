@@ -1,5 +1,20 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kr.co.bitnine.octopus.schema;
 
+import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.schema.model.MColumn;
 import kr.co.bitnine.octopus.schema.model.MTable;
@@ -9,55 +24,42 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
 
 public class MetaStoreTest
 {
-    private static final String SQLITE_URL = "jdbc:sqlite:file:testdb?mode=memory";
-    private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:file:metastore?mode=memory&cache=shared";
-
-    private Connection initialConnection;
-    private Connection metastoreConnection;
+    private TestDb testDb;
 
     @Before
     public void setUp() throws Exception
     {
-        Class.forName("org.sqlite.JDBC");
-
-        initialConnection = DriverManager.getConnection(SQLITE_URL);
-        metastoreConnection = DriverManager.getConnection(METASTORE_SQLITE_URL);
-
-        Statement stmt = initialConnection.createStatement();
-        stmt.executeUpdate("CREATE TABLE bitnine (id INTEGER, name STRING)");
-        stmt.executeUpdate("INSERT INTO bitnine VALUES(9, 'jsyang')");
+        testDb = new TestDb();
+        testDb.create();
     }
 
     @After
     public void tearDown() throws Exception
     {
-        initialConnection.close();
-        metastoreConnection.close();
-        System.out.println("end.");
+        testDb.destroy();
     }
 
     @Test
     public void testMetastore() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        conf.set("metastore.connection.URL", METASTORE_SQLITE_URL);
-        conf.set("metastore.connection.drivername", "org.sqlite.JDBC");
-        conf.set("metastore.connection.username", "");
-        conf.set("metastore.connection.password", "");
+        testDb.setMetaStoreConf(conf);
 
-        MetaStore metaStore = new MetaStore(conf);
-        metaStore.addDataSource("sqlite", "org.sqlite.JDBC", SQLITE_URL, initialConnection, "sqlite database");
-
+        MetaStore.init(conf);
+        MetaStore metaStore = MetaStore.get();
+        Connection conn = testDb.getTestDbConnection();
+        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), conn, "test database");
+/*
         MTable mtable = metaStore.getTable("bitnine");
         System.out.println("column cnt: " + mtable.getColumnCnt());
 
-        for (MColumn column : mtable.getColumns()) {
+        for (MColumn column : mtable.getColumns())
             System.out.println("Column: " + column.getName());
-        }
+ */
+        conn.close();
+        metaStore.destroy();
     }
 }

@@ -14,26 +14,20 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
-import kr.co.bitnine.octopus.queryengine.ParsedStatement;
-
 /*
  * portal
  */
 public class ExecutableStatement
 {
     private ParsedStatement parsedStatement;
-    private boolean binded;
 
-    public ExecutableStatement(ParsedStatement parsedStatement)
+    public ExecutableStatement(ParsedStatement parsedStatement, short[] paramFormats, byte[][] paramValues, short[] resultFormats)
     {
         this.parsedStatement = parsedStatement;
-        binded = false;
     }
 
-    public boolean bind(short[] paramFormats, byte[][] paramValues, short[] resultFormats)
+    public ParsedStatement getParsedStatement()
     {
-        binded = true;
-
-        return true;
+        return parsedStatement;
     }
 }

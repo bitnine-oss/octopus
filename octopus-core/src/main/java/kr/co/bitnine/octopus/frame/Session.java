@@ -15,6 +15,11 @@
 package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.libpg.*;
+import kr.co.bitnine.octopus.queryengine.ExecutableStatement;
+import kr.co.bitnine.octopus.queryengine.ParsedStatement;
+import kr.co.bitnine.octopus.queryengine.QueryEngine;
+import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.schema.model.MUser;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.sql.ResultSet;
 import java.util.Properties;
 import java.util.Random;
 
@@ -31,6 +37,9 @@ class Session implements Runnable
 
     private final SocketChannel clientChannel;
     private final int sessionId; // secret key
+
+    MetaStore metaStore;
+    QueryEngine queryEngine;
 
     interface EventHandler
     {
@@ -73,9 +82,13 @@ class Session implements Runnable
                 return;
             }
 
+            metaStore = MetaStore.get();
+
             // Start-up Phase
             handleStartupMessage(imsg);
             doAuthentication();
+
+            queryEngine = new QueryEngine(metaStore);
 
             messageLoop();
         } catch (Exception e) {
@@ -176,12 +189,21 @@ class Session implements Runnable
         }
 
         // verify password
+        String username = clientParams.getProperty(CLIENT_PARAM_USER);
+        MUser user = metaStore.getUserByName(username);
+        if (user == null) {
+            PostgresException pge = new PostgresException(
+                    PostgresException.Severity.FATAL,
+                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
+                    "invalid user name '" + username + "'");
+            PostgresExceptions.report(messageStream, pge);
+        }
         String password = msg.getCString();
-        if (!password.equals("bitnine")) { // FIXME
+        if (!password.equals(user.getPassword())) {
             PostgresException pge = new PostgresException(
                     PostgresException.Severity.FATAL,
                     PostgresException.SQLSTATE.INVALID_PASSWORD,
-                    "password authentication failed for user " + clientParams.getProperty(CLIENT_PARAM_USER));
+                    "password authentication failed for user " + username);
             PostgresExceptions.report(messageStream, pge);
         }
 
@@ -226,6 +248,10 @@ class Session implements Runnable
 
             char type = msg.getType();
             switch (type) {
+                case 'Q':
+                    handleQuery(msg);
+                    ready = true;
+                    break;
                 case 'P':
                     handleParse(msg);
                     break;
@@ -278,18 +304,67 @@ class Session implements Runnable
                 .build();
         messageStream.putMessage(msg);
     }
-/*
-    private void handleQuery(Message msg) throws IOException
+
+    private void handleQuery(Message msg) throws Exception
     {
         String query = msg.getCString();
         LOG.debug("query: " + query);
 
+        parsedStatement = queryEngine.parse(query, null);
+        executableStatement = queryEngine.bind(parsedStatement, null, null, null);
+        ResultSet rs = queryEngine.execute(executableStatement, 0);
+        if (rs == null) {
+            sendCommandComplete("");
+            return;
+        }
+
         // TODO: execute query, get results
 
+//        sendEmptyQueryResponse();
+
         // FIXME
-        sendEmptyQueryResponse();
+        // RowDescription
+        msg = Message.builder('T')
+                .putShort((short) 2)
+
+                .putCString("name")
+                .putInt(0)              // table OID
+                .putShort((short) 0)    // attribute number
+                .putInt(1043)           // data type OID (VARCHAR)
+                .putShort((short) -1)   // data type size (variable-width)
+                .putInt(0)              // type-specific type modifier
+                .putShort((short) 0)    // not yet known
+
+                .putCString("id")
+                .putInt(0)              // table OID
+                .putShort((short) 0)    // attribute number
+                .putInt(23)             // data type OID (INT4)
+                .putShort((short) -1)   // data type size (variable-width)
+                .putInt(0)              // type-specific type modifier
+                .putShort((short) 0)    // not yet known
+
+                .build();
+        messageStream.putMessage(msg);
+
+        // FIXME
+        // DataRow
+        String testName = "jsyang";
+        byte[] testNameBytes = testName.getBytes(StandardCharsets.US_ASCII);
+        String testId = String.valueOf(7);
+        byte[] testIdBytes = testId.getBytes(StandardCharsets.US_ASCII);
+        msg = Message.builder('D')
+                .putShort((short) 2)
+                .putInt(testNameBytes.length)
+                .putBytes(testNameBytes)
+                .putInt(testIdBytes.length)
+                .putBytes(testIdBytes)
+                .build();
+        messageStream.putMessage(msg);
+        messageStream.putMessage(msg);
+
+        sendCommandComplete("SELECT 2");
     }
- */
+
     private void handleParse(Message msg) throws Exception
     {
         String stmtName = msg.getCString();
@@ -313,8 +388,7 @@ class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        // parse
-        parsedStatement = new ParsedStatement(query, oids);
+        parsedStatement = queryEngine.parse(query, oids);
 
         // ParseComplete
         messageStream.putMessage(Message.builder('1').build());
@@ -344,6 +418,15 @@ class Session implements Runnable
         for (short i = 0; i < numResult; i++)
             resultFormats[i] = msg.getShort();
 
+        if (LOG.isDebugEnabled()) {
+            for (short i = 0; i < numParamFormat; i++)
+                LOG.debug("paramFormats[" + i + "]=" + paramFormats[i]);
+            for (short i = 0; i < numParamValue; i++)
+                LOG.debug("paramValues[" + i + "]=" + paramValues[i]);
+            for (short i = 0; i < numResult; i++)
+                LOG.debug("resultFormats[" + i + "]=" + resultFormats[i]);
+        }
+
         if (!portalName.isEmpty() || !stmtName.isEmpty()) {
             PostgresException pge = new PostgresException(
                     PostgresException.Severity.FATAL,
@@ -352,9 +435,7 @@ class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        // bind
-        executableStatement = new ExecutableStatement(parsedStatement);
-        executableStatement.bind(paramFormats, paramValues, resultFormats);
+        executableStatement = queryEngine.bind(parsedStatement, paramFormats, paramValues, resultFormats);
 
         // BindComplete
         messageStream.putMessage(Message.builder('2').build());
@@ -365,7 +446,7 @@ class Session implements Runnable
         String portalName = msg.getCString();
         int numRows = msg.getInt();
 
-        LOG.debug("execute (portalName=" + portalName + ")");
+        LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
 
         if (!portalName.isEmpty()) {
             PostgresException pge = new PostgresException(
@@ -375,23 +456,31 @@ class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        // TODO: execute
-/*
-        // FIXME
-        sendEmptyQueryResponse();
- */
+        ResultSet rs = queryEngine.execute(executableStatement, numRows);
+        if (rs == null) {
+            sendCommandComplete("");
+            return;
+        }
+
+//        sendEmptyQueryResponse();
+
         // FIXME
         // DataRow
         String testName = "jsyang";
-        byte[] testBytes = testName.getBytes(StandardCharsets.US_ASCII);
+        byte[] testNameBytes = testName.getBytes(StandardCharsets.US_ASCII);
+        String testId = String.valueOf(7);
+        byte[] testIdBytes = testId.getBytes(StandardCharsets.US_ASCII);
         msg = Message.builder('D')
-                .putShort((short) 1)
-                .putInt(testBytes.length)
-                .putBytes(testBytes)
+                .putShort((short) 2)
+                .putInt(testNameBytes.length)
+                .putBytes(testNameBytes)
+                .putInt(testIdBytes.length)
+                .putBytes(testIdBytes)
                 .build();
         messageStream.putMessage(msg);
+        messageStream.putMessage(msg);
 
-        sendCommandComplete("SELECT 1");
+        sendCommandComplete("SELECT 2");
     }
 
     private void handleClose(Message msg) throws IOException
@@ -412,15 +501,18 @@ class Session implements Runnable
         String name = msg.getCString();
 
         LOG.debug("describe (type='" + type + "', name=" + name + ")");
-/*
-        // FIXME
-        // NoData
-        messageStream.putMessage(Message.builder('n').build());
- */
+
+        if (parsedStatement.isDdl()) {
+            // NoData
+            messageStream.putMessage(Message.builder('n').build());
+            return;
+        }
+
         // FIXME
         // RowDescription
         msg = Message.builder('T')
-                .putShort((short) 1)
+                .putShort((short) 2)
+
                 .putCString("name")
                 .putInt(0)              // table OID
                 .putShort((short) 0)    // attribute number
@@ -428,6 +520,15 @@ class Session implements Runnable
                 .putShort((short) -1)   // data type size (variable-width)
                 .putInt(0)              // type-specific type modifier
                 .putShort((short) 0)    // not yet known
+
+                .putCString("id")
+                .putInt(0)              // table OID
+                .putShort((short) 0)    // attribute number
+                .putInt(23)             // data type OID (INT4)
+                .putShort((short) -1)   // data type size (variable-width)
+                .putInt(0)              // type-specific type modifier
+                .putShort((short) 0)    // not yet known
+
                 .build();
         messageStream.putMessage(msg);
     }
@@ -437,6 +538,8 @@ class Session implements Runnable
         try {
             clientChannel.close();
         } catch (IOException e) { }
+
+        metaStore.destroy();
 
         eventHandler.onClose(this);
     }

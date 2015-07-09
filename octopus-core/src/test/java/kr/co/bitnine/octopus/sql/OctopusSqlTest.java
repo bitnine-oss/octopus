@@ -23,7 +23,7 @@ public class OctopusSqlTest
     @Test
     public void test() throws Exception
     {
-        String query = "CREATE USER bitnine IDENTIFIED BY 'octopus';" +
+        String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';" +
                 "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';";
         List<OctopusSqlCommand> commands = OctopusSql.parse(query);
 

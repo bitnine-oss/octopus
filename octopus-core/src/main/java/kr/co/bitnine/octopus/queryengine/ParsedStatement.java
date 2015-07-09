@@ -14,29 +14,56 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
+import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
+import org.apache.calcite.sql.SqlNode;
+
 import java.util.Arrays;
+import java.util.List;
 
 /*
  * prepared statement
  */
 public class ParsedStatement
 {
-    private String query;
+    private boolean isDdl;
+
+    private SqlNode validatedQuery;
     private int[] oids;
 
-    public ParsedStatement(String query, int[] oids)
+    private List<OctopusSqlCommand> ddlCommands;
+
+    public ParsedStatement(SqlNode validatedQuery, int[] oids)
     {
-        this.query = query;
+        isDdl = false;
+
+        this.validatedQuery = validatedQuery;
         this.oids = oids;
     }
 
-    public String getQuery()
+    public ParsedStatement(List<OctopusSqlCommand> commands)
     {
-        return query;
+        isDdl = true;
+
+        ddlCommands = commands;
+    }
+
+    public boolean isDdl()
+    {
+        return isDdl;
+    }
+
+    public SqlNode getValidatedQuery()
+    {
+        return validatedQuery;
     }
 
     public int[] getOids()
     {
         return Arrays.copyOf(oids, oids.length);
+    }
+
+    public List<OctopusSqlCommand> getDdlCommands()
+    {
+        return ddlCommands;
     }
 }

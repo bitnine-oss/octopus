@@ -14,67 +14,53 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
+import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
-import kr.co.bitnine.octopus.schema.Database;
 import kr.co.bitnine.octopus.schema.MetaStore;
 
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.tools.FrameworkConfig;
-import org.apache.calcite.tools.Planner;
-import org.apache.calcite.tools.Frameworks;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
 
 public class QueryEngineTest
 {
-    private static final String SQLITE_URL = "jdbc:sqlite:file:testdb?mode=memory";
-    private static final String METASTORE_SQLITE_URL = "jdbc:sqlite:file:metastore?mode=memory&cache=shared";
-
-    private Connection initialConnection;
-    private Connection metastoreConnection;
+    private TestDb testDb;
 
     @Before
     public void setUp() throws Exception
     {
-        Class.forName("org.sqlite.JDBC");
-
-        initialConnection = DriverManager.getConnection(SQLITE_URL);
-        metastoreConnection = DriverManager.getConnection(METASTORE_SQLITE_URL);
-
-        Statement stmt = initialConnection.createStatement();
-        stmt.executeUpdate("CREATE TABLE BITNINE (ID INTEGER, NAME STRING)");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(9, 'jsyang')");
+        testDb = new TestDb();
+        testDb.create();
     }
 
     @After
     public void tearDown() throws Exception
     {
-        initialConnection.close();
-        metastoreConnection.close();
-        System.out.println("end.");
+        testDb.destroy();
     }
 
     @Test
     public void test() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        conf.set("metastore.connection.URL", METASTORE_SQLITE_URL);
-        conf.set("metastore.connection.drivername", "org.sqlite.JDBC");
-        conf.set("metastore.connection.username", "");
-        conf.set("metastore.connection.password", "");
+        testDb.setMetaStoreConf(conf);
 
-        MetaStore metaStore = new MetaStore(conf);
-        metaStore.addDataSource("SQLITE", "org.sqlite.JDBC", SQLITE_URL, initialConnection, "sqlite database");
+        MetaStore.init(conf);
+        MetaStore metaStore = MetaStore.get();
+        Connection conn = testDb.getTestDbConnection();
+        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), conn, "test database");
+/*
+        QueryEngine queryEngine = new QueryEngine(metaStore);
+        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE", null);
+        ExecutableStatement es = queryEngine.bind(ps, null, null, null);
+        queryEngine.execute(es, 0);
 
-        QueryEngine queryEngine = new QueryEngine(metaStore.getSchema());
-
-        //queryEngine.executeQuery("SELECT id FROM SQLITE.__DEFAULT.BITNINE");
-        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
+//        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
+ */
+        conn.close();
+        metaStore.destroy();
     }
 }

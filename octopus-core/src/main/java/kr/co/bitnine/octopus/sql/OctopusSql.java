@@ -34,6 +34,13 @@ public abstract class OctopusSql
         }
 
         @Override
+        public void exitDdl(OctopusSqlParser.DdlContext ctx)
+        {
+            if (ctx.exception != null)
+                throw ctx.exception;
+        }
+
+        @Override
         public void exitCreateUser(OctopusSqlParser.CreateUserContext ctx)
         {
             String name = ctx.user().getText();

@@ -16,47 +16,50 @@ package kr.co.bitnine.octopus.schema;
 
 import com.google.common.collect.ImmutableMap;
 import kr.co.bitnine.octopus.schema.model.*;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
-import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Schema;
 
-import javax.activation.DataSource;
-import javax.jdo.*;
-import javax.jdo.spi.PersistenceCapable;
-import javax.xml.crypto.Data;
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManager;
+import javax.jdo.PersistenceManagerFactory;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
- * Octopus Meta-store
+ * Octopus MetaStore
  *
- * Octopus metastore has schema information; tables, columns and views.
- * It should support fast search on the schema information.
+ * Octopus MetaStore has datasource information; schemas, tables and columns.
+ * It should support fast search on the datasource information.
  */
 public class MetaStore
 {
-    private PersistenceManager pm;
-    private PersistenceManagerFactory pmf;
-    private final SchemaPlus rootSchema = Frameworks.createRootSchema(false);
+    private static final Log LOG = LogFactory.getLog(MetaStore.class);
 
-    public MetaStore () {
+    private static PersistenceManagerFactory pmf;
 
-    }
+    private static final ThreadLocal<MetaStore> tlsMetaStore = new ThreadLocal() {
+        @Override
+        protected Object initialValue()
+        {
+            return null;
+        }
+    };
 
-    public void finalize() {
-        pm.close();
-        pmf.close();
-    }
-
-    public MetaStore (Configuration conf) {
+    public static void init(Configuration conf)
+    {
         /* initialize datanucleus */
         Properties prop = new Properties();
         prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
@@ -65,16 +68,71 @@ public class MetaStore
         prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
         prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
         prop.setProperty("datanucleus.schema.autoCreateAll", "true");
-        /* this property is added for Sqlite */
+
+        /* NOTE: using SQLite with sequences */
         prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
+        /* NOTE: using SQLite with connection pooling occurs NullPointerException */
         prop.setProperty("datanucleus.connectionPoolingType", "None");
         prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
 
         pmf = JDOHelper.getPersistenceManagerFactory(prop);
+
+        PersistenceManager pm = pmf.getPersistenceManager();
+        Query query = pm.newQuery(MUser.class);
+        query.setFilter("name == 'octopus'");
+        query.setUnique(true);
+        MUser user = (MUser) query.execute();
+        if (user == null) {
+            user = new MUser("octopus", "bitnine");
+            pm.makePersistent(user);
+        }
+        pm.close();
+    }
+
+    public static MetaStore get()
+    {
+        MetaStore ms = tlsMetaStore.get();
+        if (ms == null) {
+            ms = new MetaStore();
+            tlsMetaStore.set(ms);
+            ms = tlsMetaStore.get();
+        }
+
+        return ms;
+    }
+
+    private PersistenceManager pm;
+
+    private MetaStore()
+    {
         pm = pmf.getPersistenceManager();
     }
 
-    public void add(String name, final MDataSource dataSource) {
+    public void destroy()
+    {
+        tlsMetaStore.remove();
+        pm.close();
+    }
+
+    public void createUser(String name, String password)
+    {
+        MUser user = new MUser(name, password);
+        pm.makePersistent(user);
+    }
+
+    public MUser getUserByName(String name)
+    {
+        Query query = pm.newQuery(MUser.class);
+        query.setFilter("name == '" + name + "'");
+        query.setUnique(true);
+
+        return (MUser) query.execute();
+    }
+
+    private final SchemaPlus rootSchema = Frameworks.createRootSchema(false);
+
+    public void add(String name, final MDataSource dataSource)
+    {
         rootSchema.add(name,
                 new org.apache.calcite.schema.impl.AbstractSchema() {
                     private final ImmutableMap<String, org.apache.calcite.schema.Schema> subSchemaMap;
@@ -101,50 +159,61 @@ public class MetaStore
                     {
                         return subSchemaMap;
                     }
-                } );
+                });
     }
 
     /* return Calcite schema object */
-    public SchemaPlus getSchema()
+    public SchemaPlus getCurrentSchema()
     {
         return rootSchema;
     }
 
-    public MTable getTable(String datasource, String schema, String table) {
+    public MTable getTable(String datasource, String schema, String table)
+    {
         return null;
     }
 
-    public MTable getTable(String schema, String table) {
+    public MTable getTable(String schema, String table)
+    {
         return null;
     }
 
-    public MTable getTable(String table) {
-        Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MTABLE\" WHERE \"NAME\" = '" + table +"'");
-        query.setClass(MTable.class);
-        List<MTable> results = (List<MTable>) query.execute();
-        /* fixme: not found exception */
-        return results.get(0);
+    public MTable getTable(String tableName)
+    {
+        Query query = pm.newQuery(MTable.class);
+        query.setFilter("name == '" + tableName + "'");
+
+        // if there are more results than just 1, JDOUserException will occur
+        query.setUnique(true);
+
+        MTable table = (MTable) query.execute();
+
+        return table;
     }
 
     public List<MDataSource> getDatasources()
     {
         Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MDATASOURCE\"");
         query.setClass(MDataSource.class);
-        List<MDataSource> results = (List<MDataSource>) query.execute();
+        List<MDataSource> results = (List) query.execute();
         return results;
     }
 
-    /* add DataSource using previously-made connection
-       this method is for unit test using in-memory sqlite */
-    public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, Connection conn, String description) throws Exception {
+    /*
+     * add DataSource using previously-made connection
+     * this method is for unit test using in-memory sqlite
+     */
+    public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, Connection conn, String description) throws Exception
+    {
         // Get schema information using Metamodel
 
+        int type = 0; // TODO: make connection type enum (e.g. JDBC)
         DataContext dc = DataContextFactory.createJdbcDataContext(conn);
 
         Transaction tx = pm.currentTransaction();
-        int type = 0; // TODO: make connection type enum (e.g. JDBC)
         try {
             tx.begin();
+
             // create MDataSource
             MDataSource mds = new MDataSource(name, type, jdbc_driver, jdbc_connectionString, description);
             pm.makePersistent(mds);
@@ -175,26 +244,26 @@ public class MetaStore
                 }
             }
             add(name, mds);
+
             tx.commit();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
+            LOG.error(ExceptionUtils.getStackTrace(e));
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             if (tx.isActive())
-            {
                 tx.rollback();
-            }
         }
     }
 
-    public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, String description) throws Exception {
+    public void addDataSource(String name, String jdbc_driver, String jdbc_connectionString, String description) throws Exception
+    {
         Class.forName(jdbc_driver);
         Connection conn = DriverManager.getConnection(jdbc_connectionString);
         addDataSource(name, jdbc_driver, jdbc_connectionString, conn, description);
     }
 
-    public MDataSource getDatasource(String datasource) {
+    public MDataSource getDatasource(String datasource)
+    {
         Query query = pm.newQuery("javax.jdo.query.SQL", "SELECT * FROM \"MDATASOURCE\" WHERE \"NAME\" = '" + datasource +"'");
         query.setClass(MDataSource.class);
         List<MDataSource> results = (List<MDataSource>) query.execute();
@@ -203,7 +272,7 @@ public class MetaStore
     }
 
     /* find a datasource having the specified table */
-    /*
+/*
     public MDataSource getDatasource(String schema, String tablename) {
         Query query = pm.newQuery("javax.jdo.query.SQL",
                                   "SELECT count(*) FROM \"MDATASOURCE\" WHERE \"NAME\" = '" + datasource +"'");
@@ -212,5 +281,5 @@ public class MetaStore
         // fixme: not found exception
         return results.get(0);
     }
-    */
+ */
 }

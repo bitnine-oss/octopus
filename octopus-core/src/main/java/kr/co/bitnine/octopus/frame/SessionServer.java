@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.frame;
 
+import kr.co.bitnine.octopus.queryengine.QueryEngine;
 import kr.co.bitnine.octopus.util.NetUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -26,7 +27,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -40,7 +41,7 @@ public class SessionServer extends AbstractService
     private static final long EXECUTOR_KEEPALIVE_DEFAULT = 60;
     private static final long EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT = 5;
 
-    private HashMap<Integer, Session> sessions = null;
+    private ConcurrentHashMap<Integer, Session> sessions = null;
     private ThreadPoolExecutor executor = null;
     private Listener listener = null;
     private volatile boolean running = false;
@@ -55,7 +56,7 @@ public class SessionServer extends AbstractService
     {
         super.serviceInit(conf);
 
-        sessions = new HashMap();
+        sessions = new ConcurrentHashMap();
 
         executor = new ThreadPoolExecutor(
                 0,
@@ -160,25 +161,17 @@ public class SessionServer extends AbstractService
 
     private void registerSession(Session session)
     {
-        synchronized(sessions) {
-            sessions.put(session.getId(), session);
-        }
+        sessions.put(session.getId(), session);
     }
 
     private void unregisterSession(Session session)
     {
-        synchronized(sessions) {
-            sessions.remove(session.getId());
-        }
+        sessions.remove(session.getId());
     }
 
     private void cancelSession(int sessionId)
     {
-        Session sess;
-        synchronized(sessions) {
-            sess = sessions.get(sessionId);
-        }
-
+        Session sess = sessions.get(sessionId);
         if (sess != null)
             sess.cancel();
     }

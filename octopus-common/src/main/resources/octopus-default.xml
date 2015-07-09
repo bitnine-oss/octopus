@@ -32,4 +32,24 @@ does not already exist, create it.
     <value>5</value>
   </property>
 
+  <property>
+    <name>metastore.connection.URL</name>
+    <value></value>
+  </property>
+
+  <property>
+    <name>metastore.connection.drivername</name>
+    <value>com.mysql.jdbc.Driver</value>
+  </property>
+
+  <property>
+    <name>metastore.connection.username</name>
+    <value>octopus</value>
+  </property>
+
+  <property>
+    <name>metastore.connection.password</name>
+    <value></value>
+  </property>
+
 </configuration>

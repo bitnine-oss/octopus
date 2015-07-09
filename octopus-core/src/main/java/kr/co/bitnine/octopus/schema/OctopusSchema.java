@@ -15,7 +15,6 @@
 package kr.co.bitnine.octopus.schema;
 
 import com.google.common.collect.ImmutableMap;
-import kr.co.bitnine.octopus.schema.model.MDataSource;
 import kr.co.bitnine.octopus.schema.model.MSchema;
 import kr.co.bitnine.octopus.schema.model.MTable;
 import org.apache.calcite.schema.Table;
