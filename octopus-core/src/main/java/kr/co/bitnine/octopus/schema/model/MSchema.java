@@ -50,4 +50,8 @@ public class MSchema
     {
         return name;
     }
+
+    public MDataSource getDatasource() {
+        return datasource;
+    }
 }

@@ -1,13 +1,11 @@
 package kr.co.bitnine.octopus.queryengine;
 
 import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.schema.model.MTable;
 import org.apache.calcite.sql.*;
-import org.apache.calcite.sql.util.SqlBasicVisitor;
-import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.metamodel.schema.Table;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 public class TableNameTranslator {
 
@@ -19,11 +17,28 @@ public class TableNameTranslator {
 
     /* translate FQN to DSN (datasource name) */
     public void toDSN(SqlNode query) {
-        SqlNode accept = query.accept(new SqlTableIdentifierFindVisitor());
+        ArrayList<SqlIdentifier> tableIDs = new ArrayList<SqlIdentifier>();
+        SqlNode accept = query.accept(new SqlTableIdentifierFindVisitor(tableIDs));
+
+        for (SqlIdentifier tableID : tableIDs) {
+            List<String> newName = new ArrayList<String>();
+            newName.add(tableID.names.get(2));
+            tableID.setNames(newName, null);
+        }
     }
 
+    /* translate DSN (datasource name) to FQN */
     public void toFQN(SqlNode query) {
-        //SqlNode accept = query.accept( );
-    }
+        ArrayList<SqlIdentifier> tableIDs = new ArrayList<SqlIdentifier>();
+        SqlNode accept = query.accept(new SqlTableIdentifierFindVisitor(tableIDs));
 
+        for (SqlIdentifier tableID : tableIDs) {
+            MTable mtable = metaStore.getTable(tableID);
+            List<String> newName = new ArrayList<String>();
+            newName.add(mtable.getSchema().getDatasource().getName());
+            newName.add(mtable.getSchema().getName());
+            newName.add(mtable.getName());
+            tableID.setNames(newName, null);
+        }
+    }
 }

@@ -60,4 +60,8 @@ public class MTable
     {
         return name;
     }
+
+    public MSchema getSchema() {
+        return schema;
+    }
 }

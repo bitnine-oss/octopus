@@ -53,7 +53,8 @@ public class QueryEngineTest
         metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
 
         QueryEngine queryEngine = new QueryEngine(metaStore);
-        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE", null);
+        //ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE", null);
+        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
         queryEngine.execute(es, 0);
 

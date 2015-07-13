@@ -82,6 +82,10 @@ public class QueryEngine
         SqlNode parse = planner.parse(query);
         LOG.debug(parse);
 
+        TableNameTranslator tnt = new TableNameTranslator(metaStore);
+        tnt.toFQN(parse);
+        System.out.println(parse.toString());
+
         SqlNode validated = planner.validate(parse);
 
         return new ParsedStatement(validated, oids);

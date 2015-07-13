@@ -62,4 +62,9 @@ public class MetaStoreTest
         conn.close();
         metaStore.destroy();
     }
+
+    @Test
+    public void testPM() throws Exception{
+
+    }
 }

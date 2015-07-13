@@ -17,6 +17,7 @@ package kr.co.bitnine.octopus.schema;
 import com.google.common.collect.ImmutableMap;
 import kr.co.bitnine.octopus.schema.model.*;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -48,7 +49,7 @@ public class MetaStore
 {
     private static final Log LOG = LogFactory.getLog(MetaStore.class);
 
-    private static PersistenceManagerFactory pmf;
+    private static PersistenceManagerFactory pmf = null;
 
     private static final ThreadLocal<MetaStore> tlsMetaStore = new ThreadLocal() {
         @Override
@@ -60,22 +61,24 @@ public class MetaStore
 
     public static void init(Configuration conf)
     {
-        /* initialize datanucleus */
-        Properties prop = new Properties();
-        prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-        prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
-        prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
-        prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
-        prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
-        prop.setProperty("datanucleus.schema.autoCreateAll", "true");
+        if (pmf == null) {
+            /* initialize datanucleus */
+            Properties prop = new Properties();
+            prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+            prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
+            prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
+            prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
+            prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
+            prop.setProperty("datanucleus.schema.autoCreateAll", "true");
 
-        /* NOTE: using SQLite with sequences */
-        prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
-        /* NOTE: using SQLite with connection pooling occurs NullPointerException */
-        prop.setProperty("datanucleus.connectionPoolingType", "None");
-        prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
+            /* NOTE: using SQLite with sequences */
+            prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
+            /* NOTE: using SQLite with connection pooling occurs NullPointerException */
+            prop.setProperty("datanucleus.connectionPoolingType", "None");
+            prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
 
-        pmf = JDOHelper.getPersistenceManagerFactory(prop);
+            pmf = JDOHelper.getPersistenceManagerFactory(prop);
+        }
 
         PersistenceManager pm = pmf.getPersistenceManager();
         Query query = pm.newQuery(MUser.class);
@@ -268,6 +271,37 @@ public class MetaStore
         query.setClass(MDataSource.class);
         List<MDataSource> results = (List<MDataSource>) query.execute();
         /* fixme: not found exception */
+        return results.get(0);
+    }
+
+    public MTable getTable(SqlIdentifier tableID) {
+        Query query = pm.newQuery(MTable.class);
+        switch(tableID.names.size()) {
+            case 1:
+                query.setFilter("name == '" + tableID.toString() + "'");
+                break;
+            case 2:
+                query.setFilter("this.schemas.name == '" + tableID.names.get(0) + "' && " +
+                                "name == '" + tableID.names.get(1) + "'");
+                break;
+            case 3:
+                query.setFilter("this.schema.datasource.name == '" + tableID.names.get(0) + "' && " +
+                                "this.schema.name == '" + tableID.names.get(1) + "' && " +
+                                "name == '" + tableID.names.get(2) + "'");
+                break;
+            default:
+                /* fixme: error */
+        }
+        List<MTable> results = (List<MTable>) query.execute();
+
+        if (results.size() == 0) {
+                    /* fixme: not found exception */
+        }
+        else if (results.size() > 1) {
+                    /* fixme: ambiguous table name exception */
+        }
+
+        System.out.println("Table found: " + results.get(0).getName());
         return results.get(0);
     }
 
