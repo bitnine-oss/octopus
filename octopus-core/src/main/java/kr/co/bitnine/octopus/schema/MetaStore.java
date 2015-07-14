@@ -38,6 +38,9 @@ import java.sql.DriverManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Octopus MetaStore
@@ -59,26 +62,31 @@ public class MetaStore
         }
     };
 
+    /* lock structure to synchronize requests for Calcite schema */
+    private static final ReadWriteLock lock = new ReentrantReadWriteLock(false);
+    private static final Lock readLock = lock.readLock();
+    private static final Lock writeLock = lock.writeLock();
+
     public static void init(Configuration conf)
     {
-        if (pmf == null) {
-            /* initialize datanucleus */
-            Properties prop = new Properties();
-            prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-            prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
-            prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
-            prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
-            prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
-            prop.setProperty("datanucleus.schema.autoCreateAll", "true");
+        /* initialize datanucleus */
+        Properties prop = new Properties();
+        prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+        prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
+        prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
+        prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
+        prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
+        prop.setProperty("datanucleus.schema.autoCreateAll", "true");
 
+        if (conf.get("metastore.connection.drivername").equals("org.sqlite.JDBC")) {
             /* NOTE: using SQLite with sequences */
             prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
             /* NOTE: using SQLite with connection pooling occurs NullPointerException */
             prop.setProperty("datanucleus.connectionPoolingType", "None");
             prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
-
-            pmf = JDOHelper.getPersistenceManagerFactory(prop);
         }
+
+        pmf = JDOHelper.getPersistenceManagerFactory(prop);
 
         PersistenceManager pm = pmf.getPersistenceManager();
         Query query = pm.newQuery(MUser.class);
@@ -88,6 +96,12 @@ public class MetaStore
         if (user == null) {
             user = new MUser("octopus", "bitnine");
             pm.makePersistent(user);
+        }
+
+        /* read entire MetaStore data and make Calcite Schema instances */
+        query = pm.newQuery(MDataSource.class);
+        for (MDataSource mdatasource : (List<MDataSource>) query.execute()) {
+            add(mdatasource.getName(), mdatasource);
         }
         pm.close();
     }
@@ -111,6 +125,8 @@ public class MetaStore
         pm = pmf.getPersistenceManager();
     }
 
+    /* This method is for destroying a metastore of one thread.
+       So pmf is not closed. */
     public void destroy()
     {
         tlsMetaStore.remove();
@@ -132,10 +148,11 @@ public class MetaStore
         return (MUser) query.execute();
     }
 
-    private final SchemaPlus rootSchema = Frameworks.createRootSchema(false);
+    private static final SchemaPlus rootSchema = Frameworks.createRootSchema(false);
 
-    public void add(String name, final MDataSource dataSource)
+    public static void add(String name, final MDataSource dataSource)
     {
+        writeLock.lock();
         rootSchema.add(name,
                 new org.apache.calcite.schema.impl.AbstractSchema() {
                     private final ImmutableMap<String, org.apache.calcite.schema.Schema> subSchemaMap;
@@ -163,6 +180,7 @@ public class MetaStore
                         return subSchemaMap;
                     }
                 });
+        writeLock.unlock();
     }
 
     /* return Calcite schema object */
@@ -303,6 +321,14 @@ public class MetaStore
 
         System.out.println("Table found: " + results.get(0).getName());
         return results.get(0);
+    }
+
+    public void getReadLock() {
+        readLock.lock();
+    }
+
+    public void releaseReadLock() {
+        readLock.unlock();
     }
 
     /* find a datasource having the specified table */

@@ -86,7 +86,9 @@ public class QueryEngine
         tnt.toFQN(parse);
         System.out.println(parse.toString());
 
+        metaStore.getReadLock();
         SqlNode validated = planner.validate(parse);
+        metaStore.releaseReadLock();
 
         return new ParsedStatement(validated, oids);
     }
