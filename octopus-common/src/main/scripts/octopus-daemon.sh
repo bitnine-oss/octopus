@@ -14,7 +14,7 @@
 
 # Runs a Octopus command as a daemon.
 
-usage="Usage: octopus-daemon.sh [--config <conf-dir>] (start|stop) <octopus-command"
+usage="Usage: octopus-daemon.sh [--config <conf-dir>] (start|stop) <octopus-command>"
 
 if [ $# -lt 2 ]; then
     echo $usage
