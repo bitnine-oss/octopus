@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.queryengine;
 
 import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.schema.model.MDataSource;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
@@ -30,7 +31,8 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.sql.ResultSet;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,7 +72,7 @@ public class QueryEngine
         if (commands != null)
             return new ParsedStatement(commands);
 
-        // DML
+        // Query
 
         SchemaPlus rootSchema = metaStore.getCurrentSchema();
 
@@ -84,7 +86,7 @@ public class QueryEngine
 
         TableNameTranslator tnt = new TableNameTranslator(metaStore);
         tnt.toFQN(parse);
-        System.out.println(parse.toString());
+        LOG.debug("FQN translated: " + parse.toString());
 
         metaStore.getReadLock();
         SqlNode validated = planner.validate(parse);
@@ -108,39 +110,58 @@ public class QueryEngine
         @Override
         public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
         {
-            System.out.println("name=" + datasourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+            String driverName = null;
+            if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
+                driverName = "org.sqlite.JDBC";
+            } else {
+                throw new RuntimeException("not supported");
+            }
+
+            metaStore.addDataSource(datasourceName, driverName, jdbcConnectionString, "");
         }
     };
 
-    public boolean isByPassQuery(SqlNode query) {
-        final Set<String> dsSet = new HashSet<String>();
-        query.accept(
-                new SqlShuttle() {
-                    @Override
-                    public SqlNode visit(SqlIdentifier identifier) {
-                        // check whether this is fully qualified table name
-                        if (identifier.names.size() == 3) {
-                            dsSet.add(identifier.names.get(0));
-                            //System.out.println("DS:" + identifier.names.get(0));
-                        }
-                        return identifier;
-                    }
+    public List<String> getDatasourceNames(SqlNode query) {
+        final Set<String> dsSet = new HashSet();
+        query.accept(new SqlShuttle() {
+            @Override
+            public SqlNode visit(SqlIdentifier identifier) {
+                // check whether this is fully qualified table name
+                if (identifier.names.size() == 3) {
+                    dsSet.add(identifier.names.get(0));
+                    //System.out.println("DS:" + identifier.names.get(0));
                 }
-        );
+                return identifier;
+            }
+        });
 
-        return (dsSet.size() == 1);
+        return new ArrayList(dsSet);
     }
 
-    public void executeByPassQuery(SqlNode validatedQuery)
+    public QueryResult executeByPassQuery(SqlNode validatedQuery, String datasourceName)
     {
-        // TODO: translate each table name to fully qualified table name
+        MDataSource ds = metaStore.getDatasource(datasourceName);
+
         TableNameTranslator tnt = new TableNameTranslator(metaStore);
         tnt.toDSN(validatedQuery);
+        LOG.debug("by-pass query: " + validatedQuery.toString());
 
-        // TODO: interpret rel, return results
+        ResultSet rs = null;
+        try {
+            Class.forName(ds.getDriver());
+            Connection conn = DriverManager.getConnection(ds.getConnectionString());
+            Statement stmt = conn.createStatement();
+            rs = stmt.executeQuery(validatedQuery.toString());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new QueryResult(rs);
     }
 
-    public ResultSet execute(ExecutableStatement executableStatement, int numRows) throws Exception
+    public QueryResult execute(ExecutableStatement executableStatement, int numRows) throws Exception
     {
         ParsedStatement ps = executableStatement.getParsedStatement();
         if (ps.isDdl()) {
@@ -151,14 +172,12 @@ public class QueryEngine
         }
 
         SqlNode validatedQuery = ps.getValidatedQuery();
-        if (!isByPassQuery(validatedQuery))
+        List<String> dsNames = getDatasourceNames(validatedQuery);
+        if (dsNames.size() > 1) // by-pass
             throw new Exception("only by-pass query is supported");
 
-        executeByPassQuery(validatedQuery);
-
         // TODO: query on multiple datasources (throw not-implemented feature)
-
-        return null; // FIXME
+        return executeByPassQuery(validatedQuery, dsNames.get(0));
     }
 
     public void prepare(String sql, int[] oids)

@@ -69,24 +69,26 @@ public class MetaStore
 
     public static void init(Configuration conf)
     {
-        /* initialize datanucleus */
-        Properties prop = new Properties();
-        prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-        prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
-        prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
-        prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
-        prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
-        prop.setProperty("datanucleus.schema.autoCreateAll", "true");
+        if (pmf == null) {
+            /* initialize datanucleus */
+            Properties prop = new Properties();
+            prop.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+            prop.setProperty("datanucleus.ConnectionURL", conf.get("metastore.connection.URL"));
+            prop.setProperty("datanucleus.ConnectionDriverName", conf.get("metastore.connection.drivername"));
+            prop.setProperty("datanucleus.ConnectionUserName", conf.get("metastore.connection.username"));
+            prop.setProperty("datanucleus.ConnectionPassword", conf.get("metastore.connection.password"));
+            prop.setProperty("datanucleus.schema.autoCreateAll", "true");
 
-        if (conf.get("metastore.connection.drivername").equals("org.sqlite.JDBC")) {
-            /* NOTE: using SQLite with sequences */
-            prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
-            /* NOTE: using SQLite with connection pooling occurs NullPointerException */
-            prop.setProperty("datanucleus.connectionPoolingType", "None");
-            prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
+            if (conf.get("metastore.connection.drivername").equals("org.sqlite.JDBC")) {
+                /* NOTE: using SQLite with sequences */
+                prop.setProperty("datanucleus.valuegeneration.transactionAttribute", "UsePM");
+                /* NOTE: using SQLite with connection pooling occurs NullPointerException */
+                prop.setProperty("datanucleus.connectionPoolingType", "None");
+                prop.setProperty("datanucleus.connectionPoolingType.nontx", "None");
+            }
+
+            pmf = JDOHelper.getPersistenceManagerFactory(prop);
         }
-
-        pmf = JDOHelper.getPersistenceManagerFactory(prop);
 
         PersistenceManager pm = pmf.getPersistenceManager();
         Query query = pm.newQuery(MUser.class);
@@ -292,9 +294,10 @@ public class MetaStore
         return results.get(0);
     }
 
-    public MTable getTable(SqlIdentifier tableID) {
+    public MTable getTable(SqlIdentifier tableID)
+    {
         Query query = pm.newQuery(MTable.class);
-        switch(tableID.names.size()) {
+        switch (tableID.names.size()) {
             case 1:
                 query.setFilter("name == '" + tableID.toString() + "'");
                 break;
@@ -308,26 +311,27 @@ public class MetaStore
                                 "name == '" + tableID.names.get(2) + "'");
                 break;
             default:
-                /* fixme: error */
+                throw new RuntimeException("invalid SqlIdentifier size: " + tableID.names.size());
         }
         List<MTable> results = (List<MTable>) query.execute();
 
         if (results.size() == 0) {
-                    /* fixme: not found exception */
-        }
-        else if (results.size() > 1) {
-                    /* fixme: ambiguous table name exception */
+            /* fixme: not found exception */
+        } else if (results.size() > 1) {
+            /* fixme: ambiguous table name exception */
         }
 
-        System.out.println("Table found: " + results.get(0).getName());
+        LOG.debug("table found: " + results.get(0).getName());
         return results.get(0);
     }
 
-    public void getReadLock() {
+    public void getReadLock()
+    {
         readLock.lock();
     }
 
-    public void releaseReadLock() {
+    public void releaseReadLock()
+    {
         readLock.unlock();
     }
 
@@ -342,4 +346,13 @@ public class MetaStore
         return results.get(0);
     }
  */
+
+    // XXX: test ONLY
+    public static void closePMF()
+    {
+        if (pmf != null) {
+            pmf.close();
+            pmf = null;
+        }
+    }
 }

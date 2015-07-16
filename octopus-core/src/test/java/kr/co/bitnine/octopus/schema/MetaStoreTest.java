@@ -48,23 +48,22 @@ public class MetaStoreTest
         Configuration conf = new OctopusConfiguration();
         testDb.setMetaStoreConf(conf);
 
+        MetaStore.closePMF();
         MetaStore.init(conf);
         MetaStore metaStore = MetaStore.get();
-        Connection conn = testDb.getTestDbConnection();
-        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), conn, "test database");
-/*
-        MTable mtable = metaStore.getTable("bitnine");
+        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
+
+        MTable mtable = metaStore.getTable("BITNINE");
         System.out.println("column cnt: " + mtable.getColumnCnt());
 
         for (MColumn column : mtable.getColumns())
             System.out.println("Column: " + column.getName());
- */
-        conn.close();
+
         metaStore.destroy();
     }
 
     @Test
-    public void testPM() throws Exception{
-
+    public void testPM() throws Exception
+    {
     }
 }

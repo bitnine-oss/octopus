@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 
 public class QueryEngineTest
 {
@@ -48,15 +49,22 @@ public class QueryEngineTest
         Configuration conf = new OctopusConfiguration();
         testDb.setMetaStoreConf(conf);
 
+        MetaStore.closePMF();
         MetaStore.init(conf);
         MetaStore metaStore = MetaStore.get();
         metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
 
         QueryEngine queryEngine = new QueryEngine(metaStore);
-        //ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE", null);
         ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
-        queryEngine.execute(es, 0);
+        QueryResult qr = queryEngine.execute(es, 0);
+        ResultSet rs = qr.unwrap(ResultSet.class);
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            System.out.println("id=" + id + ", name=" + name);
+        }
+        qr.close();
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
         metaStore.destroy();

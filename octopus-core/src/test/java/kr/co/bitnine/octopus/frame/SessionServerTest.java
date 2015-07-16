@@ -59,10 +59,10 @@ public class SessionServerTest
         Configuration conf = new OctopusConfiguration();
         testDb.setMetaStoreConf(conf);
 
+        MetaStore.closePMF();
         MetaStore.init(conf);
         MetaStore metaStore = MetaStore.get();
-        Connection testConn = testDb.getTestDbConnection();
-        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testConn, "test database");
+//        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
 
         SessionServer server = new SessionServer();
         server.init(conf);
@@ -78,21 +78,25 @@ public class SessionServerTest
         Connection conn = DriverManager.getConnection(url, info);
         assertFalse(conn.isClosed());
 
-/*
-        String query = "SELECT ID, NAME FROM SQLITE.__DEFAULT.BITNINE";
+        String query = "ALTER SYSTEM ADD DATASOURCE SQLITE CONNECT BY '" + testDb.getTestDbURL() + "'";
         Statement stmt = conn.createStatement();
+        stmt.execute(query);
+
+        query = "SELECT ID, NAME FROM BITNINE;";
+        stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(query);
         while (rs.next()) {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             System.out.println("id=" + id + ", name=" + name);
         }
- */
+        rs.close();
+        stmt.close();
 
-        String query = "CREATE USER jsyang IDENTIFIED BY '0009';";
-        Statement stmt = conn.createStatement();
+        query = "CREATE USER jsyang IDENTIFIED BY '0009';";
+        stmt = conn.createStatement();
         stmt.execute(query);
-//        assertTrue(stmt.execute(query));
+        stmt.close();
 
         conn.close();
 
@@ -105,7 +109,6 @@ public class SessionServerTest
 
         server.stop();
 
-        testConn.close();
         metaStore.destroy();
 
         testDb.destroy();

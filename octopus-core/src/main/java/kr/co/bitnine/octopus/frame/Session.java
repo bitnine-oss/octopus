@@ -18,6 +18,7 @@ import kr.co.bitnine.octopus.libpg.*;
 import kr.co.bitnine.octopus.queryengine.ExecutableStatement;
 import kr.co.bitnine.octopus.queryengine.ParsedStatement;
 import kr.co.bitnine.octopus.queryengine.QueryEngine;
+import kr.co.bitnine.octopus.queryengine.QueryResult;
 import kr.co.bitnine.octopus.schema.MetaStore;
 import kr.co.bitnine.octopus.schema.model.MUser;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -28,6 +29,9 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Properties;
 import java.util.Random;
 
@@ -305,6 +309,68 @@ class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
+    private void sendRowDescription(QueryResult qr) throws Exception
+    {
+        ResultSet rs = qr.unwrap(ResultSet.class);
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        int colCnt = rsmd.getColumnCount();
+
+        // RowDescription
+        Message.Builder msgBld = Message.builder('T').putShort((short) colCnt);
+        for (int i = 1; i <= colCnt; i++) {
+            String colName = rsmd.getColumnName(i);
+            int colType = rsmd.getColumnType(i);
+            int oid = Oid.fromTypes(colType);
+
+            msgBld.putCString(colName)
+                    .putInt(0)              // table OID
+                    .putShort((short) 0)    // attribute number
+                    .putInt(oid)            // data type OID
+                    .putShort((short) -1)   // data type size (variable-width)
+                    .putInt(0)              // type-specific type modifier
+                    .putShort((short) 0);   // not yet known
+        }
+        messageStream.putMessage(msgBld.build());
+    }
+
+    private int sendDataRow(QueryResult qr) throws Exception
+    {
+        ResultSet rs = qr.unwrap(ResultSet.class);
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        int colCnt = rsmd.getColumnCount();
+
+        // DataRow
+        int rowCnt = 0;
+        while (rs.next()) {
+            Message.Builder msgBld = Message.builder('D').putShort((short) colCnt);
+            for (int i = 1; i <= colCnt; i++) {
+                switch (rsmd.getColumnType(i)) {
+                    case Types.INTEGER:
+                        byte[] iBytes = String.valueOf(rs.getInt(i)).getBytes(StandardCharsets.US_ASCII);
+                        msgBld.putInt(iBytes.length)
+                                .putBytes(iBytes);
+                        break;
+                    case Types.VARCHAR:
+                        byte[] vBytes = rs.getString(i).getBytes(StandardCharsets.US_ASCII);
+                        msgBld.putInt(vBytes.length)
+                                .putBytes(vBytes);
+                        break;
+                    default:
+                        throw new RuntimeException("not supported type");
+                }
+            }
+            messageStream.putMessage(msgBld.build());
+
+            rowCnt++;
+        }
+
+        qr.close();
+
+        return rowCnt;
+    }
+
     private void handleQuery(Message msg) throws Exception
     {
         String query = msg.getCString();
@@ -312,57 +378,22 @@ class Session implements Runnable
 
         parsedStatement = queryEngine.parse(query, null);
         executableStatement = queryEngine.bind(parsedStatement, null, null, null);
-        ResultSet rs = queryEngine.execute(executableStatement, 0);
-        if (rs == null) {
+        QueryResult qr = queryEngine.execute(executableStatement, 0);
+
+        // DDL
+        if (qr == null) {
             sendCommandComplete("");
             return;
         }
 
-        // TODO: execute query, get results
+        // Query
 
 //        sendEmptyQueryResponse();
 
-        // FIXME
-        // RowDescription
-        msg = Message.builder('T')
-                .putShort((short) 2)
+        sendRowDescription(qr);
+        int rowCnt = sendDataRow(qr);
 
-                .putCString("name")
-                .putInt(0)              // table OID
-                .putShort((short) 0)    // attribute number
-                .putInt(1043)           // data type OID (VARCHAR)
-                .putShort((short) -1)   // data type size (variable-width)
-                .putInt(0)              // type-specific type modifier
-                .putShort((short) 0)    // not yet known
-
-                .putCString("id")
-                .putInt(0)              // table OID
-                .putShort((short) 0)    // attribute number
-                .putInt(23)             // data type OID (INT4)
-                .putShort((short) -1)   // data type size (variable-width)
-                .putInt(0)              // type-specific type modifier
-                .putShort((short) 0)    // not yet known
-
-                .build();
-        messageStream.putMessage(msg);
-
-        // FIXME
-        // DataRow
-        String testName = "jsyang";
-        byte[] testNameBytes = testName.getBytes(StandardCharsets.US_ASCII);
-        String testId = String.valueOf(7);
-        byte[] testIdBytes = testId.getBytes(StandardCharsets.US_ASCII);
-        msg = Message.builder('D')
-                .putShort((short) 2)
-                .putInt(testNameBytes.length)
-                .putBytes(testNameBytes)
-                .putInt(testIdBytes.length)
-                .putBytes(testIdBytes)
-                .build();
-        messageStream.putMessage(msg);
-        messageStream.putMessage(msg);
-
-        sendCommandComplete("SELECT 2");
+        sendCommandComplete("SELECT " + rowCnt);
     }
 
     private void handleParse(Message msg) throws Exception
@@ -441,6 +472,9 @@ class Session implements Runnable
         messageStream.putMessage(Message.builder('2').build());
     }
 
+    // FIXME: describe and execute (refactor code)
+    QueryResult queryResult;
+
     private void handleExecute(Message msg) throws Exception
     {
         String portalName = msg.getCString();
@@ -456,31 +490,17 @@ class Session implements Runnable
             PostgresExceptions.report(messageStream, pge);
         }
 
-        ResultSet rs = queryEngine.execute(executableStatement, numRows);
-        if (rs == null) {
+        if (queryResult == null) { // DDL
             sendCommandComplete("");
             return;
         }
 
 //        sendEmptyQueryResponse();
 
-        // FIXME
-        // DataRow
-        String testName = "jsyang";
-        byte[] testNameBytes = testName.getBytes(StandardCharsets.US_ASCII);
-        String testId = String.valueOf(7);
-        byte[] testIdBytes = testId.getBytes(StandardCharsets.US_ASCII);
-        msg = Message.builder('D')
-                .putShort((short) 2)
-                .putInt(testNameBytes.length)
-                .putBytes(testNameBytes)
-                .putInt(testIdBytes.length)
-                .putBytes(testIdBytes)
-                .build();
-        messageStream.putMessage(msg);
-        messageStream.putMessage(msg);
+        int rowCnt = sendDataRow(queryResult);
+        queryResult = null;
 
-        sendCommandComplete("SELECT 2");
+        sendCommandComplete("SELECT " + rowCnt);
     }
 
     private void handleClose(Message msg) throws IOException
@@ -495,42 +515,22 @@ class Session implements Runnable
         messageStream.putMessage(Message.builder('3').build());
     }
 
-    private void handleDescribe(Message msg) throws IOException
+    private void handleDescribe(Message msg) throws Exception
     {
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
         LOG.debug("describe (type='" + type + "', name=" + name + ")");
 
-        if (parsedStatement.isDdl()) {
+        QueryResult qr = queryEngine.execute(executableStatement, 0);
+        if (qr == null && parsedStatement.isDdl()) {
             // NoData
             messageStream.putMessage(Message.builder('n').build());
             return;
         }
 
-        // FIXME
-        // RowDescription
-        msg = Message.builder('T')
-                .putShort((short) 2)
-
-                .putCString("name")
-                .putInt(0)              // table OID
-                .putShort((short) 0)    // attribute number
-                .putInt(1043)           // data type OID (VARCHAR)
-                .putShort((short) -1)   // data type size (variable-width)
-                .putInt(0)              // type-specific type modifier
-                .putShort((short) 0)    // not yet known
-
-                .putCString("id")
-                .putInt(0)              // table OID
-                .putShort((short) 0)    // attribute number
-                .putInt(23)             // data type OID (INT4)
-                .putShort((short) -1)   // data type size (variable-width)
-                .putInt(0)              // type-specific type modifier
-                .putShort((short) 0)    // not yet known
-
-                .build();
-        messageStream.putMessage(msg);
+        queryResult = qr;
+        sendRowDescription(queryResult);
     }
 
     void close()
