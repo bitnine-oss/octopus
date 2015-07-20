@@ -14,19 +14,26 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public abstract class OctopusSqlCommand
-{
-    enum Type
+/**
+ * Created by Kimbyungmoon on 15. 7. 20..
+ */
+class OctopusSqlDropUser extends OctopusSqlCommand{
+
+    private String name;
+
+    OctopusSqlDropUser(String name)
     {
-        ADD_DATASOURCE,
-        ALTER_USER,
-        CREATE_USER,
-        DROP_USER,
-        OTHER
+        this.name = name;
     }
 
+    String getName()
+    {
+        return name;
+    }
+
+    @Override
     public OctopusSqlCommand.Type getType()
     {
-        return OctopusSqlCommand.Type.OTHER;
+        return OctopusSqlCommand.Type.DROP_USER;
     }
 }

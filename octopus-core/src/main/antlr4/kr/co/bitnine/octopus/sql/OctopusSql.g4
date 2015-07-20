@@ -39,6 +39,10 @@ datasourceClause
     : K_ADD K_DATASOURCE datasourceName K_CONNECT K_BY jdbcConnectionString
     ;
 
+alterUser
+    : K_ALTER K_USER user K_IDENTIFIED K_BY password old_password
+    ;
+
 createUser
     : K_CREATE K_USER user K_IDENTIFIED K_BY password
     ;
@@ -47,7 +51,15 @@ datasourceName
     : IDENTIFIER
     ;
 
+dropUser
+    : K_DROP K_USER user
+    ;
+
 jdbcConnectionString
+    : STRING_LITERAL
+    ;
+
+old_password
     : STRING_LITERAL
     ;
 
@@ -72,9 +84,11 @@ K_BY : B Y ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
 K_DATASOURCE : D A T A S O U R C E ;
+K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
 K_SYSTEM : S Y S T E M ;
 K_USER : U S E R ;
+
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'

@@ -18,5 +18,7 @@ public interface OctopusSqlRunner
 {
     void createUser(String name, String password) throws Exception;
     void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception;
+    void dropUser(String name) throws Exception;
+    void alterUser(String name, String password, String old_password) throws Exception;
 }
 

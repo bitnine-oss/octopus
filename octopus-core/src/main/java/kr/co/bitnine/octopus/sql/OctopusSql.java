@@ -88,6 +88,13 @@ public abstract class OctopusSql
                 OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;
                 runner.createUser(createUser.getName(), createUser.getPassword());
                 break;
+            case DROP_USER:
+                OctopusSqlDropUser dropUser = (OctopusSqlDropUser) command;
+                runner.dropUser(dropUser.getName());
+                break;
+            case ALTER_USER:
+                OctopusSqlAlterUser alterUser = (OctopusSqlAlterUser) command;
+                runner.alterUser(alterUser.getName(), alterUser.getPassword(), alterUser.getOld_password());
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }
