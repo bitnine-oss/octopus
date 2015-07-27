@@ -108,6 +108,18 @@ public class QueryEngine
         }
 
         @Override
+        public void dropUser(String name)
+        {
+            metaStore.dropUser(name);
+        }
+
+        @Override
+        public void alterUser(String name, String password, String old_password)
+        {
+            metaStore.alterUser(name, password, old_password);
+        }
+
+        @Override
         public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
         {
             String driverName = null;

@@ -141,6 +141,25 @@ public class MetaStore
         pm.makePersistent(user);
     }
 
+    public void dropUser(String name)
+    {
+        MUser user = getUserByName(name);
+
+        if ( user == null )
+            throw new RuntimeException("There are no "+name+" user");
+        else
+            pm.deletePersistent(user);
+
+    }
+
+    public void alterUser(String name, String password, String old_password)
+    {
+        MUser user = getUserByName(name);
+
+        // TODO : Change 'old_password' -> 'password'
+
+    }
+
     public MUser getUserByName(String name)
     {
         Query query = pm.newQuery(MUser.class);
@@ -164,21 +183,19 @@ public class MetaStore
 
                         for (MSchema schema : dataSource.getSchemas()) {
                             String name = schema.getName();
-                            builder.put(name,  new OctopusSchema(schema));
+                            builder.put(name, new OctopusSchema(schema));
                         }
 
                         subSchemaMap = builder.build();
                     }
 
                     @Override
-                    public boolean isMutable()
-                    {
+                    public boolean isMutable() {
                         return false;
                     }
 
                     @Override
-                    protected Map<String, org.apache.calcite.schema.Schema> getSubSchemaMap()
-                    {
+                    protected Map<String, org.apache.calcite.schema.Schema> getSubSchemaMap() {
                         return subSchemaMap;
                     }
                 });

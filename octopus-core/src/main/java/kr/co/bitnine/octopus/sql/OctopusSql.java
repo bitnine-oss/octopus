@@ -49,6 +49,22 @@ public abstract class OctopusSql
         }
 
         @Override
+        public void exitDropUser(OctopusSqlParser.DropUserContext ctx)
+        {
+            String name = ctx.user().getText();
+            commands.add(new OctopusSqlDropUser(name));
+        }
+
+        @Override
+        public void exitAlterUser(OctopusSqlParser.AlterUserContext ctx)
+        {
+            String name = ctx.user().getText();
+            String password = ctx.password().getText();
+            String old_password = ctx.old_password().getText();
+            commands.add(new OctopusSqlAlterUser(name, password, old_password));
+        }
+
+        @Override
         public void exitDatasourceClause(OctopusSqlParser.DatasourceClauseContext ctx)
         {
             String datasourceName = ctx.datasourceName().getText();
