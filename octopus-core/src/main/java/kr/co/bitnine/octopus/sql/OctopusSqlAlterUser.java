@@ -14,9 +14,6 @@
 
 package kr.co.bitnine.octopus.sql;
 
-/**
- * Created by Kimbyungmoon on 15. 7. 20..
- */
 public class OctopusSqlAlterUser extends OctopusSqlCommand{
     private String name;
     private String password;
