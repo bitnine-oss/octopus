@@ -145,8 +145,8 @@ public class MetaStore
     {
         MUser user = getUserByName(name);
 
-        if ( user == null )
-            throw new RuntimeException("There are no "+name+" user");
+        if (user == null)
+            throw new RuntimeException("There are no " + name + " user");
         else
             pm.deletePersistent(user);
 
@@ -155,9 +155,8 @@ public class MetaStore
     public void alterUser(String name, String password, String old_password)
     {
         MUser user = getUserByName(name);
-
-        // TODO : Change 'old_password' -> 'password'
-
+        user.setPassword(password);
+        pm.makePersistent(user);
     }
 
     public MUser getUserByName(String name)

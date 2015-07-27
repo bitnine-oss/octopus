@@ -105,6 +105,30 @@ public class SessionServerTest
         conn = DriverManager.getConnection(url, info);
         assertFalse(conn.isClosed());
 
+        query = "ALTER USER jsyang IDENTIFIED BY 'jsyang' '0009';";
+        stmt = conn.createStatement();
+        stmt.execute(query);
+        stmt.close();
+
+        conn.close();
+
+        info.setProperty("user", "jsyang");
+        info.setProperty("password", "jsyang");
+        conn = DriverManager.getConnection(url, info);
+        assertFalse(conn.isClosed());
+
+        conn.close();
+
+        info.setProperty("user", "octopus");
+        info.setProperty("password", "bitnine");
+        conn = DriverManager.getConnection(url, info);
+        assertFalse(conn.isClosed());
+
+        query = "DROP USER jsyang;";
+        stmt = conn.createStatement();
+        stmt.execute(query);
+        stmt.close();
+
         conn.close();
 
         server.stop();

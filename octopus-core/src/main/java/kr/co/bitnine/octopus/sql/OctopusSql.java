@@ -111,6 +111,7 @@ public abstract class OctopusSql
             case ALTER_USER:
                 OctopusSqlAlterUser alterUser = (OctopusSqlAlterUser) command;
                 runner.alterUser(alterUser.getName(), alterUser.getPassword(), alterUser.getOld_password());
+                break;
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

@@ -29,6 +29,8 @@ ddlStmts
 ddlStmt
     : alterSystem
     | createUser
+    | alterUser
+    | dropUser
     ;
 
 alterSystem
