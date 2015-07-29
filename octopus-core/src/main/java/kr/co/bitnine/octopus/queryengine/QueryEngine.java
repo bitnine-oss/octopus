@@ -14,8 +14,10 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
-import kr.co.bitnine.octopus.schema.MetaStore;
-import kr.co.bitnine.octopus.schema.model.MDataSource;
+import kr.co.bitnine.octopus.meta.MetaContext;
+import kr.co.bitnine.octopus.meta.MetaException;
+import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
@@ -41,13 +43,15 @@ public class QueryEngine
 {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
-    MetaStore metaStore;
+    private final MetaContext metaContext;
+    private final SchemaManager schemaManager;
 
     DataSourceManager dsm;
 
-    public QueryEngine(MetaStore metaStore)
+    public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
-        this.metaStore = metaStore;
+        this.metaContext = metaContext;
+        this.schemaManager = schemaManager;
 
 /*
         FrameworkConfig config = Frameworks.newConfigBuilder()
@@ -74,7 +78,7 @@ public class QueryEngine
 
         // Query
 
-        SchemaPlus rootSchema = metaStore.getCurrentSchema();
+        SchemaPlus rootSchema = schemaManager.getCurrentSchema();
 
         FrameworkConfig config = Frameworks.newConfigBuilder()
                 .defaultSchema(rootSchema)
@@ -84,13 +88,12 @@ public class QueryEngine
         SqlNode parse = planner.parse(query);
         LOG.debug(parse);
 
-        TableNameTranslator tnt = new TableNameTranslator(metaStore);
-        tnt.toFQN(parse);
+        TableNameTranslator.toFQN(schemaManager, parse);
         LOG.debug("FQN translated: " + parse.toString());
 
-        metaStore.getReadLock();
+        schemaManager.lockRead();
         SqlNode validated = planner.validate(parse);
-        metaStore.releaseReadLock();
+        schemaManager.unlockRead();
 
         return new ParsedStatement(validated, oids);
     }
@@ -102,34 +105,36 @@ public class QueryEngine
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
         @Override
-        public void createUser(String name, String password) throws Exception
+        public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
-            metaStore.createUser(name, password);
-        }
-
-        @Override
-        public void dropUser(String name)
-        {
-            metaStore.dropUser(name);
-        }
-
-        @Override
-        public void alterUser(String name, String password, String old_password)
-        {
-            metaStore.alterUser(name, password, old_password);
-        }
-
-        @Override
-        public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
-        {
-            String driverName = null;
+            String driverName;
             if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
                 driverName = "org.sqlite.JDBC";
             } else {
                 throw new RuntimeException("not supported");
             }
 
-            metaStore.addDataSource(datasourceName, driverName, jdbcConnectionString, "");
+            // FIXME: all or nothing
+            MetaDataSource dataSource = metaContext.addJdbcDataSource(driverName, jdbcConnectionString, dataSourceName);
+            schemaManager.addDataSource(dataSource);
+        }
+
+        @Override
+        public void createUser(String name, String password) throws Exception
+        {
+            metaContext.createUser(name, password);
+        }
+
+        @Override
+        public void alterUser(String name, String password, String oldPassword) throws Exception
+        {
+            metaContext.alterUser(name, password);
+        }
+
+        @Override
+        public void dropUser(String name) throws Exception
+        {
+            metaContext.dropUser(name);
         }
     };
 
@@ -150,18 +155,17 @@ public class QueryEngine
         return new ArrayList(dsSet);
     }
 
-    public QueryResult executeByPassQuery(SqlNode validatedQuery, String datasourceName)
+    public QueryResult executeByPassQuery(SqlNode validatedQuery, String dataSourceName) throws MetaException
     {
-        MDataSource ds = metaStore.getDatasource(datasourceName);
+        MetaDataSource dataSource = metaContext.getDataSourceByName(dataSourceName);
 
-        TableNameTranslator tnt = new TableNameTranslator(metaStore);
-        tnt.toDSN(validatedQuery);
+        TableNameTranslator.toDSN(validatedQuery);
         LOG.debug("by-pass query: " + validatedQuery.toString());
 
         ResultSet rs = null;
         try {
-            Class.forName(ds.getDriver());
-            Connection conn = DriverManager.getConnection(ds.getConnectionString());
+            Class.forName(dataSource.getDriverName());
+            Connection conn = DriverManager.getConnection(dataSource.getConnectionString());
             Statement stmt = conn.createStatement();
             rs = stmt.executeQuery(validatedQuery.toString());
         } catch (ClassNotFoundException e) {
@@ -188,7 +192,7 @@ public class QueryEngine
         if (dsNames.size() > 1) // by-pass
             throw new Exception("only by-pass query is supported");
 
-        // TODO: query on multiple datasources (throw not-implemented feature)
+        // TODO: query on multiple data sources (throw not-implemented feature)
         return executeByPassQuery(validatedQuery, dsNames.get(0));
     }
 

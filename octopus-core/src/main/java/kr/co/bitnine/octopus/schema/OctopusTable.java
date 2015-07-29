@@ -14,8 +14,8 @@
 
 package kr.co.bitnine.octopus.schema;
 
-import kr.co.bitnine.octopus.schema.model.MColumn;
-import kr.co.bitnine.octopus.schema.model.MTable;
+import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaTable;
 import org.apache.calcite.rel.type.*;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.impl.AbstractTable;
@@ -24,11 +24,15 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 public class OctopusTable extends AbstractTable
 {
+    private final String name;
     private Schema.TableType tableType;
-    private RelProtoDataType protoRowType;
+    private final RelProtoDataType protoRowType;
+    private final OctopusSchema schema;
 
-    public OctopusTable(MTable table)
+    public OctopusTable(MetaTable metaTable, OctopusSchema schema)
     {
+        name = metaTable.getName();
+
         try {
             //tableType = Schema.TableType.valueOf(table.getType().name());
             tableType = Schema.TableType.TABLE; // FIXME
@@ -38,18 +42,25 @@ public class OctopusTable extends AbstractTable
 
         RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         RelDataTypeFactory.FieldInfoBuilder fieldInfo = typeFactory.builder();
-        for (MColumn col : table.getColumns()) {
-            String name = col.getName();
+        for (MetaColumn metaColumn : metaTable.getColumns()) {
+            String name = metaColumn.getName();
 
-            //int jdbcType = col.getType().getJdbcType();
-            int jdbcType = col.getType(); //FIXME
+            //int jdbcType = metaColumn.getType().getJdbcType();
+            int jdbcType = metaColumn.getType(); //FIXME
             SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
             RelDataType sqlType = typeFactory.createSqlType(typeName);
 
-            System.out.println("column:" + name + " type:" +sqlType);
+            System.out.println("column=" + name + ", type=" +sqlType);
             fieldInfo.add(name, sqlType);
         }
         protoRowType = RelDataTypeImpl.proto(fieldInfo.build());
+
+        this.schema = schema;
+    }
+
+    public String getName()
+    {
+        return name;
     }
 
     @Override
@@ -62,5 +73,10 @@ public class OctopusTable extends AbstractTable
     public Schema.TableType getJdbcTableType()
     {
         return tableType;
+    }
+
+    public OctopusSchema getSchema()
+    {
+        return schema;
     }
 }

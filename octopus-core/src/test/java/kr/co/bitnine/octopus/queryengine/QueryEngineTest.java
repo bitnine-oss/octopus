@@ -16,14 +16,17 @@ package kr.co.bitnine.octopus.queryengine;
 
 import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
-import kr.co.bitnine.octopus.schema.MetaStore;
-
+import kr.co.bitnine.octopus.meta.MetaContext;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStoreService;
+import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 
 public class QueryEngineTest
@@ -49,12 +52,21 @@ public class QueryEngineTest
         Configuration conf = new OctopusConfiguration();
         testDb.setMetaStoreConf(conf);
 
-        MetaStore.closePMF();
-        MetaStore.init(conf);
-        MetaStore metaStore = MetaStore.get();
-        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
+        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService.init(conf);
+        metaStoreService.start();
 
-        QueryEngine queryEngine = new QueryEngine(metaStore);
+        SchemaManager schemaManager = new SchemaManager(metaStore);
+        schemaManager.init(conf);
+        schemaManager.start();
+
+        MetaContext mc = metaStore.getMetaContext();
+
+        MetaDataSource metaDataSource = mc.addJdbcDataSource(testDb.getDriverName(), testDb.getTestDbURL(), "SQLITE");
+        schemaManager.addDataSource(metaDataSource);
+
+        QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
         ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
         QueryResult qr = queryEngine.execute(es, 0);
@@ -67,6 +79,9 @@ public class QueryEngineTest
         qr.close();
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
-        metaStore.destroy();
+
+        mc.close();
+        schemaManager.stop();
+        metaStoreService.stop();
     }
 }

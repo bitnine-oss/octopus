@@ -66,6 +66,8 @@ limitations under the License.
       <useAllReactorProjects>true</useAllReactorProjects>
       <includes>
         <include>${project.groupId}:octopus-common</include>
+        <include>${project.groupId}:octopus-meta</include>
+        <include>${project.groupId}:octopus-meta-jdo</include>
         <include>${project.groupId}:octopus-core</include>
       </includes>
       <binaries>

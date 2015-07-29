@@ -14,7 +14,8 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.queryengine.QueryEngine;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.util.NetUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -41,14 +42,20 @@ public class SessionServer extends AbstractService
     private static final long EXECUTOR_KEEPALIVE_DEFAULT = 60;
     private static final long EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT = 5;
 
+    private final MetaStore metaStore;
+    private final SchemaManager schemaManager;
+
     private ConcurrentHashMap<Integer, Session> sessions = null;
     private ThreadPoolExecutor executor = null;
     private Listener listener = null;
     private volatile boolean running = false;
 
-    public SessionServer()
+    public SessionServer(MetaStore metaStore, SchemaManager schemaManager)
     {
         super(SessionServer.class.getSimpleName());
+
+        this.metaStore = metaStore;
+        this.schemaManager = schemaManager;
     }
 
     @Override
@@ -143,7 +150,7 @@ public class SessionServer extends AbstractService
                 } catch (IOException e) { }
                 LOG.debug("connection from " + clientAddress + " is accepted");
 
-                Session sess = new Session(clientChannel, sessEvtHandler);
+                Session sess = new Session(clientChannel, sessEvtHandler, metaStore.getMetaContext(), schemaManager);
                 registerSession(sess);
                 try {
                     executor.execute(sess);

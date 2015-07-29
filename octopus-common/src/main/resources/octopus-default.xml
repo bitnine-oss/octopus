@@ -33,23 +33,30 @@ does not already exist, create it.
   </property>
 
   <property>
-    <name>metastore.connection.URL</name>
-    <value></value>
+    <name>metastore.class</name>
+    <value>kr.co.bitnine.octopus.meta.jdo.JDOMetaStore</value>
   </property>
 
+  <!-- JDOMetaStore specific properties -->
+
   <property>
-    <name>metastore.connection.drivername</name>
+    <name>metastore.jdo.connection.drivername</name>
     <value>com.mysql.jdbc.Driver</value>
   </property>
 
   <property>
-    <name>metastore.connection.username</name>
+    <name>metastore.jdo.connection.URL</name>
+    <value></value>
+  </property>
+
+  <property>
+    <name>metastore.jdo.connection.username</name>
     <value>octopus</value>
   </property>
 
   <property>
-    <name>metastore.connection.password</name>
-    <value></value>
+    <name>metastore.jdo.connection.password</name>
+    <value>bitnine</value>
   </property>
 
 </configuration>

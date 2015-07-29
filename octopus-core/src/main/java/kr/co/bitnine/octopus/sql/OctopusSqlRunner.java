@@ -16,9 +16,9 @@ package kr.co.bitnine.octopus.sql;
 
 public interface OctopusSqlRunner
 {
+    void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception;
     void createUser(String name, String password) throws Exception;
-    void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception;
+    void alterUser(String name, String password, String oldPassword) throws Exception;
     void dropUser(String name) throws Exception;
-    void alterUser(String name, String password, String old_password) throws Exception;
 }
 

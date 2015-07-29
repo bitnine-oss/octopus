@@ -23,13 +23,19 @@ public class OctopusSqlTest
     @Test
     public void test() throws Exception
     {
-        String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';" +
-                "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';" +
-                "DROP USER octopus;" +
-                "ALTER USER octopus IDENTIFIED BY 'bitnine0' 'bitnine'";
+        String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';\n" +
+                "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n" +
+                "DROP USER octopus;\n" +
+                "ALTER USER octopus IDENTIFIED BY 'bitnine'\n";
         List<OctopusSqlCommand> commands = OctopusSql.parse(query);
 
         OctopusSqlRunner runner = new OctopusSqlRunner() {
+            @Override
+            public void addDataSource(String datasourceName, String jdbcConnectionString) throws Exception
+            {
+                System.out.println("name=" + datasourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+            }
+
             @Override
             public void createUser(String name, String password) throws Exception
             {
@@ -37,21 +43,15 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
+            public void alterUser(String name, String password, String old_password) throws Exception
             {
-                System.out.println("name=" + datasourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+                System.out.println("name=" + name + ", password=" + password + ", old_password=" + old_password);
             }
 
             @Override
             public void dropUser(String name) throws Exception
             {
                 System.out.println("name=" + name);
-            }
-
-            @Override
-            public void alterUser(String name, String password, String old_password) throws Exception
-            {
-                System.out.println("name=" + name + ", password=" + password + ", old_password=" + old_password);
             }
         };
 

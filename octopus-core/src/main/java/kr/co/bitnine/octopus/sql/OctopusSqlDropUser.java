@@ -14,11 +14,8 @@
 
 package kr.co.bitnine.octopus.sql;
 
-/**
- * Created by Kimbyungmoon on 15. 7. 20..
- */
-class OctopusSqlDropUser extends OctopusSqlCommand{
-
+class OctopusSqlDropUser extends OctopusSqlCommand
+{
     private String name;
 
     OctopusSqlDropUser(String name)

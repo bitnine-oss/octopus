@@ -16,8 +16,10 @@ package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
-
-import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStoreService;
+import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.hadoop.conf.Configuration;
 
@@ -59,12 +61,16 @@ public class SessionServerTest
         Configuration conf = new OctopusConfiguration();
         testDb.setMetaStoreConf(conf);
 
-        MetaStore.closePMF();
-        MetaStore.init(conf);
-        MetaStore metaStore = MetaStore.get();
-//        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
+        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService.init(conf);
+        metaStoreService.start();
 
-        SessionServer server = new SessionServer();
+        SchemaManager schemaManager = new SchemaManager(metaStore);
+        schemaManager.init(conf);
+        schemaManager.start();
+
+        SessionServer server = new SessionServer(metaStore, schemaManager);
         server.init(conf);
         server.start();
 
@@ -105,7 +111,7 @@ public class SessionServerTest
         conn = DriverManager.getConnection(url, info);
         assertFalse(conn.isClosed());
 
-        query = "ALTER USER jsyang IDENTIFIED BY 'jsyang' '0009';";
+        query = "ALTER USER jsyang IDENTIFIED BY 'jsyang' REPLACE '0009';";
         stmt = conn.createStatement();
         stmt.execute(query);
         stmt.close();
@@ -132,9 +138,7 @@ public class SessionServerTest
         conn.close();
 
         server.stop();
-
-        metaStore.destroy();
-
-        testDb.destroy();
+        schemaManager.stop();
+        metaStoreService.stop();
     }
 }

@@ -32,10 +32,10 @@ public class TestDb
 
     public void setMetaStoreConf(Configuration conf)
     {
-        conf.set("metastore.connection.URL", METASTORE_URL);
-        conf.set("metastore.connection.drivername", DRIVER_NAME);
-        conf.set("metastore.connection.username", "");
-        conf.set("metastore.connection.password", "");
+        conf.set("metastore.jdo.connection.URL", METASTORE_URL);
+        conf.set("metastore.jdo.connection.drivername", DRIVER_NAME);
+        conf.set("metastore.jdo.connection.username", "");
+        conf.set("metastore.jdo.connection.password", "");
     }
 
     public Connection getMetaStoreConnection() throws Exception

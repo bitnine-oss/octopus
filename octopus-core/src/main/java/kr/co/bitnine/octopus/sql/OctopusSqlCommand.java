@@ -19,8 +19,8 @@ public abstract class OctopusSqlCommand
     enum Type
     {
         ADD_DATASOURCE,
-        ALTER_USER,
         CREATE_USER,
+        ALTER_USER,
         DROP_USER,
         OTHER
     }

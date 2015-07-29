@@ -26,7 +26,8 @@ import java.util.List;
 /**
  * Exec is a helper class for executing an external process from a mojo.
  */
-public class Exec {
+public class Exec
+{
     private Mojo mojo;
 
     /**

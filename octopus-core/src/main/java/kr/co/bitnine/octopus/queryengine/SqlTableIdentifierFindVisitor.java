@@ -33,11 +33,11 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
     }
 
     private final Stack<State> nodeStack = new Stack();
-    private ArrayList<SqlIdentifier> tableIDs;
+    private final ArrayList<SqlIdentifier> tableIds;
 
-    public SqlTableIdentifierFindVisitor(ArrayList<SqlIdentifier> tableIDs)
+    public SqlTableIdentifierFindVisitor(ArrayList<SqlIdentifier> tableIds)
     {
-        this.tableIDs = tableIDs;
+        this.tableIds = tableIds;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
 
         SqlOperator operator = call.getOperator();
         if (operator instanceof SqlOperator && operator.getKind() == SqlKind.AS) {
-            /* AS operator will be probed only if it is in FROM clause */
+            // AS operator will be probed only if it is in FROM clause
             if (nodeStack.peek() == State.FROM)
                 call.operand(0).accept(this);
             return null;
@@ -79,7 +79,7 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
     {
         // check whether this is fully qualified table name
         if (nodeStack.peek() == State.FROM) {
-            tableIDs.add(identifier);
+            tableIds.add(identifier);
             //System.out.println("Table Name: " + identifier.toString());
             //System.out.println("To Table Name: " + identifier.toString());
         }

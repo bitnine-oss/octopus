@@ -16,7 +16,11 @@ package kr.co.bitnine.octopus.master;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.frame.SessionServer;
-import kr.co.bitnine.octopus.schema.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStoreService;
+import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.util.StringUtils;
 
 import org.apache.commons.logging.Log;
@@ -39,9 +43,14 @@ public class OctopusMaster extends CompositeService
     @Override
     protected void serviceInit(Configuration conf) throws Exception
     {
-        MetaStore.init(conf);
+        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        addService(metaStoreService);
 
-        SessionServer sessServer = new SessionServer();
+        SchemaManager schemaManager = new SchemaManager(metaStore);
+        addService(schemaManager);
+
+        SessionServer sessServer = new SessionServer(metaStore, schemaManager);
         addService(sessServer);
 
         super.serviceInit(conf);
