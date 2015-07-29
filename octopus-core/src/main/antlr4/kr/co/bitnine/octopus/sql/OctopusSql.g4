@@ -31,6 +31,8 @@ ddlStmt
     | createUser
     | alterUser
     | dropUser
+    | createRole
+    | dropRole
     ;
 
 alterSystem
@@ -49,6 +51,10 @@ createUser
     : K_CREATE K_USER user K_IDENTIFIED K_BY password
     ;
 
+createRole
+    : K_CREATE K_ROLE role
+    ;
+
 datasourceName
     : IDENTIFIER
     ;
@@ -57,12 +63,20 @@ dropUser
     : K_DROP K_USER user
     ;
 
+dropRole
+    : K_DROP K_ROLE role
+    ;
+
 jdbcConnectionString
     : STRING_LITERAL
     ;
 
 old_password
     : STRING_LITERAL
+    ;
+
+role
+    : IDENTIFIER
     ;
 
 user
@@ -88,6 +102,7 @@ K_CREATE : C R E A T E ;
 K_DATASOURCE : D A T A S O U R C E ;
 K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
+K_ROLE : R O L E ;
 K_SYSTEM : S Y S T E M ;
 K_USER : U S E R ;
 

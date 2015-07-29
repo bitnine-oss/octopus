@@ -14,36 +14,23 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlAlterUser extends OctopusSqlCommand{
-    private String name;
-    private String password;
-    private String old_password;
+class OctopusSqlDropRole extends OctopusSqlCommand{
+    private String role;
 
-    OctopusSqlAlterUser(String name, String password, String old_password)
+    OctopusSqlDropRole(String role)
     {
-        this.name = name;
-        this.password = password;
-        this.old_password = old_password;
+        this.role = role;
     }
 
     String getName()
     {
-        return name;
-    }
-
-    String getPassword()
-    {
-        return password;
-    }
-
-    String getOld_password()
-    {
-        return this.old_password;
+        return this.role;
     }
 
     @Override
     public OctopusSqlCommand.Type getType()
     {
-        return OctopusSqlCommand.Type.ALTER_USER;
+        return OctopusSqlCommand.Type.DROP_ROLE;
     }
+
 }

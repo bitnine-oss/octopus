@@ -131,6 +131,30 @@ public class SessionServerTest
 
         conn.close();
 
+        info.setProperty("user", "octopus");
+        info.setProperty("password", "bitnine");
+        conn = DriverManager.getConnection(url, info);
+        assertFalse(conn.isClosed());
+
+        query = "CREATE ROLE bmkim;";
+        stmt = conn.createStatement();
+        stmt.execute(query);
+        stmt.close();
+
+        conn.close();
+
+        info.setProperty("user", "octopus");
+        info.setProperty("password", "bitnine");
+        conn = DriverManager.getConnection(url, info);
+        assertFalse(conn.isClosed());
+
+        query = "DROP ROLE bmkim;";
+        stmt = conn.createStatement();
+        stmt.execute(query);
+        stmt.close();
+
+        conn.close();
+
         server.stop();
 
         metaStore.destroy();

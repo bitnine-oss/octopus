@@ -152,6 +152,22 @@ public class MetaStore
 
     }
 
+    public void createRole(String name)
+    {
+        MRole role = new MRole(name);
+        pm.makePersistent(role);
+    }
+
+    public void dropRole(String name)
+    {
+        MRole role = getRoleByName(name);
+
+        if(role == null)
+            throw new RuntimeException("There are no " + name + " role");
+        else
+            pm.deletePersistent(role);
+    }
+
     public void alterUser(String name, String password, String old_password)
     {
         MUser user = getUserByName(name);
@@ -166,6 +182,15 @@ public class MetaStore
         query.setUnique(true);
 
         return (MUser) query.execute();
+    }
+
+    public MRole getRoleByName(String name)
+    {
+        Query query = pm.newQuery(MRole.class);
+        query.setFilter("name == '" + name + "'");
+        query.setUnique(true);
+
+        return (MRole) query.execute();
     }
 
     private static final SchemaPlus rootSchema = Frameworks.createRootSchema(false);

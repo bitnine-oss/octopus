@@ -120,6 +120,18 @@ public class QueryEngine
         }
 
         @Override
+        public void createRole(String role)
+        {
+            metaStore.createRole(role);
+        }
+
+        @Override
+        public void dropRole(String role)
+        {
+            metaStore.dropRole(role);
+        }
+
+        @Override
         public void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception
         {
             String driverName = null;

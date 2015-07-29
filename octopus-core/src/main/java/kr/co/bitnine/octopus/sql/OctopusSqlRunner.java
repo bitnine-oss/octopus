@@ -14,11 +14,15 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import sun.reflect.annotation.ExceptionProxy;
+
 public interface OctopusSqlRunner
 {
     void createUser(String name, String password) throws Exception;
     void addDatasource(String datasourceName, String jdbcConnectionString) throws Exception;
     void dropUser(String name) throws Exception;
     void alterUser(String name, String password, String old_password) throws Exception;
+    void createRole(String role) throws Exception;
+    void dropRole(String role) throws Exception;
 }
 
