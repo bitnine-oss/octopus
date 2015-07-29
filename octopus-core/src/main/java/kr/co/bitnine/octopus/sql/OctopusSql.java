@@ -41,7 +41,7 @@ public abstract class OctopusSql
         }
 
         @Override
-        public void exitDatasourceClause(OctopusSqlParser.DatasourceClauseContext ctx)
+        public void exitDataSourceClause(OctopusSqlParser.DataSourceClauseContext ctx)
         {
             String dataSourceName = ctx.dataSourceName().getText();
             String jdbcConnectionString = ctx.jdbcConnectionString().getText();
@@ -71,6 +71,20 @@ public abstract class OctopusSql
         {
             String name = ctx.user().getText();
             commands.add(new OctopusSqlDropUser(name));
+        }
+
+        @Override
+        public void exitCreateRole(OctopusSqlParser.CreateRoleContext ctx)
+        {
+            String name = ctx.role().getText();
+            commands.add(new OctopusSqlCreateRole(name));
+        }
+
+        @Override
+        public void exitDropRole(OctopusSqlParser.DropRoleContext ctx)
+        {
+            String name = ctx.role().getText();
+            commands.add(new OctopusSqlDropRole(name));
         }
 
         List getSqlCommands()
@@ -113,9 +127,16 @@ public abstract class OctopusSql
                 OctopusSqlDropUser dropUser = (OctopusSqlDropUser) command;
                 runner.dropUser(dropUser.getName());
                 break;
+            case CREATE_ROLE:
+                OctopusSqlCreateRole createRole = (OctopusSqlCreateRole) command;
+                runner.createRole(createRole.getName());
+                break;
+            case DROP_ROLE:
+                OctopusSqlDropRole dropRole = (OctopusSqlDropRole) command;
+                runner.dropRole(dropRole.getName());
+                break;
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }
     }
 }
-

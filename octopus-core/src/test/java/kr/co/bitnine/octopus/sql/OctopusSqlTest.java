@@ -26,7 +26,9 @@ public class OctopusSqlTest
         String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';\n" +
                 "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n" +
                 "DROP USER octopus;\n" +
-                "ALTER USER octopus IDENTIFIED BY 'bitnine'\n";
+                "ALTER USER octopus IDENTIFIED BY 'bitnine'\n" +
+                "CREATE ROLE octopus;\n" +
+                "DROP ROLE octopus;\n";
         List<OctopusSqlCommand> commands = OctopusSql.parse(query);
 
         OctopusSqlRunner runner = new OctopusSqlRunner() {
@@ -52,6 +54,18 @@ public class OctopusSqlTest
             public void dropUser(String name) throws Exception
             {
                 System.out.println("name=" + name);
+            }
+
+            @Override
+            public void createRole(String role) throws Exception
+            {
+                System.out.println("role=" + role);
+            }
+
+            @Override
+            public void dropRole(String role) throws Exception
+            {
+                System.out.println("role=" + role);
             }
         };
 

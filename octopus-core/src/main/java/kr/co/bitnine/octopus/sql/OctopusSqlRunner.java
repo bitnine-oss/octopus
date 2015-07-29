@@ -20,5 +20,7 @@ public interface OctopusSqlRunner
     void createUser(String name, String password) throws Exception;
     void alterUser(String name, String password, String oldPassword) throws Exception;
     void dropUser(String name) throws Exception;
+    void createRole(String role) throws Exception;
+    void dropRole(String role) throws Exception;
 }
 

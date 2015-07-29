@@ -12,23 +12,9 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.sql;
+package kr.co.bitnine.octopus.meta.model;
 
-public abstract class OctopusSqlCommand
+public interface MetaRole
 {
-    enum Type
-    {
-        ADD_DATASOURCE,
-        CREATE_USER,
-        ALTER_USER,
-        DROP_USER,
-        CREATE_ROLE,
-        DROP_ROLE,
-        OTHER
-    }
-
-    public OctopusSqlCommand.Type getType()
-    {
-        return OctopusSqlCommand.Type.OTHER;
-    }
+    String getName();
 }

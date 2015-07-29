@@ -31,13 +31,15 @@ ddlStmt
     | createUser
     | alterUser
     | dropUser
+    | createRole
+    | dropRole
     ;
 
 alterSystem
-    : K_ALTER K_SYSTEM datasourceClause
+    : K_ALTER K_SYSTEM dataSourceClause
     ;
 
-datasourceClause
+dataSourceClause
     : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_BY jdbcConnectionString
     ;
 
@@ -73,6 +75,18 @@ oldPassword
     : STRING_LITERAL
     ;
 
+createRole
+    : K_CREATE K_ROLE role
+    ;
+
+dropRole
+    : K_DROP K_ROLE role
+    ;
+
+role
+    : IDENTIFIER
+    ;
+
 error
     : UNEXPECTED_CHAR
         {
@@ -89,6 +103,7 @@ K_DATASOURCE : D A T A S O U R C E ;
 K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
 K_REPLACE : R E P L A C E ;
+K_ROLE : R O L E ;
 K_SYSTEM : S Y S T E M ;
 K_USER : U S E R ;
 

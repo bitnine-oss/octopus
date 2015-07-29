@@ -18,6 +18,7 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.meta.model.MetaRole;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import org.apache.metamodel.DataContext;
@@ -193,6 +194,37 @@ public class JDOMetaContext implements MetaContext
             if (table == null)
                 throw new MetaException("table '" + name + "' does not exist");
             return table;
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
+    }
+
+    @Override
+    public MetaRole createRole(String name) throws MetaException
+    {
+        try {
+            MRole role = new MRole(name);
+            pm.makePersistent(role);
+            return role;
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to create role '" + name + "'");
+        }
+    }
+
+    @Override
+    public void dropRoleByName(String name) throws MetaException
+    {
+
+        try {
+            Query query = pm.newQuery(MRole.class);
+            query.setFilter("name == '" + name + "'");
+            query.setUnique(true);
+
+            MRole role = (MRole) query.execute();
+            if (role == null)
+                throw new MetaException("role '" + name + "' does not exist");
+
+            pm.deletePersistent(role);
         } catch (RuntimeException e) {
             throw new MetaException(e);
         }

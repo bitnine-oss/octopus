@@ -136,6 +136,17 @@ public class QueryEngine
         {
             metaContext.dropUser(name);
         }
+
+        public void createRole(String role) throws Exception
+        {
+            metaContext.createRole(role);
+        }
+
+        @Override
+        public void dropRole(String role) throws Exception
+        {
+            metaContext.dropRoleByName(role);
+        }
     };
 
     public List<String> getDatasourceNames(SqlNode query) {

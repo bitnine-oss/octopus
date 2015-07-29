@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.meta;
 
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.meta.model.MetaRole;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 
@@ -33,6 +34,9 @@ public interface MetaContext
     MetaDataSource getDataSourceByName(String name) throws MetaException;
 
     MetaTable getTableByName(String name) throws MetaException;
+
+    MetaRole createRole(String name) throws MetaException;
+    void dropRoleByName(String name) throws MetaException;
 
     void close();
 }
