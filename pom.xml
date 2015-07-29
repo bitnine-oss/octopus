@@ -31,13 +31,14 @@ limitations under the License.
   </properties>
 
   <modules>
+    <module>octopus-project</module>
     <module>octopus-maven-plugin</module>
     <module>octopus-common</module>
     <module>octopus-meta</module>
+    <module>octopus-testutils</module>
     <module>octopus-meta-jdo</module>
     <module>octopus-core</module>
     <module>octopus-assembly</module>
-    <module>octopus-project</module>
   </modules>
 
   <build>

@@ -26,7 +26,7 @@ public class OctopusSqlTest
         String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';\n" +
                 "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n" +
                 "DROP USER octopus;\n" +
-                "ALTER USER octopus IDENTIFIED BY 'bitnine'\n" +
+                "ALTER USER octopus IDENTIFIED BY 'bitnine';\n" +
                 "CREATE ROLE octopus;\n" +
                 "DROP ROLE octopus;\n";
         List<OctopusSqlCommand> commands = OctopusSql.parse(query);

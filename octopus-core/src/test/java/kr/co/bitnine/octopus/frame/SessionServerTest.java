@@ -14,12 +14,12 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
 import kr.co.bitnine.octopus.schema.SchemaManager;
+import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.hadoop.conf.Configuration;
 
@@ -38,28 +38,37 @@ import java.util.Properties;
 
 public class SessionServerTest
 {
-    private TestDb testDb;
+    private MemoryDatabase metaMemDb;
+    private MemoryDatabase dataMemDb;
 
     @Before
     public void setUp() throws Exception
     {
         Class.forName("org.postgresql.Driver");
 
-        testDb = new TestDb();
-        testDb.create();
+        metaMemDb = new MemoryDatabase("META");
+        metaMemDb.start();
+
+        dataMemDb = new MemoryDatabase("DATA");
+        dataMemDb.start();
+        dataMemDb.init();
     }
 
     @After
     public void tearDown() throws Exception
     {
-        testDb.destroy();
+        dataMemDb.stop();
+        metaMemDb.stop();
     }
 
     @Test
     public void testStartup() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        testDb.setMetaStoreConf(conf);
+        conf.set("metastore.jdo.connection.drivername", metaMemDb.DRIVER_NAME);
+        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
+        conf.set("metastore.jdo.connection.username", "");
+        conf.set("metastore.jdo.connection.password", "");
 
         MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
         MetaStoreService metaStoreService = new MetaStoreService(metaStore);
@@ -84,7 +93,7 @@ public class SessionServerTest
         Connection conn = DriverManager.getConnection(url, info);
         assertFalse(conn.isClosed());
 
-        String query = "ALTER SYSTEM ADD DATASOURCE SQLITE CONNECT BY '" + testDb.getTestDbURL() + "'";
+        String query = "ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'";
         Statement stmt = conn.createStatement();
         stmt.execute(query);
 

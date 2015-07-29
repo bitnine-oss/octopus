@@ -18,6 +18,8 @@ import java.lang.reflect.Constructor;
 
 public final class MetaStores
 {
+    private MetaStores() { }
+
     public static MetaStore newInstance(String className) throws ReflectiveOperationException
     {
         Class<?> clazz = Class.forName(className);

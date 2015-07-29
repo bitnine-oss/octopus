@@ -24,15 +24,15 @@ limitations under the License.
     <relativePath>../octopus-project</relativePath>
   </parent>
 
-  <artifactId>octopus-meta</artifactId>
+  <artifactId>octopus-testutils</artifactId>
 
-  <name>Octopus MetaStore</name>
-  <description>Octopus MetaStore</description>
+  <name>Octopus Test Utilities</name>
+  <description>Octopus Test Utilities</description>
 
   <dependencies>
     <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
+      <groupId>org.xerial</groupId>
+      <artifactId>sqlite-jdbc</artifactId>
     </dependency>
   </dependencies>
 </project>

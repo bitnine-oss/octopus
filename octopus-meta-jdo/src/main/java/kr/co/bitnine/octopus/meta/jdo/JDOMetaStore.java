@@ -35,8 +35,8 @@ public class JDOMetaStore implements MetaStore
     {
         Properties props = new Properties();
         props.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-        props.setProperty("datanucleus.ConnectionURL", conf.getProperty("metastore.jdo.connection.URL"));
         props.setProperty("datanucleus.ConnectionDriverName", conf.getProperty("metastore.jdo.connection.drivername"));
+        props.setProperty("datanucleus.ConnectionURL", conf.getProperty("metastore.jdo.connection.URL"));
         props.setProperty("datanucleus.ConnectionUserName", conf.getProperty("metastore.jdo.connection.username"));
         props.setProperty("datanucleus.ConnectionPassword", conf.getProperty("metastore.jdo.connection.password"));
         props.setProperty("datanucleus.schema.autoCreateAll", "true");
