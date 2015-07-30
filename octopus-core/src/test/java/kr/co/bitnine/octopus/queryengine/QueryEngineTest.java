@@ -14,47 +14,68 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
-import kr.co.bitnine.octopus.TestDb;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
-import kr.co.bitnine.octopus.schema.MetaStore;
-
+import kr.co.bitnine.octopus.meta.MetaContext;
+import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.MetaStoreService;
+import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.schema.SchemaManager;
+import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 
 public class QueryEngineTest
 {
-    private TestDb testDb;
+    private MemoryDatabase metaMemDb;
+    private MemoryDatabase dataMemDb;
 
     @Before
     public void setUp() throws Exception
     {
-        testDb = new TestDb();
-        testDb.create();
+        metaMemDb = new MemoryDatabase("META");
+        metaMemDb.start();
+
+        dataMemDb = new MemoryDatabase("DATA");
+        dataMemDb.start();
+        dataMemDb.init();
     }
 
     @After
     public void tearDown() throws Exception
     {
-        testDb.destroy();
+        dataMemDb.stop();
+        metaMemDb.stop();
     }
 
     @Test
     public void test() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        testDb.setMetaStoreConf(conf);
+        conf.set("metastore.jdo.connection.drivername", metaMemDb.DRIVER_NAME);
+        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
+        conf.set("metastore.jdo.connection.username", "");
+        conf.set("metastore.jdo.connection.password", "");
 
-        MetaStore.closePMF();
-        MetaStore.init(conf);
-        MetaStore metaStore = MetaStore.get();
-        metaStore.addDataSource("SQLITE", testDb.getDriverName(), testDb.getTestDbURL(), testDb.getInitialConnection(), "test database");
+        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService.init(conf);
+        metaStoreService.start();
 
-        QueryEngine queryEngine = new QueryEngine(metaStore);
+        SchemaManager schemaManager = new SchemaManager(metaStore);
+        schemaManager.init(conf);
+        schemaManager.start();
+
+        MetaContext mc = metaStore.getMetaContext();
+
+        MetaDataSource metaDataSource = mc.addJdbcDataSource(dataMemDb.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        schemaManager.addDataSource(metaDataSource);
+
+        QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
         ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
         QueryResult qr = queryEngine.execute(es, 0);
@@ -67,6 +88,9 @@ public class QueryEngineTest
         qr.close();
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
-        metaStore.destroy();
+
+        mc.close();
+        schemaManager.stop();
+        metaStoreService.stop();
     }
 }

@@ -15,12 +15,13 @@
 package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.libpg.*;
+import kr.co.bitnine.octopus.meta.MetaContext;
+import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.queryengine.ExecutableStatement;
 import kr.co.bitnine.octopus.queryengine.ParsedStatement;
 import kr.co.bitnine.octopus.queryengine.QueryEngine;
 import kr.co.bitnine.octopus.queryengine.QueryResult;
-import kr.co.bitnine.octopus.schema.MetaStore;
-import kr.co.bitnine.octopus.schema.model.MUser;
+import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,7 +31,6 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Properties;
 import java.util.Random;
@@ -42,9 +42,6 @@ class Session implements Runnable
     private final SocketChannel clientChannel;
     private final int sessionId; // secret key
 
-    MetaStore metaStore;
-    QueryEngine queryEngine;
-
     interface EventHandler
     {
         void onClose(Session session);
@@ -53,8 +50,12 @@ class Session implements Runnable
     private final EventHandler eventHandler;
 
     private final MessageStream messageStream;
+    private final MetaContext metaContext;
+    private final SchemaManager schemaManager;
 
-    Session(SocketChannel clientChannel, EventHandler eventHandler)
+    QueryEngine queryEngine;
+
+    Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager)
     {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
@@ -62,6 +63,8 @@ class Session implements Runnable
         this.eventHandler = eventHandler;
 
         messageStream = new MessageStream(clientChannel);
+        this.metaContext = metaContext;
+        this.schemaManager = schemaManager;
     }
 
     int getId()
@@ -86,13 +89,11 @@ class Session implements Runnable
                 return;
             }
 
-            metaStore = MetaStore.get();
-
             // Start-up Phase
             handleStartupMessage(imsg);
             doAuthentication();
 
-            queryEngine = new QueryEngine(metaStore);
+            queryEngine = new QueryEngine(metaContext, schemaManager);
 
             messageLoop();
         } catch (Exception e) {
@@ -194,20 +195,21 @@ class Session implements Runnable
 
         // verify password
         String username = clientParams.getProperty(CLIENT_PARAM_USER);
-        MUser user = metaStore.getUserByName(username);
-        if (user == null) {
+        try {
+            String password = msg.getCString();
+            String currentPassword = metaContext.getUserPasswordByName(username);
+            if (!password.equals(currentPassword)) {
+                PostgresException pge = new PostgresException(
+                        PostgresException.Severity.FATAL,
+                        PostgresException.SQLSTATE.INVALID_PASSWORD,
+                        "password authentication failed for user " + username);
+                PostgresExceptions.report(messageStream, pge);
+            }
+        } catch (MetaException e) {
             PostgresException pge = new PostgresException(
                     PostgresException.Severity.FATAL,
                     PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
-                    "invalid user name '" + username + "'");
-            PostgresExceptions.report(messageStream, pge);
-        }
-        String password = msg.getCString();
-        if (!password.equals(user.getPassword())) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.INVALID_PASSWORD,
-                    "password authentication failed for user " + username);
+                    "invalid user name '" + username + "'", e);
             PostgresExceptions.report(messageStream, pge);
         }
 
@@ -539,7 +541,7 @@ class Session implements Runnable
             clientChannel.close();
         } catch (IOException e) { }
 
-        metaStore.destroy();
+        metaContext.close();
 
         eventHandler.onClose(this);
     }

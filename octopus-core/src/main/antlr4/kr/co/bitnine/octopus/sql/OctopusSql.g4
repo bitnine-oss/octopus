@@ -29,26 +29,38 @@ ddlStmts
 ddlStmt
     : alterSystem
     | createUser
+    | alterUser
+    | dropUser
+    | createRole
+    | dropRole
     ;
 
 alterSystem
-    : K_ALTER K_SYSTEM datasourceClause
+    : K_ALTER K_SYSTEM dataSourceClause
     ;
 
-datasourceClause
-    : K_ADD K_DATASOURCE datasourceName K_CONNECT K_BY jdbcConnectionString
+dataSourceClause
+    : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_BY jdbcConnectionString
+    ;
+
+dataSourceName
+    : IDENTIFIER
+    ;
+
+jdbcConnectionString
+    : STRING_LITERAL
     ;
 
 createUser
     : K_CREATE K_USER user K_IDENTIFIED K_BY password
     ;
 
-datasourceName
-    : IDENTIFIER
+alterUser
+    : K_ALTER K_USER user K_IDENTIFIED K_BY password ( K_REPLACE oldPassword )?
     ;
 
-jdbcConnectionString
-    : STRING_LITERAL
+dropUser
+    : K_DROP K_USER user
     ;
 
 user
@@ -57,6 +69,22 @@ user
 
 password
     : STRING_LITERAL
+    ;
+
+oldPassword
+    : STRING_LITERAL
+    ;
+
+createRole
+    : K_CREATE K_ROLE role
+    ;
+
+dropRole
+    : K_DROP K_ROLE role
+    ;
+
+role
+    : IDENTIFIER
     ;
 
 error
@@ -72,7 +100,10 @@ K_BY : B Y ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
 K_DATASOURCE : D A T A S O U R C E ;
+K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
+K_REPLACE : R E P L A C E ;
+K_ROLE : R O L E ;
 K_SYSTEM : S Y S T E M ;
 K_USER : U S E R ;
 

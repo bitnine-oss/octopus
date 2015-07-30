@@ -31,11 +31,14 @@ limitations under the License.
   </properties>
 
   <modules>
-    <module>octopus-common</module>
-    <module>octopus-core</module>
-    <module>octopus-maven-plugin</module>
-    <module>octopus-assembly</module>
     <module>octopus-project</module>
+    <module>octopus-maven-plugin</module>
+    <module>octopus-common</module>
+    <module>octopus-meta</module>
+    <module>octopus-testutils</module>
+    <module>octopus-meta-jdo</module>
+    <module>octopus-core</module>
+    <module>octopus-assembly</module>
   </modules>
 
   <build>
@@ -128,14 +131,6 @@ limitations under the License.
       </plugins>
     </pluginManagement>
   </build>
-
-  <repositories>
-    <repository>
-      <id>oracle</id>
-      <name>ORACLE JDBC Repository</name>
-      <url>http://maven.jahia.org/maven2</url>
-    </repository>
-  </repositories>
 
   <licenses>
     <license>

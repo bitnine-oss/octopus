@@ -340,9 +340,7 @@ public class VersionInfoMojo extends AbstractMojo
         }
     }
 
-    private class UnknownSCM extends AbstractSCM
-    {
-    }
+    private class UnknownSCM extends AbstractSCM { }
 
     /**
      * Returns a string representing current build time.

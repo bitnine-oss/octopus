@@ -20,6 +20,10 @@ public abstract class OctopusSqlCommand
     {
         ADD_DATASOURCE,
         CREATE_USER,
+        ALTER_USER,
+        DROP_USER,
+        CREATE_ROLE,
+        DROP_ROLE,
         OTHER
     }
 

@@ -63,6 +63,14 @@ public class PostgresException extends Exception
         this.sqlState = sqlState;
     }
 
+    public PostgresException(Severity severity, String sqlState, String message, Throwable cause)
+    {
+        super(message, cause);
+
+        this.severity = severity;
+        this.sqlState = sqlState;
+    }
+
     public PostgresException(Severity severity, String sqlState, Throwable cause)
     {
         super(cause);

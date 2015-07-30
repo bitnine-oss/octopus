@@ -14,48 +14,37 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
-import kr.co.bitnine.octopus.schema.MetaStore;
-import kr.co.bitnine.octopus.schema.model.MTable;
-import org.apache.calcite.sql.*;
+import kr.co.bitnine.octopus.schema.SchemaManager;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TableNameTranslator
+public final class TableNameTranslator
 {
-    MetaStore metaStore;
-
-    public TableNameTranslator(MetaStore metastore)
+    // translate FQN(Fully Qualified Name) to DSN(DataSource Name)
+    public static void toDSN(SqlNode query)
     {
-       this.metaStore = metastore;
-    }
+        ArrayList<SqlIdentifier> tableIds = new ArrayList();
+        query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
-    /* translate FQN(Fully Qualified Name) to DSN(DataSource Name) */
-    public void toDSN(SqlNode query)
-    {
-        ArrayList<SqlIdentifier> tableIDs = new ArrayList();
-        query.accept(new SqlTableIdentifierFindVisitor(tableIDs));
-
-        for (SqlIdentifier tableID : tableIDs) {
-            List<String> newName = new ArrayList();
-            newName.add(tableID.names.get(2));
-            tableID.setNames(newName, null);
+        for (SqlIdentifier tableID : tableIds) {
+            List<String> dsn = new ArrayList();
+            dsn.add(tableID.names.get(2));
+            tableID.setNames(dsn, null);
         }
     }
 
-    /* translate DSN to FQN */
-    public void toFQN(SqlNode query)
+    // translate DSN to FQN
+    public static void toFQN(SchemaManager schemaManager, SqlNode query)
     {
-        ArrayList<SqlIdentifier> tableIDs = new ArrayList();
-        query.accept(new SqlTableIdentifierFindVisitor(tableIDs));
+        ArrayList<SqlIdentifier> tableIds = new ArrayList();
+        query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
-        for (SqlIdentifier tableID : tableIDs) {
-            MTable mtable = metaStore.getTable(tableID);
-            List<String> newName = new ArrayList();
-            newName.add(mtable.getSchema().getDatasource().getName());
-            newName.add(mtable.getSchema().getName());
-            newName.add(mtable.getName());
-            tableID.setNames(newName, null);
+        for (SqlIdentifier tableId : tableIds) {
+            List<String> fqn = schemaManager.toFullyQualifiedTableName(tableId.names);
+            tableId.setNames(fqn, null);
         }
     }
 }
