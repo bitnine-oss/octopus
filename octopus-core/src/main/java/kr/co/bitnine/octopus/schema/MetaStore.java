@@ -316,9 +316,9 @@ public class MetaStore
         List<MTable> results = (List<MTable>) query.execute();
 
         if (results.size() == 0) {
-            /* fixme: not found exception */
+            throw new RuntimeException("Table not found: " + tableID.names);
         } else if (results.size() > 1) {
-            /* fixme: ambiguous table name exception */
+            throw new RuntimeException("Table name, " + tableID.names + " is ambiguous");
         }
 
         LOG.debug("table found: " + results.get(0).getName());

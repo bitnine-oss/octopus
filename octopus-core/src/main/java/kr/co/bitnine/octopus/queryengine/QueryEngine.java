@@ -82,7 +82,6 @@ public class QueryEngine
         Planner planner = Frameworks.getPlanner(config);
 
         SqlNode parse = planner.parse(query);
-        LOG.debug(parse);
 
         TableNameTranslator tnt = new TableNameTranslator(metaStore);
         tnt.toFQN(parse);
