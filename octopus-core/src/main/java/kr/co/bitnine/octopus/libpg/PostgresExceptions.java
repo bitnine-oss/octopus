@@ -18,7 +18,7 @@ public abstract class PostgresExceptions
 {
     public static void report(MessageStream messageStream, PostgresException postgresException) throws Exception
     {
-        messageStream.putMessage(postgresException.toMessage());
+        messageStream.putMessageAndFlush(postgresException.toMessage());
         if (postgresException.isError())
             throw postgresException;
     }

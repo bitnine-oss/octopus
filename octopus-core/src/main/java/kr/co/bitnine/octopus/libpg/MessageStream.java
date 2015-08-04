@@ -56,6 +56,12 @@ public class MessageStream
         byte[] body = message.getBody();
         putInt(PostgresConstants.INTEGER_BYTES + body.length);
         putBytes(body);
+    }
+
+    // Flush sendBuffer so client will see buffered messages immediately
+    public void putMessageAndFlush(Message message) throws IOException
+    {
+        putMessage(message);
         flush();
     }
 
@@ -68,7 +74,7 @@ public class MessageStream
                     PostgresException.Severity.FATAL,
                     PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
                     "incomplete packet");
-            putMessage(pge.toMessage());
+            putMessageAndFlush(pge.toMessage());
             throw pge;
         }
         byte[] body = new byte[len - PostgresConstants.INTEGER_BYTES];
@@ -160,7 +166,7 @@ public class MessageStream
         recvBuffer.flip();
     }
 
-    private void flush() throws IOException
+    public void flush() throws IOException
     {
         sendBuffer.flip();
 

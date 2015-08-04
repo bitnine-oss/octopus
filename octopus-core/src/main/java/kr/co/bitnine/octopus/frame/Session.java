@@ -181,7 +181,7 @@ class Session implements Runnable
         Message msg = Message.builder('R')
                 .putInt(3)
                 .build();
-        messageStream.putMessage(msg);
+        messageStream.putMessageAndFlush(msg);
 
         // receive PasswordMessage
         msg = messageStream.getMessage();
@@ -246,7 +246,7 @@ class Session implements Runnable
                 Message msg = Message.builder('Z')
                         .putChar(TransactionStatus.IDLE.getIndicator())
                         .build();
-                messageStream.putMessage(msg);
+                messageStream.putMessageAndFlush(msg);
                 ready = false;
             }
 
@@ -272,6 +272,9 @@ class Session implements Runnable
                     break;
                 case 'D':
                     handleDescribe(msg);
+                    break;
+                case 'H':
+                    messageStream.flush();
                     break;
                 case 'S':
                     LOG.debug("sync");
