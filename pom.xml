@@ -39,6 +39,7 @@ limitations under the License.
     <module>octopus-meta-jdo</module>
     <module>octopus-core</module>
     <module>octopus-assembly</module>
+    <module>octopus-jdbc</module>
   </modules>
 
   <build>

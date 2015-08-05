@@ -47,6 +47,11 @@ limitations under the License.
       <artifactId>octopus-meta-jdo</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>octopus-jdbc</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>commons-configuration</groupId>
@@ -89,6 +94,7 @@ limitations under the License.
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
     </dependency>
+
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>

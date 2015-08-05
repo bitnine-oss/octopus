@@ -40,6 +40,11 @@ limitations under the License.
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>octopus-jdbc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>octopus-common</artifactId>
         <version>${project.version}</version>
       </dependency>

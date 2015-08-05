@@ -44,7 +44,7 @@ public class SessionServerTest
     @Before
     public void setUp() throws Exception
     {
-        Class.forName("org.postgresql.Driver");
+        Class.forName("org.octopus.Driver");
 
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();
@@ -84,7 +84,7 @@ public class SessionServerTest
         server.start();
 
         InetSocketAddress addr = NetUtils.createSocketAddr("127.0.0.1:58000");
-        String url = "jdbc:postgresql://" + NetUtils.getHostPortString(addr) + "/db";
+        String url = "jdbc:octopus://" + NetUtils.getHostPortString(addr) + "/db";
 
         Properties info = new Properties();
         info.setProperty("user", "octopus");
