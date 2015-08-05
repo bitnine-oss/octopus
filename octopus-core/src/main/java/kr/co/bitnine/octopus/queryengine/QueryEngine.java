@@ -86,7 +86,6 @@ public class QueryEngine
         Planner planner = Frameworks.getPlanner(config);
 
         SqlNode parse = planner.parse(query);
-        LOG.debug(parse);
 
         TableNameTranslator.toFQN(schemaManager, parse);
         LOG.debug("FQN translated: " + parse.toString());
