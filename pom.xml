@@ -38,8 +38,8 @@ limitations under the License.
     <module>octopus-testutils</module>
     <module>octopus-meta-jdo</module>
     <module>octopus-core</module>
-    <module>octopus-assembly</module>
     <module>octopus-jdbc</module>
+    <module>octopus-assembly</module>
   </modules>
 
   <build>
@@ -92,6 +92,11 @@ limitations under the License.
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <version>2.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>2.4.1</version>
         </plugin>
 
         <!-- tools -->

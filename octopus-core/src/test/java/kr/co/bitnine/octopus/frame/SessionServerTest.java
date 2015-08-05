@@ -44,7 +44,7 @@ public class SessionServerTest
     @Before
     public void setUp() throws Exception
     {
-        Class.forName("org.octopus.Driver");
+        Class.forName("kr.co.bitnine.octopus.Driver");
 
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();

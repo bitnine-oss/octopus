@@ -69,6 +69,7 @@ limitations under the License.
         <include>${project.groupId}:octopus-meta</include>
         <include>${project.groupId}:octopus-meta-jdo</include>
         <include>${project.groupId}:octopus-core</include>
+        <include>${project.groupId}:octopus-jdbc</include>
       </includes>
       <binaries>
         <outputDirectory>share/octopus</outputDirectory>
