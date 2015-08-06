@@ -18,8 +18,15 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-abstract class ByteBuffers
+final class ByteBuffers
 {
+    /* Byte.BYTES, Integer.BYTES since Java 8 */
+    static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
+    static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
+    static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
+
+    private ByteBuffers() { }
+
     static String getCString(ByteBuffer buf)
     {
         int end;
@@ -39,7 +46,7 @@ abstract class ByteBuffers
         return str;
     }
 
-    private static int BYTEBUFFER_CAPACITY_MAX = 1 << 30;
+    static int BYTEBUFFER_CAPACITY_MAX = 1 << 30;
 
     static ByteBuffer enlargeByteBuffer(ByteBuffer buf, int needed)
     {

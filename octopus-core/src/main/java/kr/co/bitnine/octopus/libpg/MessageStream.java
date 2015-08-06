@@ -36,13 +36,13 @@ public class MessageStream
         recvBuffer.flip();
     }
 
-    public Message getInitialMessage() throws Exception
+    public Message getInitialMessage() throws IOException
     {
         byte[] body = getMessageBody();
         return new Message(body);
     }
 
-    public Message getMessage() throws Exception
+    public Message getMessage() throws IOException
     {
         char type = getChar();
         byte[] body = getMessageBody();
@@ -54,7 +54,7 @@ public class MessageStream
         char type = message.getType();
         putChar(type);
         byte[] body = message.getBody();
-        putInt(PostgresConstants.INTEGER_BYTES + body.length);
+        putInt(ByteBuffers.INTEGER_BYTES + body.length);
         putBytes(body);
     }
 
@@ -65,26 +65,20 @@ public class MessageStream
         flush();
     }
 
-    private byte[] getMessageBody() throws Exception
+    private byte[] getMessageBody() throws IOException
     {
         int len = getInt();
         /* length count includes itself */
-        if (len < PostgresConstants.INTEGER_BYTES) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
-                    "incomplete packet");
-            putMessageAndFlush(pge.toMessage());
-            throw pge;
-        }
-        byte[] body = new byte[len - PostgresConstants.INTEGER_BYTES];
+        if (len < ByteBuffers.INTEGER_BYTES)
+            throw new EOFException("invalid message length");
+        byte[] body = new byte[len - ByteBuffers.INTEGER_BYTES];
         getBytes(body);
         return body;
     }
 
     private char getChar() throws IOException
     {
-        if (recvBuffer.remaining() < PostgresConstants.BYTE_BYTES)
+        if (recvBuffer.remaining() < ByteBuffers.BYTE_BYTES)
             read();
 
         return (char) recvBuffer.get();
@@ -92,7 +86,7 @@ public class MessageStream
 
     private int getInt() throws IOException
     {
-        if (recvBuffer.remaining() < PostgresConstants.INTEGER_BYTES)
+        if (recvBuffer.remaining() < ByteBuffers.INTEGER_BYTES)
             read();
 
         return recvBuffer.getInt();
@@ -118,7 +112,7 @@ public class MessageStream
 
     private void putChar(char c) throws IOException
     {
-        if (sendBuffer.remaining() < PostgresConstants.BYTE_BYTES)
+        if (sendBuffer.remaining() < ByteBuffers.BYTE_BYTES)
             flush();
 
         sendBuffer.put((byte) c);
@@ -126,7 +120,7 @@ public class MessageStream
 
     private void putInt(int i) throws IOException
     {
-        if (sendBuffer.remaining() < PostgresConstants.INTEGER_BYTES)
+        if (sendBuffer.remaining() < ByteBuffers.INTEGER_BYTES)
             flush();
 
         sendBuffer.putInt(i);
@@ -161,7 +155,7 @@ public class MessageStream
          */
         int ret = socketChannel.read(recvBuffer);
         if (ret == -1)
-            throw new EOFException();
+            throw new EOFException("unexpected EOF on client connection");
 
         recvBuffer.flip();
     }

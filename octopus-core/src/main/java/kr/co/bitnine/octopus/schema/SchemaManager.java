@@ -60,9 +60,9 @@ public class SchemaManager extends AbstractService
         this.metaStore = metaStore;
         rootSchema = Frameworks.createRootSchema(false);
 
-        dataSourceMap = new HashMap();
-        schemaMap = new HashMap();
-        tableMap = new HashMap();
+        dataSourceMap = new HashMap<>();
+        schemaMap = new HashMap<>();
+        tableMap = new HashMap<>();
     }
 
     @Override
@@ -107,7 +107,7 @@ public class SchemaManager extends AbstractService
     {
         List<T> values = map.get(key);
         if (values == null) {
-            values = new ArrayList();
+            values = new ArrayList<>();
             map.put(key, values);
         }
         values.add(value);
@@ -155,7 +155,7 @@ public class SchemaManager extends AbstractService
                 break;
         }
 
-        List<String> fqn = new ArrayList();
+        List<String> fqn = new ArrayList<>();
         fqn.add(dataSource.getName());
         fqn.add(schema.getName());
         fqn.add(table.getName());

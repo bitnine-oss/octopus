@@ -30,7 +30,7 @@ public abstract class OctopusSql
 
         Listener()
         {
-            commands = new ArrayList();
+            commands = new ArrayList<>();
         }
 
         @Override
@@ -87,7 +87,7 @@ public abstract class OctopusSql
             commands.add(new OctopusSqlDropRole(name));
         }
 
-        List getSqlCommands()
+        List<OctopusSqlCommand> getSqlCommands()
         {
             return commands;
         }

@@ -63,7 +63,7 @@ public class SessionServer extends AbstractService
     {
         super.serviceInit(conf);
 
-        sessions = new ConcurrentHashMap();
+        sessions = new ConcurrentHashMap<>();
 
         executor = new ThreadPoolExecutor(
                 0,
@@ -95,7 +95,7 @@ public class SessionServer extends AbstractService
         listener = null;
 
         executor.shutdownNow();
-        boolean terminated = executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);;
+        boolean terminated = executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);
         if (!terminated)
             LOG.warn("there are remaining sessions still running");
         executor = null;

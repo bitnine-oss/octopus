@@ -39,7 +39,7 @@ public class JDOMetaStoreTest
     public void test() throws Exception
     {
         Properties conf = new Properties();
-        conf.setProperty("metastore.jdo.connection.drivername", metaMemDb.DRIVER_NAME);
+        conf.setProperty("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
         conf.setProperty("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
         conf.setProperty("metastore.jdo.connection.username", "");
         conf.setProperty("metastore.jdo.connection.password", "");
@@ -49,7 +49,7 @@ public class JDOMetaStoreTest
 
         MetaContext mc = metaStore.getMetaContext();
 
-        mc.addJdbcDataSource(dataMemDb.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
 
         MetaTable metaTable = mc.getTableByName("BITNINE");
         Collection<MetaColumn> columns = metaTable.getColumns();

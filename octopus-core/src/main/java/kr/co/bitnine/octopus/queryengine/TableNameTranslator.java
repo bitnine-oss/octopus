@@ -26,11 +26,11 @@ public final class TableNameTranslator
     // translate FQN(Fully Qualified Name) to DSN(DataSource Name)
     public static void toDSN(SqlNode query)
     {
-        ArrayList<SqlIdentifier> tableIds = new ArrayList();
+        ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
         for (SqlIdentifier tableID : tableIds) {
-            List<String> dsn = new ArrayList();
+            List<String> dsn = new ArrayList<>();
             dsn.add(tableID.names.get(2));
             tableID.setNames(dsn, null);
         }
@@ -39,7 +39,7 @@ public final class TableNameTranslator
     // translate DSN to FQN
     public static void toFQN(SchemaManager schemaManager, SqlNode query)
     {
-        ArrayList<SqlIdentifier> tableIds = new ArrayList();
+        ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
         for (SqlIdentifier tableId : tableIds) {

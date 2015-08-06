@@ -20,7 +20,7 @@ import org.postgresql.jdbc4.Jdbc4Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-// XXX: Why we need to extend AbstractJdbcDatabaseMetaData?
+// XXX: Why we need to extend AbstractJdbc4DatabaseMetaData?
 public class OctopusDatabaseMetaData extends AbstractJdbc4DatabaseMetaData implements DatabaseMetaData
 {
     public OctopusDatabaseMetaData(Jdbc4Connection conn)

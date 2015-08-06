@@ -19,7 +19,6 @@ import kr.co.bitnine.octopus.frame.SessionServer;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
-import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.util.StringUtils;
 

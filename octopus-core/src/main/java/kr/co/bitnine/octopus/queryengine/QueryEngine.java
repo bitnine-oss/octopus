@@ -149,7 +149,7 @@ public class QueryEngine
     };
 
     public List<String> getDatasourceNames(SqlNode query) {
-        final Set<String> dsSet = new HashSet();
+        final Set<String> dsSet = new HashSet<>();
         query.accept(new SqlShuttle() {
             @Override
             public SqlNode visit(SqlIdentifier identifier) {
@@ -162,7 +162,7 @@ public class QueryEngine
             }
         });
 
-        return new ArrayList(dsSet);
+        return new ArrayList<>(dsSet);
     }
 
     public QueryResult executeByPassQuery(SqlNode validatedQuery, String dataSourceName) throws MetaException
@@ -178,10 +178,8 @@ public class QueryEngine
             Connection conn = DriverManager.getConnection(dataSource.getConnectionString());
             Statement stmt = conn.createStatement();
             rs = stmt.executeQuery(validatedQuery.toString());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException | SQLException e) {
+            LOG.error(ExceptionUtils.getStackTrace(e));
         }
 
         return new QueryResult(rs);

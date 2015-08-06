@@ -65,7 +65,7 @@ public class SessionServerTest
     public void testStartup() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        conf.set("metastore.jdo.connection.drivername", metaMemDb.DRIVER_NAME);
+        conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
         conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
         conf.set("metastore.jdo.connection.username", "");
         conf.set("metastore.jdo.connection.password", "");

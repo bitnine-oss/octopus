@@ -59,21 +59,21 @@ public class Message
 
         public Builder putChar(char c)
         {
-            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.BYTE_BYTES);
+            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.BYTE_BYTES);
             buf.put((byte) c);
             return this;
         }
 
         public Builder putShort(short h)
         {
-            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.SHORT_BYTES);
+            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.SHORT_BYTES);
             buf.putShort(h);
             return this;
         }
 
         public Builder putInt(int i)
         {
-            ByteBuffers.enlargeByteBuffer(buf, PostgresConstants.INTEGER_BYTES);
+            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.INTEGER_BYTES);
             buf.putInt(i);
             return this;
         }

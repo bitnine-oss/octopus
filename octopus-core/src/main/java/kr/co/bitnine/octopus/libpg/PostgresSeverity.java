@@ -14,15 +14,14 @@
 
 package kr.co.bitnine.octopus.libpg;
 
-public final class PostgresConstants
+public enum PostgresSeverity
 {
-    public static final int CANCEL_REQUEST_CODE = (1234 << 16) | 5678;
-    public static final int SSL_REQUEST_CODE = (1234 << 16) | 5679;
-
-    private PostgresConstants() { }
-
-    public static int PROTOCOL_VERSION(int major, int minor)
-    {
-        return (major << 16) | minor;
-    }
+    DEBUG,      // debugging messages
+    LOG,        // server operational messages
+    INFO,       // messages specifically requested by user
+    NOTICE,     // helpful messages to users about query operation
+    WARNING,    // unexpected messages
+    ERROR,      // abort transaction
+    FATAL,      // abort session
+    PANIC       // abort system
 }

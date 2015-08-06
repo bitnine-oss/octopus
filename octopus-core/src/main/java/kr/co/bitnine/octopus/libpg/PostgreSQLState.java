@@ -14,12 +14,25 @@
 
 package kr.co.bitnine.octopus.libpg;
 
-public abstract class PostgresExceptions
+public enum PostgreSQLState
 {
-    public static void report(MessageStream messageStream, PostgresException postgresException) throws Exception
+    SUCCESSFUL_COMPLETION("00000"),
+    WARNING("01000"),
+    PROTOCOL_VIOLATION("08P01"),
+    FEATURE_NOT_SUPPORTED("0A000"),
+    INVALID_PASSWORD("28P01"),
+    TOO_MANY_CONNECTIONS("53300"),
+    INTERNAL_ERROR("XX000");
+
+    private final String state;
+
+    PostgreSQLState(String state)
     {
-        messageStream.putMessageAndFlush(postgresException.toMessage());
-        if (postgresException.isError())
-            throw postgresException;
+        this.state = state;
+    }
+
+    public String getState()
+    {
+        return this.state;
     }
 }

@@ -427,9 +427,7 @@ public class Driver implements java.sql.Driver
      */
     public boolean acceptsURL(String url)
     {
-        if (parseURL(url, null) == null)
-            return false;
-        return true;
+        return (parseURL(url, null) != null);
     }
 
     /**
@@ -551,9 +549,7 @@ public class Driver implements java.sql.Driver
             String[] addresses = l_urlServer.substring(0, slash).split(",");
             StringBuilder hosts = new StringBuilder();
             StringBuilder ports = new StringBuilder();
-            for (int addr = 0; addr < addresses.length; ++addr) {
-                String address = addresses[addr];
-
+            for (String address : addresses) {
                 int portIdx = address.lastIndexOf(':');
                 if (portIdx != -1 && address.lastIndexOf(']') < portIdx) {
                     String portStr = address.substring(portIdx + 1);
@@ -583,9 +579,7 @@ public class Driver implements java.sql.Driver
 
         //parse the args part of the url
         String[] args = l_urlArgs.split("&");
-        for (int i = 0; i < args.length; ++i)
-        {
-            String token = args[i];
+        for (String token : args) {
             if (token.length() ==  0)
                 continue;
 

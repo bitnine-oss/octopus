@@ -26,6 +26,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
@@ -72,46 +73,50 @@ class Session implements Runnable
         return sessionId;
     }
 
+    private static final ThreadLocal<Session> localSession = new ThreadLocal<>();
+
+    static Session currentSession()
+    {
+        return localSession.get();
+    }
+
     @Override
     public void run()
     {
+        localSession.set(this);
         try {
-            Message imsg = messageStream.getInitialMessage();
-            int i = imsg.peekInt();
+            boolean proceed = doStartup();
+            if (proceed) {
+                doAuthentication();
 
-            if (i == PostgresConstants.CANCEL_REQUEST_CODE) {
-                handleCancelRequest(imsg);
-                return;
+                queryEngine = new QueryEngine(metaContext, schemaManager);
+
+                messageLoop();
             }
-
-            if (i == PostgresConstants.SSL_REQUEST_CODE) {
-                handleSSLRequest(imsg);
-                return;
-            }
-
-            // Start-up Phase
-            handleStartupMessage(imsg);
-            doAuthentication();
-
-            queryEngine = new QueryEngine(metaContext, schemaManager);
-
-            messageLoop();
         } catch (Exception e) {
-            LOG.error(ExceptionUtils.getStackTrace(e));
+            LOG.fatal(ExceptionUtils.getStackTrace(e));
         }
+        localSession.remove();
 
         close();
+    }
+
+    void emitErrorReport(PostgresErrorData errorData) throws IOException
+    {
+        messageStream.putMessageAndFlush(errorData.toMessage());
     }
 
     void reject()
     {
         try {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.TOO_MANY_CONNECTIONS,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.TOO_MANY_CONNECTIONS,
                     "too many clients already, rejected");
-            PostgresExceptions.report(messageStream, pge);
-        } catch (Exception e) { }
+            emitErrorReport(edata);
+        } catch (IOException e) {
+            LOG.error(ExceptionUtils.getStackTrace(e));
+        }
 
         close();
     }
@@ -124,35 +129,55 @@ class Session implements Runnable
     private ParsedStatement parsedStatement = null;
     private ExecutableStatement executableStatement = null;
 
+    private boolean doStartup() throws IOException, OctopusException
+    {
+        Message imsg = messageStream.getInitialMessage();
+        int i = imsg.peekInt();
+
+        if (i == PostgresConstants.CANCEL_REQUEST_CODE) {
+            handleCancelRequest(imsg);
+            return false;
+        }
+
+        if (i == PostgresConstants.SSL_REQUEST_CODE) {
+            handleSSLRequest(imsg);
+            return doStartup();
+        }
+
+        handleStartupMessage(imsg);
+        return true;
+    }
+
     private void handleCancelRequest(Message imsg)
     {
         imsg.getInt(); // cancel request code
-        imsg.getInt(); // process ID
+        imsg.getInt(); // process ID, not used
         int cancelKey = imsg.getInt();
 
         // cancelKey is the same as sessionId
         eventHandler.onCancel(cancelKey);
     }
 
-    // TODO
-    private void handleSSLRequest(Message imsg) throws Exception
+    private void handleSSLRequest(Message imsg) throws IOException, OctopusException
     {
-        PostgresException pge = new PostgresException(
-                PostgresException.Severity.FATAL,
-                PostgresException.SQLSTATE.FEATURE_NOT_SUPPORTED,
+        // TODO: SSL
+
+        PostgresErrorData edata = new PostgresErrorData(
+                PostgresSeverity.FATAL,
+                PostgreSQLState.FEATURE_NOT_SUPPORTED,
                 "unsupported frontend protocol");
-        PostgresExceptions.report(messageStream, pge);
+        new OctopusException(edata).emitErrorReport();
     }
 
-    private void handleStartupMessage(Message imsg) throws Exception
+    private void handleStartupMessage(Message imsg) throws IOException, OctopusException
     {
         int version = imsg.getInt();
         if (version != PostgresConstants.PROTOCOL_VERSION(3, 0)) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.FEATURE_NOT_SUPPORTED,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.FEATURE_NOT_SUPPORTED,
                     "unsupported frontend protocol");
-            PostgresExceptions.report(messageStream, pge);
+            new OctopusException(edata).emitErrorReport();
         }
 
         Properties params = new Properties();
@@ -175,7 +200,7 @@ class Session implements Runnable
     }
 
     // NOTE: Now, cleartext only
-    private void doAuthentication() throws Exception
+    private void doAuthentication() throws IOException, OctopusException
     {
         // AuthenticationCleartextPassword
         Message msg = Message.builder('R')
@@ -186,11 +211,11 @@ class Session implements Runnable
         // receive PasswordMessage
         msg = messageStream.getMessage();
         if (msg.getType() != 'p') {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.PROTOCOL_VIOLATION,
                     "expected password response, got message type '" + msg.getType() + "'");
-            PostgresExceptions.report(messageStream, pge);
+            new OctopusException(edata).emitErrorReport();
         }
 
         // verify password
@@ -199,18 +224,18 @@ class Session implements Runnable
             String password = msg.getCString();
             String currentPassword = metaContext.getUserPasswordByName(username);
             if (!password.equals(currentPassword)) {
-                PostgresException pge = new PostgresException(
-                        PostgresException.Severity.FATAL,
-                        PostgresException.SQLSTATE.INVALID_PASSWORD,
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.FATAL,
+                        PostgreSQLState.INVALID_PASSWORD,
                         "password authentication failed for user " + username);
-                PostgresExceptions.report(messageStream, pge);
+                new OctopusException(edata).emitErrorReport();
             }
         } catch (MetaException e) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
-                    "invalid user name '" + username + "'", e);
-            PostgresExceptions.report(messageStream, pge);
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    "invalid user name '" + username + "'");
+            new OctopusException(edata, e).emitErrorReport();
         }
 
         // AuthenticationOk
@@ -218,8 +243,6 @@ class Session implements Runnable
                 .putInt(0)
                 .build();
         messageStream.putMessage(msg);
-
-        // TODO: initialize user schema
 
         // TODO: ParameterStatus
 
@@ -235,64 +258,97 @@ class Session implements Runnable
 
     private void messageLoop() throws Exception
     {
-        /*
-         * Normal Phase
-         */
+        boolean doingExtendedQueryMessage = false;
+        boolean ignoreTillSync = false;
+        boolean sendReadyForQuery = true;
 
-        boolean ready = true;
         while (true) {
-            if (ready) {
-                // ReadyForQuery
-                Message msg = Message.builder('Z')
-                        .putChar(TransactionStatus.IDLE.getIndicator())
-                        .build();
-                messageStream.putMessageAndFlush(msg);
-                ready = false;
-            }
+            try {
+                doingExtendedQueryMessage = false;
 
-            Message msg = messageStream.getMessage();
+                if (sendReadyForQuery) {
+                    Message msg = Message.builder('Z')
+                            .putChar(TransactionStatus.IDLE.getIndicator())
+                            .build();
+                    messageStream.putMessageAndFlush(msg);
+                    sendReadyForQuery = false;
+                }
 
-            char type = msg.getType();
-            switch (type) {
-                case 'Q':
-                    handleQuery(msg);
-                    ready = true;
-                    break;
-                case 'P':
-                    handleParse(msg);
-                    break;
-                case 'B':
-                    handleBind(msg);
-                    break;
-                case 'E':
-                    handleExecute(msg);
-                    break;
-                case 'C':
-                    handleClose(msg);
-                    break;
-                case 'D':
-                    handleDescribe(msg);
-                    break;
-                case 'H':
-                    messageStream.flush();
-                    break;
-                case 'S':
-                    LOG.debug("sync");
-                    ready = true;
-                    break;
-                case 'X':
-                    LOG.info("Terminate received");
-                    return;
-                case 'd':   // copy data
-                case 'c':   // copy done
-                case 'f':   // copy fail
-                    break;  // ignore these messages
-                default:
-                    PostgresException pge = new PostgresException(
-                            PostgresException.Severity.FATAL,
-                            PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
-                            "invalid frontend message type '" + type + "'");
-                    PostgresExceptions.report(messageStream, pge);
+                Message msg = messageStream.getMessage();
+
+                if (ignoreTillSync)
+                    continue;
+
+                char type = msg.getType();
+                switch (type) {
+                    case 'Q':
+                        handleQuery(msg);
+                        sendReadyForQuery = true;
+                        break;
+                    case 'P':
+                        doingExtendedQueryMessage = true;
+                        handleParse(msg);
+                        break;
+                    case 'B':
+                        doingExtendedQueryMessage = true;
+                        handleBind(msg);
+                        break;
+                    case 'E':
+                        doingExtendedQueryMessage = true;
+                        handleExecute(msg);
+                        break;
+                    case 'C':
+                        doingExtendedQueryMessage = true;
+                        handleClose(msg);
+                        break;
+                    case 'D':
+                        doingExtendedQueryMessage = true;
+                        handleDescribe(msg);
+                        break;
+                    case 'H':
+                        doingExtendedQueryMessage = true;
+                        messageStream.flush();
+                        break;
+                    case 'S':
+                        ignoreTillSync = false;
+                        sendReadyForQuery = true;
+                        break;
+                    case 'X':
+                        ignoreTillSync = false;
+                        LOG.info("Terminate received");
+                        return;
+                    case 'd':   // copy data
+                    case 'c':   // copy done
+                    case 'f':   // copy fail
+                        break;  // ignore these messages
+                    default:
+                        PostgresErrorData edata = new PostgresErrorData(
+                                PostgresSeverity.FATAL,
+                                PostgreSQLState.PROTOCOL_VIOLATION,
+                                "invalid frontend message type '" + type + "'");
+                        new OctopusException(edata).emitErrorReport();
+                }
+            } catch (OctopusException oe) {
+                switch (oe.getErrorData().severity) {
+                    case PANIC: // exit Octopus
+                        LOG.fatal(ExceptionUtils.getStackTrace(oe));
+                        System.exit(0);
+                    case FATAL: // exit Session
+                        throw oe;
+                }
+
+                // ERROR
+                if (doingExtendedQueryMessage)
+                    ignoreTillSync = true;
+                if (!ignoreTillSync)
+                    sendReadyForQuery = true;
+            } catch (EOFException eofe) {
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.FATAL,
+                        PostgreSQLState.PROTOCOL_VIOLATION,
+                        eofe.getMessage());
+                emitErrorReport(edata);
+                throw eofe;
             }
         }
     }
@@ -417,11 +473,11 @@ class Session implements Runnable
         }
 
         if (!stmtName.isEmpty()) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.PROTOCOL_VIOLATION,
                     "named prepared statement is not supported");
-            PostgresExceptions.report(messageStream, pge);
+            new OctopusException(edata).emitErrorReport();
         }
 
         parsedStatement = queryEngine.parse(query, oids);
@@ -464,11 +520,11 @@ class Session implements Runnable
         }
 
         if (!portalName.isEmpty() || !stmtName.isEmpty()) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.PROTOCOL_VIOLATION,
                     "named prepared statement is not supported");
-            PostgresExceptions.report(messageStream, pge);
+            new OctopusException(edata).emitErrorReport();
         }
 
         executableStatement = queryEngine.bind(parsedStatement, paramFormats, paramValues, resultFormats);
@@ -488,11 +544,11 @@ class Session implements Runnable
         LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
 
         if (!portalName.isEmpty()) {
-            PostgresException pge = new PostgresException(
-                    PostgresException.Severity.FATAL,
-                    PostgresException.SQLSTATE.PROTOCOL_VIOLATION,
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgreSQLState.PROTOCOL_VIOLATION,
                     "named prepared statement is not supported");
-            PostgresExceptions.report(messageStream, pge);
+            new OctopusException(edata).emitErrorReport();
         }
 
         if (queryResult == null) { // DDL
@@ -542,7 +598,9 @@ class Session implements Runnable
     {
         try {
             clientChannel.close();
-        } catch (IOException e) { }
+        } catch (IOException e) {
+            LOG.info(ExceptionUtils.getStackTrace(e));
+        }
 
         metaContext.close();
 

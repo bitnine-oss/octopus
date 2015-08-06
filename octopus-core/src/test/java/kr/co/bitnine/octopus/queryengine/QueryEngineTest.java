@@ -56,7 +56,7 @@ public class QueryEngineTest
     public void test() throws Exception
     {
         Configuration conf = new OctopusConfiguration();
-        conf.set("metastore.jdo.connection.drivername", metaMemDb.DRIVER_NAME);
+        conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
         conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
         conf.set("metastore.jdo.connection.username", "");
         conf.set("metastore.jdo.connection.password", "");
@@ -72,7 +72,7 @@ public class QueryEngineTest
 
         MetaContext mc = metaStore.getMetaContext();
 
-        MetaDataSource metaDataSource = mc.addJdbcDataSource(dataMemDb.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        MetaDataSource metaDataSource = mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
         schemaManager.addDataSource(metaDataSource);
 
         QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
