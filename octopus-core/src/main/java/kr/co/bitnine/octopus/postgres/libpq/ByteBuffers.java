@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.libpg;
+package kr.co.bitnine.octopus.postgres.libpq;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;

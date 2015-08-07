@@ -12,12 +12,14 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.libpg;
+package kr.co.bitnine.octopus.postgres.utils;
+
+import kr.co.bitnine.octopus.postgres.libpq.Message;
 
 public class PostgresErrorData
 {
     public final PostgresSeverity severity;
-    public final PostgreSQLState sqlState;
+    public final PostgresSQLState sqlState;
     public final String message;
 
     public String detail = null;
@@ -35,12 +37,12 @@ public class PostgresErrorData
     public int line = 0;
     public String routine = null;
 
-    public PostgresErrorData(PostgresSeverity severity, PostgreSQLState sqlState)
+    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState)
     {
         this(severity, sqlState, "missing error text");
     }
 
-    public PostgresErrorData(PostgresSeverity severity, PostgreSQLState sqlState, String message)
+    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState, String message)
     {
         this.severity = severity;
         this.sqlState = sqlState;

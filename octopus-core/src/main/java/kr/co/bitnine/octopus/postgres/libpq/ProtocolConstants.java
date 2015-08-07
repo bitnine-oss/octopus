@@ -12,14 +12,14 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.libpg;
+package kr.co.bitnine.octopus.postgres.libpq;
 
-public final class PostgresConstants
+public final class ProtocolConstants
 {
     public static final int CANCEL_REQUEST_CODE = (1234 << 16) | 5678;
     public static final int SSL_REQUEST_CODE = (1234 << 16) | 5679;
 
-    private PostgresConstants() { }
+    private ProtocolConstants() { }
 
     public static int PROTOCOL_VERSION(int major, int minor)
     {

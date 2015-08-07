@@ -14,7 +14,7 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.libpg.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 
 import java.io.IOException;
 

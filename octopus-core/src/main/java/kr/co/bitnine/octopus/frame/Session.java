@@ -14,9 +14,16 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.libpg.*;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
+import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.libpq.Message;
+import kr.co.bitnine.octopus.postgres.libpq.MessageStream;
+import kr.co.bitnine.octopus.postgres.libpq.ProtocolConstants;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
+import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.postgres.xact.TransactionStatus;
 import kr.co.bitnine.octopus.queryengine.ExecutableStatement;
 import kr.co.bitnine.octopus.queryengine.ParsedStatement;
 import kr.co.bitnine.octopus.queryengine.QueryEngine;
@@ -111,7 +118,7 @@ class Session implements Runnable
         try {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.TOO_MANY_CONNECTIONS,
+                    PostgresSQLState.TOO_MANY_CONNECTIONS,
                     "too many clients already, rejected");
             emitErrorReport(edata);
         } catch (IOException e) {
@@ -134,12 +141,12 @@ class Session implements Runnable
         Message imsg = messageStream.getInitialMessage();
         int i = imsg.peekInt();
 
-        if (i == PostgresConstants.CANCEL_REQUEST_CODE) {
+        if (i == ProtocolConstants.CANCEL_REQUEST_CODE) {
             handleCancelRequest(imsg);
             return false;
         }
 
-        if (i == PostgresConstants.SSL_REQUEST_CODE) {
+        if (i == ProtocolConstants.SSL_REQUEST_CODE) {
             handleSSLRequest(imsg);
             return doStartup();
         }
@@ -164,7 +171,7 @@ class Session implements Runnable
 
         PostgresErrorData edata = new PostgresErrorData(
                 PostgresSeverity.FATAL,
-                PostgreSQLState.FEATURE_NOT_SUPPORTED,
+                PostgresSQLState.FEATURE_NOT_SUPPORTED,
                 "unsupported frontend protocol");
         new OctopusException(edata).emitErrorReport();
     }
@@ -172,10 +179,10 @@ class Session implements Runnable
     private void handleStartupMessage(Message imsg) throws IOException, OctopusException
     {
         int version = imsg.getInt();
-        if (version != PostgresConstants.PROTOCOL_VERSION(3, 0)) {
+        if (version != ProtocolConstants.PROTOCOL_VERSION(3, 0)) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.FEATURE_NOT_SUPPORTED,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
                     "unsupported frontend protocol");
             new OctopusException(edata).emitErrorReport();
         }
@@ -213,7 +220,7 @@ class Session implements Runnable
         if (msg.getType() != 'p') {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    PostgresSQLState.PROTOCOL_VIOLATION,
                     "expected password response, got message type '" + msg.getType() + "'");
             new OctopusException(edata).emitErrorReport();
         }
@@ -226,14 +233,14 @@ class Session implements Runnable
             if (!password.equals(currentPassword)) {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.FATAL,
-                        PostgreSQLState.INVALID_PASSWORD,
+                        PostgresSQLState.INVALID_PASSWORD,
                         "password authentication failed for user " + username);
                 new OctopusException(edata).emitErrorReport();
             }
         } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    PostgresSQLState.PROTOCOL_VIOLATION,
                     "invalid user name '" + username + "'");
             new OctopusException(edata, e).emitErrorReport();
         }
@@ -252,8 +259,6 @@ class Session implements Runnable
                 .putInt(sessionId)
                 .build();
         messageStream.putMessage(msg);
-
-        LOG.info("BackendKeyData");
     }
 
     private void messageLoop() throws Exception
@@ -324,7 +329,7 @@ class Session implements Runnable
                     default:
                         PostgresErrorData edata = new PostgresErrorData(
                                 PostgresSeverity.FATAL,
-                                PostgreSQLState.PROTOCOL_VIOLATION,
+                                PostgresSQLState.PROTOCOL_VIOLATION,
                                 "invalid frontend message type '" + type + "'");
                         new OctopusException(edata).emitErrorReport();
                 }
@@ -345,7 +350,7 @@ class Session implements Runnable
             } catch (EOFException eofe) {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.FATAL,
-                        PostgreSQLState.PROTOCOL_VIOLATION,
+                        PostgresSQLState.PROTOCOL_VIOLATION,
                         eofe.getMessage());
                 emitErrorReport(edata);
                 throw eofe;
@@ -382,7 +387,7 @@ class Session implements Runnable
         for (int i = 1; i <= colCnt; i++) {
             String colName = rsmd.getColumnName(i);
             int colType = rsmd.getColumnType(i);
-            int oid = Oid.fromTypes(colType);
+            int oid = PostgresType.fromTypes(colType);
 
             msgBld.putCString(colName)
                     .putInt(0)              // table OID
@@ -419,7 +424,11 @@ class Session implements Runnable
                                 .putBytes(vBytes);
                         break;
                     default:
-                        throw new RuntimeException("not supported type");
+                        PostgresErrorData edata = new PostgresErrorData(
+                                PostgresSeverity.ERROR,
+                                PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                                "currently data type " + rsmd.getColumnType(i) + " is not supported");
+                        new OctopusException(edata).emitErrorReport();
                 }
             }
             messageStream.putMessage(msgBld.build());
@@ -461,21 +470,24 @@ class Session implements Runnable
     {
         String stmtName = msg.getCString();
         String query = msg.getCString();
-        short numParam = msg.getShort();
-        int[] oids = (numParam > 0 ? new int[numParam] : null);
-        for (short i = 0; i < numParam; i++)
-            oids[i] = msg.getInt();
+        short numParams = msg.getShort();
+        int[] oids = null;
+        if (numParams > 0) {
+            oids = new int[numParams];
+            for (short i = 0; i < numParams; i++)
+                oids[i] = msg.getInt();
+        }
 
         LOG.debug("stmtName=" + stmtName + ", query='" + query + "'");
         if (LOG.isDebugEnabled()) {
-            for (short i = 0; i < numParam; i++)
+            for (short i = 0; i < numParams; i++)
                 LOG.debug("OID[" + i + "]=" + oids[i]);
         }
 
         if (!stmtName.isEmpty()) {
             PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
                     "named prepared statement is not supported");
             new OctopusException(edata).emitErrorReport();
         }
@@ -522,7 +534,7 @@ class Session implements Runnable
         if (!portalName.isEmpty() || !stmtName.isEmpty()) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    PostgresSQLState.PROTOCOL_VIOLATION,
                     "named prepared statement is not supported");
             new OctopusException(edata).emitErrorReport();
         }
@@ -546,7 +558,7 @@ class Session implements Runnable
         if (!portalName.isEmpty()) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
-                    PostgreSQLState.PROTOCOL_VIOLATION,
+                    PostgresSQLState.PROTOCOL_VIOLATION,
                     "named prepared statement is not supported");
             new OctopusException(edata).emitErrorReport();
         }

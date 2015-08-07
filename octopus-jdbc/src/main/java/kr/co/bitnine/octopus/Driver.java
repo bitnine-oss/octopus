@@ -13,7 +13,7 @@
  */
 
 /*
- * Borrowed from PostgreSQL JDBC Driver
+ * Borrowed from PostgreSQL JDBC driver
  */
 
 package kr.co.bitnine.octopus;

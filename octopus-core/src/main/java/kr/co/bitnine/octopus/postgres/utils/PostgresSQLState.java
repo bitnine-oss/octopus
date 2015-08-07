@@ -12,16 +12,27 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.libpg;
+package kr.co.bitnine.octopus.postgres.utils;
 
-public enum PostgresSeverity
+public enum PostgresSQLState
 {
-    DEBUG,      // debugging messages
-    LOG,        // server operational messages
-    INFO,       // messages specifically requested by user
-    NOTICE,     // helpful messages to users about query operation
-    WARNING,    // unexpected messages
-    ERROR,      // abort transaction
-    FATAL,      // abort session
-    PANIC       // abort system
+    SUCCESSFUL_COMPLETION("00000"),
+    WARNING("01000"),
+    PROTOCOL_VIOLATION("08P01"),
+    FEATURE_NOT_SUPPORTED("0A000"),
+    INVALID_PASSWORD("28P01"),
+    TOO_MANY_CONNECTIONS("53300"),
+    INTERNAL_ERROR("XX000");
+
+    private final String state;
+
+    PostgresSQLState(String state)
+    {
+        this.state = state;
+    }
+
+    public String getState()
+    {
+        return this.state;
+    }
 }
