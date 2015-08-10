@@ -12,78 +12,77 @@
  * limitations under the License.
  */
 
+/*
+ * Borrowed from PostgreSQL JDBC driver
+ */
+
 package kr.co.bitnine.octopus.postgres.catalog;
 
-import java.sql.Types;
-
-/* Borrowed from PostgreSQL JDBC driver */
-public final class PostgresType
+public enum PostgresType
 {
-    private PostgresType() { }
+    UNSPECIFIED(0), // InvalidOid
 
-    public static final int UNSPECIFIED = 0;        // InvalidOid
+    BOOL(16),
+    BYTEA(17),
+    CHAR(18),
+    NAME(19),
+    INT8(20),
+    INT2(21),
+    INT4(23),
+    TEXT(25),
+    OID(26),
 
-    public static final int BOOL = 16;
-    public static final int BYTEA = 17;
-    public static final int CHAR = 18;
-    public static final int NAME = 19;
-    public static final int INT8 = 20;
-    public static final int INT2 = 21;
-    public static final int INT4 = 23;
-    public static final int TEXT = 25;
-    public static final int OID = 26;
+    FLOAT4(700),
+    FLOAT8(701),
+    MONEY(790),
+    MONEY_ARRAY(791),
 
-    public static final int FLOAT4 = 700;
-    public static final int FLOAT8 = 701;
-    public static final int MONEY = 790;
-    public static final int MONEY_ARRAY = 791;
+    BOOL_ARRAY(1000),
+    BYTEA_ARRAY(1001),
+    NAME_ARRAY(1003),
+    INT2_ARRAY(1005),
+    INT4_ARRAY(1007),
+    TEXT_ARRAY(1009),
+    BPCHAR_ARRAY(1014),
+    VARCHAR_ARRAY(1015),
+    INT8_ARRAY(1016),
+    FLOAT4_ARRAY(1021),
+    FLOAT8_ARRAY(1022),
+    OID_ARRAY(1028),
+    BPCHAR(1042),
+    VARCHAR(1043),
+    DATE(1082),
+    TIME(1083),
 
-    public static final int BOOL_ARRAY = 1000;
-    public static final int BYTEA_ARRAY = 1001;
-    public static final int NAME_ARRAY = 1003;
-    public static final int INT2_ARRAY = 1005;
-    public static final int INT4_ARRAY = 1007;
-    public static final int TEXT_ARRAY = 1009;
-    public static final int BPCHAR_ARRAY = 1014;
-    public static final int VARCHAR_ARRAY = 1015;
-    public static final int INT8_ARRAY = 1016;
-    public static final int FLOAT4_ARRAY = 1021;
-    public static final int FLOAT8_ARRAY = 1022;
-    public static final int OID_ARRAY = 1028;
-    public static final int BPCHAR = 1042;
-    public static final int VARCHAR = 1043;
-    public static final int DATE = 1082;
-    public static final int TIME = 1083;
+    TIMESTAMP(1114),
+    TIMESTAMP_ARRAY(1115),
+    DATE_ARRAY(1182),
+    TIME_ARRAY(1183),
+    TIMESTAMPTZ(1184),
+    TIMESTAMPTZ_ARRAY(1185),
+    INTERVAL(1186),
+    INTERVAL_ARRAY(1187),
 
-    public static final int TIMESTAMP = 1114;
-    public static final int TIMESTAMP_ARRAY = 1115;
-    public static final int DATE_ARRAY = 1182;
-    public static final int TIME_ARRAY = 1183;
-    public static final int TIMESTAMPTZ = 1184;
-    public static final int TIMESTAMPTZ_ARRAY = 1185;
-    public static final int INTERVAL = 1186;
-    public static final int INTERVAL_ARRAY = 1187;
+    NUMERIC_ARRAY(1231),
+    TIMETZ(1266),
+    TIMETZ_ARRAY(1270),
 
-    public static final int NUMERIC_ARRAY = 1231;
-    public static final int TIMETZ = 1266;
-    public static final int TIMETZ_ARRAY = 1270;
+    BIT(1560),
+    BIT_ARRAY(1561),
 
-    public static final int BIT = 1560;
-    public static final int BIT_ARRAY = 1561;
+    NUMERIC(1700),
 
-    public static final int NUMERIC = 1700;
+    VOID(2278);
 
-    public static final int VOID = 2278;
+    private final int oid;
 
-    public static int fromTypes(int type)
+    PostgresType(int oid)
     {
-        switch (type) {
-            case Types.INTEGER:
-                return INT4;
-            case Types.VARCHAR:
-                return VARCHAR;
-            default:
-                return UNSPECIFIED;
-        }
+        this.oid = oid;
+    }
+
+    public int getOid()
+    {
+        return oid;
     }
 }
