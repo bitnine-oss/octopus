@@ -20,6 +20,7 @@ import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 import kr.co.bitnine.octopus.postgres.libpq.Message;
 import kr.co.bitnine.octopus.postgres.libpq.MessageStream;
 import kr.co.bitnine.octopus.postgres.libpq.ProtocolConstants;
+import kr.co.bitnine.octopus.postgres.utils.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
@@ -375,7 +376,7 @@ class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
-    private void sendRowDescription(QueryResult qr) throws Exception
+    private void sendRowDescription(QueryResult qr, FormatCode[] formats) throws Exception
     {
         ResultSet rs = qr.unwrap(ResultSet.class);
         ResultSetMetaData rsmd = rs.getMetaData();
@@ -390,12 +391,12 @@ class Session implements Runnable
             PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
 
             msgBld.putCString(colName)
-                    .putInt(0)                              // table OID
-                    .putShort((short) 0)                    // attribute number
-                    .putInt(type.oid())                     // data type OID
-                    .putShort((short) type.typeLength())    // data type size
-                    .putInt(-1)                             // type-specific type modifier
-                    .putShort((short) 0);                   // FIXME: not yet known
+                    .putInt(0)                                  // table OID
+                    .putShort((short) 0)                        // attribute number
+                    .putInt(type.oid())                         // data type OID
+                    .putShort((short) type.typeLength())        // data type size
+                    .putInt(-1)                                 // type-specific type modifier
+                    .putShort((short) FormatCode.TEXT.code());  // FIXME: not yet known
         }
         messageStream.putMessage(msgBld.build());
     }
