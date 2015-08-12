@@ -14,34 +14,41 @@
 
 package kr.co.bitnine.octopus.queryengine;
 
+import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.Arrays;
 import java.util.List;
 
-/*
- * prepared statement
- */
 public class ParsedStatement
 {
     private boolean isDdl;
 
-    private SqlNode validatedQuery;
-    private int[] oids;
+    private final SqlNode validatedQuery;
+    private final String queryString;
+    private final PostgresType[] paramTypes;
+    private final String commandTag;
 
     private List<OctopusSqlCommand> ddlCommands;
 
-    public ParsedStatement(SqlNode validatedQuery, int[] oids)
+    public ParsedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
     {
         isDdl = false;
 
         this.validatedQuery = validatedQuery;
-        this.oids = oids;
+        this.queryString = queryString;
+        this.paramTypes = paramTypes;
+        commandTag = null;
     }
 
     public ParsedStatement(List<OctopusSqlCommand> commands)
     {
+        validatedQuery = null;
+        queryString = null;
+        paramTypes = null;
+        commandTag = null;
+
         isDdl = true;
 
         ddlCommands = commands;
@@ -57,9 +64,14 @@ public class ParsedStatement
         return validatedQuery;
     }
 
-    public int[] getOids()
+    public PostgresType[] getParamTypes()
     {
-        return Arrays.copyOf(oids, oids.length);
+        return Arrays.copyOf(paramTypes, paramTypes.length);
+    }
+
+    public String getCommandTag()
+    {
+        return commandTag;
     }
 
     public List<OctopusSqlCommand> getDdlCommands()

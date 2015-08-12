@@ -12,77 +12,126 @@
  * limitations under the License.
  */
 
-/*
- * Borrowed from PostgreSQL JDBC driver
- */
-
 package kr.co.bitnine.octopus.postgres.catalog;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public enum PostgresType
 {
-    UNSPECIFIED(0), // InvalidOid
+    UNSPECIFIED         (0,     0),
 
-    BOOL(16),
-    BYTEA(17),
-    CHAR(18),
-    NAME(19),
-    INT8(20),
-    INT2(21),
-    INT4(23),
-    TEXT(25),
-    OID(26),
+    BOOL                (16,    1),
+    BYTEA               (17,    -1),
+    CHAR                (18,    1),
+    NAME                (19,    64),
+    INT8                (20,    8),
+    INT2                (21,    2),
+    INT4                (23,    4),
+    TEXT                (25,    -1),
+    OID                 (26,    4),
 
-    FLOAT4(700),
-    FLOAT8(701),
-    MONEY(790),
-    MONEY_ARRAY(791),
+    XML                 (142,   -1),
+    XML_ARRAY           (143,   -1),
 
-    BOOL_ARRAY(1000),
-    BYTEA_ARRAY(1001),
-    NAME_ARRAY(1003),
-    INT2_ARRAY(1005),
-    INT4_ARRAY(1007),
-    TEXT_ARRAY(1009),
-    BPCHAR_ARRAY(1014),
-    VARCHAR_ARRAY(1015),
-    INT8_ARRAY(1016),
-    FLOAT4_ARRAY(1021),
-    FLOAT8_ARRAY(1022),
-    OID_ARRAY(1028),
-    BPCHAR(1042),
-    VARCHAR(1043),
-    DATE(1082),
-    TIME(1083),
+    POINT               (600,   16),
+    BOX                 (603,   32),
 
-    TIMESTAMP(1114),
-    TIMESTAMP_ARRAY(1115),
-    DATE_ARRAY(1182),
-    TIME_ARRAY(1183),
-    TIMESTAMPTZ(1184),
-    TIMESTAMPTZ_ARRAY(1185),
-    INTERVAL(1186),
-    INTERVAL_ARRAY(1187),
+    FLOAT4              (700,   4),
+    FLOAT8              (701,   8),
+    MONEY               (790,   8),
+    MONEY_ARRAY         (791,   -1),
 
-    NUMERIC_ARRAY(1231),
-    TIMETZ(1266),
-    TIMETZ_ARRAY(1270),
+    BOOL_ARRAY          (1000,  -1),
+    BYTEA_ARRAY         (1001,  -1),
+    CHAR_ARRAY          (1002,  -1),
+    NAME_ARRAY          (1003,  -1),
+    INT2_ARRAY          (1005,  -1),
+    INT4_ARRAY          (1007,  -1),
+    TEXT_ARRAY          (1009,  -1),
+    BPCHAR_ARRAY        (1014,  -1),
+    VARCHAR_ARRAY       (1015,  -1),
+    INT8_ARRAY          (1016,  -1),
+    FLOAT4_ARRAY        (1021,  -1),
+    FLOAT8_ARRAY        (1022,  -1),
+    OID_ARRAY           (1028,  -1),
+    BPCHAR              (1042,  -1),
+    VARCHAR             (1043,  -1),
+    DATE                (1082,  4),
+    TIME                (1083,  8),
 
-    BIT(1560),
-    BIT_ARRAY(1561),
+    TIMESTAMP           (1114,  8),
+    TIMESTAMP_ARRAY     (1115,  -1),
+    DATE_ARRAY          (1182,  -1),
+    TIME_ARRAY          (1183,  -1),
+    TIMESTAMPTZ         (1184,  8),
+    TIMESTAMPTZ_ARRAY   (1185,  -1),
+    INTERVAL            (1186,  16),
+    INTERVAL_ARRAY      (1187,  -1),
 
-    NUMERIC(1700),
+    NUMERIC_ARRAY       (1231,  -1),
+    TIMETZ              (1266,  12),
+    TIMETZ_ARRAY        (1270,  -1),
 
-    VOID(2278);
+    BIT                 (1560,  -1),
+    BIT_ARRAY           (1561,  -1),
+    VARBIT              (1562,  -1),
+    VARBIT_ARRAY        (1563,  -1),
+
+    NUMERIC             (1700,  -1),
+
+    VOID                (2278,  4),
+
+    UUID                (2950,  16),
+    UUID_ARRAY          (2951,  -1);
 
     private final int oid;
+    private final String typeName;
 
-    PostgresType(int oid)
+    /*
+     * -1 indicates a "varlena" type (one that has a length word)
+     * -2 indicates a null-terminated C string
+     */
+    private final int typeLength;
+
+    PostgresType(int oid, int typeLength)
     {
         this.oid = oid;
+
+        String typeName = name().toLowerCase();
+        if (typeName.endsWith("_array"))
+            typeName = "_" + typeName.substring(0, typeName.lastIndexOf('_'));
+        this.typeName = typeName;
+
+        this.typeLength = typeLength;
     }
 
-    public int getOid()
+    public int oid()
     {
         return oid;
+    }
+
+    public String typeName()
+    {
+        return typeName;
+    }
+
+    public int typeLength()
+    {
+        return typeLength;
+    }
+
+    private static final Map<Integer, PostgresType> oidToType = new HashMap<>();
+
+    static
+    {
+        for (PostgresType type : PostgresType.values())
+            oidToType.put(type.oid(), type);
+    }
+
+    public static PostgresType ofOid(int oid)
+    {
+        PostgresType type = oidToType.get(oid);
+        return type == null ? UNSPECIFIED : type;
     }
 }

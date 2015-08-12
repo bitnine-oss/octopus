@@ -387,15 +387,15 @@ class Session implements Runnable
         for (int i = 1; i <= colCnt; i++) {
             String colName = rsmd.getColumnName(i);
             int colType = rsmd.getColumnType(i);
-            int oid = PostgresType.fromTypes(colType);
+            PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
 
             msgBld.putCString(colName)
-                    .putInt(0)              // table OID
-                    .putShort((short) 0)    // attribute number
-                    .putInt(oid)            // data type OID
-                    .putShort((short) -1)   // data type size (variable-width)
-                    .putInt(0)              // type-specific type modifier
-                    .putShort((short) 0);   // not yet known
+                    .putInt(0)                              // table OID
+                    .putShort((short) 0)                    // attribute number
+                    .putInt(type.oid())                     // data type OID
+                    .putShort((short) type.typeLength())    // data type size
+                    .putInt(-1)                             // type-specific type modifier
+                    .putShort((short) 0);                   // FIXME: not yet known
         }
         messageStream.putMessage(msgBld.build());
     }
@@ -443,12 +443,10 @@ class Session implements Runnable
 
     private void handleQuery(Message msg) throws Exception
     {
-        String query = msg.getCString();
-        LOG.debug("query: " + query);
+        String queryString = msg.getCString();
+        LOG.debug("queryString: " + queryString);
 
-        parsedStatement = queryEngine.parse(query, null);
-        executableStatement = queryEngine.bind(parsedStatement, null, null, null);
-        QueryResult qr = queryEngine.execute(executableStatement, 0);
+        QueryResult qr = queryEngine.query(queryString);
 
         // DDL
         if (qr == null) {
@@ -469,21 +467,19 @@ class Session implements Runnable
     private void handleParse(Message msg) throws Exception
     {
         String stmtName = msg.getCString();
-        String query = msg.getCString();
+        String queryString = msg.getCString();
         short numParams = msg.getShort();
-        int[] oids = null;
-        if (numParams > 0) {
-            oids = new int[numParams];
-            for (short i = 0; i < numParams; i++)
-                oids[i] = msg.getInt();
-        }
+        PostgresType[] paramTypes = new PostgresType[numParams];
+        for (short i = 0; i < numParams; i++)
+            paramTypes[i] = PostgresType.ofOid(msg.getInt());
 
-        LOG.debug("stmtName=" + stmtName + ", query='" + query + "'");
+        LOG.debug("stmtName=" + stmtName + ", queryString='" + queryString + "'");
         if (LOG.isDebugEnabled()) {
-            for (short i = 0; i < numParams; i++)
-                LOG.debug("OID[" + i + "]=" + oids[i]);
+            for (short i = 0; i < paramTypes.length; i++)
+                LOG.debug("paramTypes[" + i + "]=" + paramTypes[i].name());
         }
 
+        // FIXME: CachedPlanSource (parsed query)
         if (!stmtName.isEmpty()) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
@@ -492,7 +488,7 @@ class Session implements Runnable
             new OctopusException(edata).emitErrorReport();
         }
 
-        parsedStatement = queryEngine.parse(query, oids);
+        parsedStatement = queryEngine.parse(queryString, stmtName, paramTypes);
 
         // ParseComplete
         messageStream.putMessage(Message.builder('1').build());

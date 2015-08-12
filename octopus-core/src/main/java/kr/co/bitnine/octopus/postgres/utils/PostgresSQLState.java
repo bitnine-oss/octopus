@@ -16,13 +16,13 @@ package kr.co.bitnine.octopus.postgres.utils;
 
 public enum PostgresSQLState
 {
-    SUCCESSFUL_COMPLETION("00000"),
-    WARNING("01000"),
+    SUCCESSFUL_COMPLETION("00000"), // default when severity <= NOTICE
+    WARNING("01000"),               // default when severity == WARNING
     PROTOCOL_VIOLATION("08P01"),
     FEATURE_NOT_SUPPORTED("0A000"),
     INVALID_PASSWORD("28P01"),
     TOO_MANY_CONNECTIONS("53300"),
-    INTERNAL_ERROR("XX000");
+    INTERNAL_ERROR("XX000");        // default when severity >= ERROR
 
     private final String state;
 

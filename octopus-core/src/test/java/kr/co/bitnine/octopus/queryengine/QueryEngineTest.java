@@ -76,7 +76,7 @@ public class QueryEngineTest
         schemaManager.addDataSource(metaDataSource);
 
         QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
-        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", null);
+        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", "", null);
         ExecutableStatement es = queryEngine.bind(ps, null, null, null);
         QueryResult qr = queryEngine.execute(es, 0);
         ResultSet rs = qr.unwrap(ResultSet.class);

@@ -17,6 +17,7 @@ package kr.co.bitnine.octopus.queryengine;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -62,19 +63,32 @@ public class QueryEngine
  */
     }
 
-    public ParsedStatement parse(String query, int[] oids) throws Exception
+    public QueryResult query(String queryString) throws Exception
     {
+        ParsedStatement parsedStatement = parse(queryString, "", new PostgresType[0]);
+        ExecutableStatement executableStatement = bind(parsedStatement, null, null, null);
+        QueryResult qr = execute(executableStatement, 0);
+        return qr;
+    }
+
+    public ParsedStatement parse(String queryString, String stmtName, PostgresType[] paramTypes) throws Exception
+    {
+        // TODO: use stmtName to cache pasred statement
+        // XXX: parse query
+
         // DDL
 
         List<OctopusSqlCommand> commands = null;
         try {
-            commands = OctopusSql.parse(query);
+            commands = OctopusSql.parse(queryString);
         } catch (RecognitionException e) {
-            LOG.info(ExceptionUtils.getStackTrace(e));
+            LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
         if (commands != null)
             return new ParsedStatement(commands);
+
+        // tag = CreateCommandTag()
 
         // Query
 
@@ -85,7 +99,7 @@ public class QueryEngine
                 .build();
         Planner planner = Frameworks.getPlanner(config);
 
-        SqlNode parse = planner.parse(query);
+        SqlNode parse = planner.parse(queryString);
 
         TableNameTranslator.toFQN(schemaManager, parse);
         LOG.debug("FQN translated: " + parse.toString());
@@ -94,7 +108,7 @@ public class QueryEngine
         SqlNode validated = planner.validate(parse);
         schemaManager.unlockRead();
 
-        return new ParsedStatement(validated, oids);
+        return new ParsedStatement(validated, queryString, paramTypes);
     }
 
     public ExecutableStatement bind(ParsedStatement parsedStatement, short[] paramFormats, byte[][] paramValues, short[] resultFormats)
