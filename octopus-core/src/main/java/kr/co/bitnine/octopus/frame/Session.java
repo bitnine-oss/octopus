@@ -61,8 +61,7 @@ class Session implements Runnable
     private final MessageStream messageStream;
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
-
-    QueryEngine queryEngine;
+    private final QueryEngine queryEngine;
 
     Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager)
     {
@@ -74,6 +73,7 @@ class Session implements Runnable
         messageStream = new MessageStream(clientChannel);
         this.metaContext = metaContext;
         this.schemaManager = schemaManager;
+        queryEngine = new QueryEngine(metaContext, schemaManager);
     }
 
     int getId()
@@ -96,8 +96,6 @@ class Session implements Runnable
             boolean proceed = doStartup();
             if (proceed) {
                 doAuthentication();
-
-                queryEngine = new QueryEngine(metaContext, schemaManager);
 
                 messageLoop();
             }
@@ -459,7 +457,7 @@ class Session implements Runnable
 
 //        sendEmptyQueryResponse();
 
-        sendRowDescription(qr);
+        sendRowDescription(qr, new FormatCode[0]);
         int rowCnt = sendDataRow(qr);
 
         sendCommandComplete("SELECT " + rowCnt);
@@ -479,6 +477,13 @@ class Session implements Runnable
             for (short i = 0; i < paramTypes.length; i++)
                 LOG.debug("paramTypes[" + i + "]=" + paramTypes[i].name());
         }
+
+        /*
+         * Format of PostgreSQL's parameter is $n (starts from 1)
+         * Format of Calcite's parameter is ? (same as JDBC)
+         */
+        queryString = queryString.replaceAll("\\$\\d+", "?");
+        LOG.debug("refined queryString='" + queryString + "'");
 
         // FIXME: CachedPlanSource (parsed query)
         if (!stmtName.isEmpty()) {
@@ -600,7 +605,7 @@ class Session implements Runnable
         }
 
         queryResult = qr;
-        sendRowDescription(queryResult);
+        sendRowDescription(queryResult, new FormatCode[0]);
     }
 
     void close()

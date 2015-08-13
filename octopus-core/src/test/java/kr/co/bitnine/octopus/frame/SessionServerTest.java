@@ -30,10 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Properties;
 
 public class SessionServerTest
@@ -107,6 +104,18 @@ public class SessionServerTest
         }
         rs.close();
         stmt.close();
+
+        query = "SELECT ID, NAME FROM BITNINE WHERE NAME = ?";
+        PreparedStatement pstmt = conn.prepareStatement(query);
+        pstmt.setString(1, "octopus");
+        rs = pstmt.executeQuery();
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            System.out.println("id=" + id + ", name=" + name);
+        }
+        rs.close();
+        pstmt.close();
 
         query = "CREATE USER jsyang IDENTIFIED BY '0009';";
         stmt = conn.createStatement();
