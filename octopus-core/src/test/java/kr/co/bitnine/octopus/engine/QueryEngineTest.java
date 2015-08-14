@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.queryengine;
+package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.meta.MetaContext;
@@ -20,6 +20,7 @@ import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.postgres.utils.FormatCode;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
@@ -76,9 +77,9 @@ public class QueryEngineTest
         schemaManager.addDataSource(metaDataSource);
 
         QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
-        ParsedStatement ps = queryEngine.parse("SELECT ID, NAME FROM BITNINE", "", null);
-        ExecutableStatement es = queryEngine.bind(ps, null, null, null);
-        QueryResult qr = queryEngine.execute(es, 0);
+        queryEngine.parse("SELECT ID, NAME FROM BITNINE", "", null);
+        queryEngine.bind("", "", new FormatCode[0], new byte[0][], new FormatCode[0]);
+        QueryResult qr = queryEngine.execute("", 0);
         ResultSet rs = qr.unwrap(ResultSet.class);
         while (rs.next()) {
             int id = rs.getInt("id");

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.queryengine;
+package kr.co.bitnine.octopus.engine;
 
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.util.SqlBasicVisitor;

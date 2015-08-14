@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.queryengine;
+package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.calcite.sql.SqlIdentifier;

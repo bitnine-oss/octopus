@@ -14,6 +14,8 @@
 
 package kr.co.bitnine.octopus.frame;
 
+import kr.co.bitnine.octopus.engine.QueryEngine;
+import kr.co.bitnine.octopus.engine.QueryResult;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
@@ -25,10 +27,6 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.xact.TransactionStatus;
-import kr.co.bitnine.octopus.queryengine.ExecutableStatement;
-import kr.co.bitnine.octopus.queryengine.ParsedStatement;
-import kr.co.bitnine.octopus.queryengine.QueryEngine;
-import kr.co.bitnine.octopus.queryengine.QueryResult;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -132,8 +130,6 @@ class Session implements Runnable
     private final String CLIENT_PARAM_ENCODING = "client_encoding";
 
     private Properties clientParams;
-    private ParsedStatement parsedStatement = null;
-    private ExecutableStatement executableStatement = null;
 
     private boolean doStartup() throws IOException, OctopusException
     {
@@ -485,16 +481,7 @@ class Session implements Runnable
         queryString = queryString.replaceAll("\\$\\d+", "?");
         LOG.debug("refined queryString='" + queryString + "'");
 
-        // FIXME: CachedPlanSource (parsed query)
-        if (!stmtName.isEmpty()) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
-
-        parsedStatement = queryEngine.parse(queryString, stmtName, paramTypes);
+        queryEngine.parse(queryString, stmtName, paramTypes);
 
         // ParseComplete
         messageStream.putMessage(Message.builder('1').build());
@@ -508,9 +495,9 @@ class Session implements Runnable
         LOG.debug("bind (portalName=" + portalName + ", stmtName=" + stmtName + ")");
 
         short numParamFormat = msg.getShort();
-        short[] paramFormats = new short[numParamFormat];
+        FormatCode[] paramFormats = new FormatCode[numParamFormat];
         for (short i = 0; i < numParamFormat; i++)
-            paramFormats[i] = msg.getShort();
+            paramFormats[i] = FormatCode.ofCode((int) msg.getShort());
 
         short numParamValue = msg.getShort();
         byte[][] paramValues = new byte[numParamValue][];
@@ -520,28 +507,20 @@ class Session implements Runnable
         }
 
         short numResult = msg.getShort();
-        short[] resultFormats = new short[numResult];
+        FormatCode[] resultFormats = new FormatCode[numResult];
         for (short i = 0; i < numResult; i++)
-            resultFormats[i] = msg.getShort();
+            resultFormats[i] = FormatCode.ofCode((int) msg.getShort());
 
         if (LOG.isDebugEnabled()) {
             for (short i = 0; i < numParamFormat; i++)
-                LOG.debug("paramFormats[" + i + "]=" + paramFormats[i]);
+                LOG.debug("paramFormats[" + i + "]=" + paramFormats[i].name());
             for (short i = 0; i < numParamValue; i++)
                 LOG.debug("paramValues[" + i + "]=" + paramValues[i]);
             for (short i = 0; i < numResult; i++)
-                LOG.debug("resultFormats[" + i + "]=" + resultFormats[i]);
+                LOG.debug("resultFormats[" + i + "]=" + resultFormats[i].name());
         }
 
-        if (!portalName.isEmpty() || !stmtName.isEmpty()) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgresSQLState.PROTOCOL_VIOLATION,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
-
-        executableStatement = queryEngine.bind(parsedStatement, paramFormats, paramValues, resultFormats);
+        queryEngine.bind(stmtName, portalName, paramFormats, paramValues, resultFormats);
 
         // BindComplete
         messageStream.putMessage(Message.builder('2').build());
@@ -556,14 +535,6 @@ class Session implements Runnable
         int numRows = msg.getInt();
 
         LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
-
-        if (!portalName.isEmpty()) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgresSQLState.PROTOCOL_VIOLATION,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
 
         if (queryResult == null) { // DDL
             sendCommandComplete("");
@@ -597,8 +568,16 @@ class Session implements Runnable
 
         LOG.debug("describe (type='" + type + "', name=" + name + ")");
 
-        QueryResult qr = queryEngine.execute(executableStatement, 0);
-        if (qr == null && parsedStatement.isDdl()) {
+        if (type == 'S') {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                    "unsupported frontend protocol");
+            new OctopusException(edata).emitErrorReport();
+        }
+
+        QueryResult qr = queryEngine.execute(name, 0);
+        if (qr == null /*&& parsedStatement.isDdl()*/) {
             // NoData
             messageStream.putMessage(Message.builder('n').build());
             return;

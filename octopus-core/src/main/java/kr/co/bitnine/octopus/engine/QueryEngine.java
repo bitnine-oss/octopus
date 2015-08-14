@@ -12,12 +12,17 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.queryengine;
+package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.frame.OctopusException;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.utils.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -34,6 +39,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,34 +53,33 @@ public class QueryEngine
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
 
-    DataSourceManager dsm;
+    private ParsedStatement unnamedStatement = null;
+    private ExecutableStatement unnamedExStatement = null;
 
     public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
         this.metaContext = metaContext;
         this.schemaManager = schemaManager;
-
-/*
-        FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(rootSchema)
-                .build();
-
-        planner = Frameworks.getPlanner(config);
- */
     }
 
     public QueryResult query(String queryString) throws Exception
     {
-        ParsedStatement parsedStatement = parse(queryString, "", new PostgresType[0]);
-        ExecutableStatement executableStatement = bind(parsedStatement, null, null, null);
-        QueryResult qr = execute(executableStatement, 0);
+        parse(queryString, "", new PostgresType[0]);
+        bind("", "", null, null, null);
+        QueryResult qr = execute("", 0);
         return qr;
     }
 
-    public ParsedStatement parse(String queryString, String stmtName, PostgresType[] paramTypes) throws Exception
+    public void parse(String queryString, String stmtName, PostgresType[] paramTypes) throws Exception
     {
-        // TODO: use stmtName to cache pasred statement
-        // XXX: parse query
+        // TODO: use stmtName to cache ParsedStatement
+        if (!stmtName.isEmpty()) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                    "named prepared statement is not supported");
+            new OctopusException(edata).emitErrorReport();
+        }
 
         // DDL
 
@@ -85,8 +90,10 @@ public class QueryEngine
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
-        if (commands != null)
-            return new ParsedStatement(commands);
+        if (commands != null) {
+            unnamedStatement = new ParsedStatement(commands);
+            return;
+        }
 
         // tag = CreateCommandTag()
 
@@ -108,12 +115,33 @@ public class QueryEngine
         SqlNode validated = planner.validate(parse);
         schemaManager.unlockRead();
 
-        return new ParsedStatement(validated, queryString, paramTypes);
+        unnamedStatement = new ParsedStatement(validated, queryString, paramTypes);
     }
 
-    public ExecutableStatement bind(ParsedStatement parsedStatement, short[] paramFormats, byte[][] paramValues, short[] resultFormats)
+    public void bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws IOException, OctopusException
     {
-        return new ExecutableStatement(parsedStatement, paramFormats, paramValues, resultFormats);
+        ParsedStatement curStmt = null;
+        if (stmtName.isEmpty()) {
+            curStmt = unnamedStatement;
+        } else {
+            // TODO: use stmtName to get cached ParsedStatement
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                    "named prepared statement is not supported");
+            new OctopusException(edata).emitErrorReport();
+        }
+
+        // TODO: use portalName to cache ExecutableStatement
+        if (!portalName.isEmpty()) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                    "named prepared statement is not supported");
+            new OctopusException(edata).emitErrorReport();
+        }
+
+        unnamedExStatement = new ExecutableStatement(curStmt, paramFormats, paramValues, resultFormats);
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
@@ -199,9 +227,20 @@ public class QueryEngine
         return new QueryResult(rs);
     }
 
-    public QueryResult execute(ExecutableStatement executableStatement, int numRows) throws Exception
+    public QueryResult execute(String portalName, int numRows) throws Exception
     {
-        ParsedStatement ps = executableStatement.getParsedStatement();
+        ExecutableStatement curExStmt = null;
+        if (portalName.isEmpty()) {
+            curExStmt = unnamedExStatement;
+        } else {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.FATAL,
+                    PostgresSQLState.PROTOCOL_VIOLATION,
+                    "named prepared statement is not supported");
+            new OctopusException(edata).emitErrorReport();
+        }
+
+        ParsedStatement ps = curExStmt.getParsedStatement();
         if (ps.isDdl()) {
             for (OctopusSqlCommand c : ps.getDdlCommands())
                 OctopusSql.run(c, ddlRunner);

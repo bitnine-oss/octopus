@@ -17,7 +17,7 @@ public enum FormatCode
         return code;
     }
 
-    public FormatCode ofCode(int code)
+    public static FormatCode ofCode(int code)
     {
         return code == 0 ? TEXT : BINARY;
     }

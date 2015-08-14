@@ -12,18 +12,26 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.queryengine;
+package kr.co.bitnine.octopus.engine;
+
+import kr.co.bitnine.octopus.postgres.utils.FormatCode;
 
 /*
  * portal
  */
 public class ExecutableStatement
 {
-    private ParsedStatement parsedStatement;
+    private final ParsedStatement parsedStatement;
+    private final FormatCode[] paramFormats;
+    private final byte[][] paramValues;
+    private final FormatCode[] resultFormats;
 
-    public ExecutableStatement(ParsedStatement parsedStatement, short[] paramFormats, byte[][] paramValues, short[] resultFormats)
+    public ExecutableStatement(ParsedStatement parsedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
     {
         this.parsedStatement = parsedStatement;
+        this.paramFormats = paramFormats;
+        this.paramValues = paramValues;
+        this.resultFormats = resultFormats;
     }
 
     public ParsedStatement getParsedStatement()
