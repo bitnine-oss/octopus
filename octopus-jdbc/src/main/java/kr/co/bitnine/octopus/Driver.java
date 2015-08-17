@@ -412,7 +412,8 @@ public class Driver implements java.sql.Driver
     private static Connection makeConnection(String url, Properties props) throws SQLException
     {
         // FIXME: replace Jdbc4Connection to OctopusConnection
-        return new Jdbc4Connection(hostSpecs(props), user(props), database(props), props, url);
+        // return new Jdbc4Connection(hostSpecs(props), user(props), database(props), props, url);
+        return new OctopusConnection(hostSpecs(props), user(props), database(props), props, url);
     }
 
     /**
@@ -596,7 +597,7 @@ public class Driver implements java.sql.Driver
     /**
      * @return the address portion of the URL
      */
-    private static HostSpec[] hostSpecs(Properties props)
+    protected static HostSpec[] hostSpecs(Properties props)
     {
         String[] hosts = props.getProperty("PGHOST").split(",");
         String[] ports = props.getProperty("PGPORT").split(",");
@@ -610,7 +611,7 @@ public class Driver implements java.sql.Driver
     /**
      * @return the username of the URL
      */
-    private static String user(Properties props)
+    protected static String user(Properties props)
     {
         return props.getProperty("user", "");
     }
@@ -618,7 +619,7 @@ public class Driver implements java.sql.Driver
     /**
      * @return the database name of the URL
      */
-    private static String database(Properties props)
+    protected static String database(Properties props)
     {
         return props.getProperty("PGDBNAME", "");
     }
@@ -626,7 +627,7 @@ public class Driver implements java.sql.Driver
     /**
      * @return the timeout from the URL, in milliseconds
      */
-    private static long timeout(Properties props)
+    protected static long timeout(Properties props)
     {
         String timeout = PGProperty.LOGIN_TIMEOUT.get(props);
         if (timeout != null) {
