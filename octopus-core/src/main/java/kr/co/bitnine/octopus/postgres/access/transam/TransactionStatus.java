@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.postgres.xact;
+package kr.co.bitnine.octopus.postgres.access.transam;
 
 public enum TransactionStatus
 {

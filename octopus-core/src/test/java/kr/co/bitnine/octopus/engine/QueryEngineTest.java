@@ -20,7 +20,7 @@ import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
-import kr.co.bitnine.octopus.postgres.utils.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;

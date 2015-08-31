@@ -14,28 +14,28 @@
 
 package kr.co.bitnine.octopus.engine;
 
-import kr.co.bitnine.octopus.postgres.utils.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 
 /*
  * portal
  */
-public class ExecutableStatement
+public class Cursor
 {
-    private final ParsedStatement parsedStatement;
+    private final CachedStatement cachedStatement;
     private final FormatCode[] paramFormats;
     private final byte[][] paramValues;
     private final FormatCode[] resultFormats;
 
-    public ExecutableStatement(ParsedStatement parsedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
+    public Cursor(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
     {
-        this.parsedStatement = parsedStatement;
+        this.cachedStatement = cachedStatement;
         this.paramFormats = paramFormats;
         this.paramValues = paramValues;
         this.resultFormats = resultFormats;
     }
 
-    public ParsedStatement getParsedStatement()
+    public CachedStatement getCachedStatement()
     {
-        return parsedStatement;
+        return cachedStatement;
     }
 }

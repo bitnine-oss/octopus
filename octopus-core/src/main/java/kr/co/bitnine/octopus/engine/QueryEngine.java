@@ -19,10 +19,10 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
-import kr.co.bitnine.octopus.postgres.utils.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -53,8 +53,8 @@ public class QueryEngine
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
 
-    private ParsedStatement unnamedStatement = null;
-    private ExecutableStatement unnamedExStatement = null;
+    private CachedStatement unnamedStatement = null;
+    private Cursor unnamedExStatement = null;
 
     public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
@@ -91,7 +91,7 @@ public class QueryEngine
         }
 
         if (commands != null) {
-            unnamedStatement = new ParsedStatement(commands);
+            unnamedStatement = new CachedStatement(commands);
             return;
         }
 
@@ -115,12 +115,12 @@ public class QueryEngine
         SqlNode validated = planner.validate(parse);
         schemaManager.unlockRead();
 
-        unnamedStatement = new ParsedStatement(validated, queryString, paramTypes);
+        unnamedStatement = new CachedStatement(validated, queryString, paramTypes);
     }
 
     public void bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws IOException, OctopusException
     {
-        ParsedStatement curStmt = null;
+        CachedStatement curStmt = null;
         if (stmtName.isEmpty()) {
             curStmt = unnamedStatement;
         } else {
@@ -141,7 +141,7 @@ public class QueryEngine
             new OctopusException(edata).emitErrorReport();
         }
 
-        unnamedExStatement = new ExecutableStatement(curStmt, paramFormats, paramValues, resultFormats);
+        unnamedExStatement = new Cursor(curStmt, paramFormats, paramValues, resultFormats);
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
@@ -229,7 +229,7 @@ public class QueryEngine
 
     public QueryResult execute(String portalName, int numRows) throws Exception
     {
-        ExecutableStatement curExStmt = null;
+        Cursor curExStmt = null;
         if (portalName.isEmpty()) {
             curExStmt = unnamedExStatement;
         } else {
@@ -240,7 +240,7 @@ public class QueryEngine
             new OctopusException(edata).emitErrorReport();
         }
 
-        ParsedStatement ps = curExStmt.getParsedStatement();
+        CachedStatement ps = curExStmt.getCachedStatement();
         if (ps.isDdl()) {
             for (OctopusSqlCommand c : ps.getDdlCommands())
                 OctopusSql.run(c, ddlRunner);

@@ -21,7 +21,7 @@ import org.apache.calcite.sql.SqlNode;
 import java.util.Arrays;
 import java.util.List;
 
-public class ParsedStatement
+public class CachedStatement
 {
     private boolean isDdl;
 
@@ -32,7 +32,7 @@ public class ParsedStatement
 
     private List<OctopusSqlCommand> ddlCommands;
 
-    public ParsedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
+    public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
     {
         isDdl = false;
 
@@ -42,7 +42,7 @@ public class ParsedStatement
         commandTag = null;
     }
 
-    public ParsedStatement(List<OctopusSqlCommand> commands)
+    public CachedStatement(List<OctopusSqlCommand> commands)
     {
         validatedQuery = null;
         queryString = null;
