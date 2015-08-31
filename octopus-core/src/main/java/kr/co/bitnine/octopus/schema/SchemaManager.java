@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.schema;
 
+import kr.co.bitnine.octopus.engine.CatalogViewResultSet;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.MetaStore;
@@ -26,10 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.service.AbstractService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.ResultSet;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -190,4 +189,5 @@ public class SchemaManager extends AbstractService
     {
         readLock.unlock();
     }
+
 }

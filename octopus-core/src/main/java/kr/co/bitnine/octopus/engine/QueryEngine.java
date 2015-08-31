@@ -17,7 +17,7 @@ package kr.co.bitnine.octopus.engine;
 import kr.co.bitnine.octopus.frame.OctopusException;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
-import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.meta.model.*;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 import kr.co.bitnine.octopus.postgres.utils.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
@@ -41,10 +41,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class QueryEngine
 {
@@ -55,6 +52,9 @@ public class QueryEngine
 
     private ParsedStatement unnamedStatement = null;
     private ExecutableStatement unnamedExStatement = null;
+
+    // for catalog view pattern matching
+    private static final char SEARCH_STRING_ESCAPE = '\\';
 
     public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
@@ -188,6 +188,231 @@ public class QueryEngine
         {
             metaContext.dropRoleByName(role);
         }
+
+        @Override
+        public ResultSet showDataSources() throws Exception
+        {
+            CatalogViewResultSet resultSet = new CatalogViewResultSet();
+            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
+                String datasource_name = mdatasource.getName();
+                resultSet.addTuple(Arrays.asList(datasource_name));
+            }
+            return resultSet;
+        }
+
+        @Override
+        public ResultSet showSchemas(String datasource, String schemapattern) throws Exception
+        {
+            CatalogViewResultSet resultSet = new CatalogViewResultSet();
+            String regSchemaNamePattern = convertPattern(schemapattern);
+
+            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
+                String datasource_name = mdatasource.getName();
+
+                if (datasource != null && !datasource.equals(datasource_name))
+                    continue;
+
+                for (MetaSchema mschema : mdatasource.getSchemas()) {
+                    String schema_name = mschema.getName();
+
+                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
+                        continue;
+
+                    /* result columns:
+                        1. TABLE_SCHEM String
+                        2. TABLE_CATALOG String
+                     */
+                    resultSet.addTuple(Arrays.asList(datasource_name, schema_name));
+                }
+            }
+            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
+                @Override
+                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
+                    /* sort by TABLE_SCHEM and TABLE_CATALOG */
+                    int r = t1.get(0).compareTo(t2.get(0));
+                    if (r == 0) {
+                        r = t1.get(1).compareTo(t2.get(1));
+                    }
+                    return r;
+                }
+            });
+
+            return resultSet;
+        }
+
+        @Override
+        public ResultSet showTables(String datasource, String schemapattern, String tablepattern) throws Exception {
+            CatalogViewResultSet resultSet = new CatalogViewResultSet();
+            String regTableNamePattern = convertPattern(tablepattern);
+            String regSchemaNamePattern = convertPattern(schemapattern);
+
+            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
+                String datasource_name = mdatasource.getName();
+
+                if (datasource != null && !datasource.equals(datasource_name))
+                    continue;
+
+                for (MetaSchema mschema : mdatasource.getSchemas()) {
+                    String schema_name = mschema.getName();
+
+                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
+                        continue;
+
+                    for (MetaTable mtable : mschema.getTables()) {
+                        String table_name = mtable.getName();
+
+                        if (regTableNamePattern != null && !table_name.matches(regTableNamePattern))
+                            continue;
+
+                        /* result columns:
+                            1. TABLE_CAT String
+                            2. TABLE_SCHEM String
+                            3. TABLE_NAME String
+                            4. TABLE_TYPE String "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"
+                            5. REMARKS String (description in Octopus)
+                            6. TYPE_CAT String
+                            7. TYPE_SCHEMA String
+                            8. TYPE_NAME String
+                            9. SELE_REFERENCING_COL_NAME String
+                            10. REF_GENERATION String
+                         */
+                        resultSet.addTuple(Arrays.asList(datasource_name, schema_name, table_name,
+                                "TABLE",  /* TODO: set TABLE TYPE */
+                                mtable.getDescription(),
+                                "NULL", "NULL", "NULL", "NULL", "NULL"));
+                    }
+                }
+            }
+            // Order by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
+            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
+                @Override
+                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
+                    int r = t1.get(3).compareTo(t2.get(3));
+                    if (r == 0) {
+                        r = t1.get(0).compareTo(t2.get(0));
+                    }
+                    if (r == 0) {
+                        r = t1.get(1).compareTo(t2.get(1));
+                    }
+                    if (r == 0) {
+                        r = t1.get(2).compareTo(t2.get(2));
+                    }
+                    return r;
+                }
+            });
+            return resultSet;
+        }
+
+        @Override
+        public ResultSet showColumns(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        {
+            CatalogViewResultSet resultSet = new CatalogViewResultSet();
+            String regSchemaNamePattern = convertPattern(schemapattern);
+            String regTableNamePattern = convertPattern(tablepattern);
+            String regColumnNamePattern = convertPattern(columnpattern);
+
+            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
+                String datasource_name = mdatasource.getName();
+
+                if (datasource != null && !datasource.equals(datasource_name))
+                    continue;
+
+                for (MetaSchema mschema : mdatasource.getSchemas()) {
+                    String schema_name = mschema.getName();
+
+                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
+                        continue;
+
+                    for (MetaTable mtable : mschema.getTables()) {
+                        String table_name = mtable.getName();
+
+                        if (regTableNamePattern != null && !table_name.matches(regTableNamePattern))
+                            continue;
+
+                        for (MetaColumn mcolumn : mtable.getColumns()) {
+                            String column_name = mcolumn.getName();
+
+                            if (regColumnNamePattern != null && !table_name.matches(regColumnNamePattern))
+                                continue;
+
+                            /* 1. TABLE_CAT String
+                               2. TABLE_SCHEM String
+                               3. TABLE_NAME String
+                               4. COLUMN_NAME String
+                               5. DATA_TYPE int
+                               6. TYPE_NAME String
+                               7. COLUMN_SIZE int
+                               8. BUFFER_LENGTH ('not used' in JDBC spec.)
+                               9. DECIMAL_DIGIT int
+                               10. NUM_PREC_RADIX
+                               11. NULLABLE int
+                               12. REMARKS (description in Octopus)
+                               13. COLUMN_DEF String
+                               14. SQL_DATA_TYPE int ('not used' in JDBC spec.)
+                               15. SQL_DATETIME_SUB int ('not used' in JDBC spec.)
+                               16. CHAR_OCTET_LENGTH int
+                               17. ORDINAL_POSITION int
+                               18. IS_NULLABLE String
+                               19. SCOPE_CATALOG String
+                               20. SCOPE_SCHEMA String
+                               21. SCOPE_TABLE String
+                               22. SOURCE_DATA_TYPE short
+                               23. IS_AUTOINCREMENT String
+                               24. IS_GENERATEDCOLUMN
+                             */
+                            resultSet.addTuple(Arrays.asList(datasource_name, schema_name, table_name,
+                                    column_name, String.valueOf(mcolumn.getType()), "NON AVAILABLE" /* FIXME: */,
+                                    "NULL", "NULL", "NULL", "NULL", "NULL",
+                                    mcolumn.getDescription(),
+                                    "NULL", "NULL", "NULL", "NULL", "NULL",
+                                    "NULL", "NULL", "NULL", "NULL", "NULL",
+                                    "NULL", "NULL", "NULL"));
+                        }
+                    }
+                }
+            }
+            // Order by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
+            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
+                @Override
+                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
+                    int r = t1.get(16).compareTo(t2.get(16));
+                    if (r == 0) {
+                        r = t1.get(0).compareTo(t2.get(0));
+                    }
+                    if (r == 0) {
+                        r = t1.get(1).compareTo(t2.get(1));
+                    }
+                    if (r == 0) {
+                        r = t1.get(2).compareTo(t2.get(2));
+                    }
+                    return r;
+                }
+            });
+            return resultSet;
+        }
+
+        @Override
+        public ResultSet showTablePrivileges(String datasource, String schemapattern, String tablepattern) throws Exception
+        {
+            //TODO
+            return null;
+        }
+
+        @Override
+        public ResultSet showColumnPrivileges(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        {
+            // TODO
+            return null;
+        }
+
+        @Override
+        public ResultSet showUsers() throws Exception
+        {
+            for (MetaUser muser: metaContext.getUsers()) {
+
+            }
+            return null;
+        }
     };
 
     public List<String> getDatasourceNames(SqlNode query) {
@@ -242,8 +467,12 @@ public class QueryEngine
 
         ParsedStatement ps = curExStmt.getParsedStatement();
         if (ps.isDdl()) {
-            for (OctopusSqlCommand c : ps.getDdlCommands())
-                OctopusSql.run(c, ddlRunner);
+            for (OctopusSqlCommand c : ps.getDdlCommands()) {
+                ResultSet result = OctopusSql.run(c, ddlRunner);
+                if (result != null) {
+                    return new QueryResult(result);
+                }
+            }
 
             return null;
         }
@@ -255,6 +484,48 @@ public class QueryEngine
 
         // TODO: query on multiple data sources (throw not-implemented feature)
         return executeByPassQuery(validatedQuery, dsNames.get(0));
+    }
+
+    /**
+     * Convert a pattern containing JDBC catalog search wildcards into
+     * Java regex patterns.
+     *
+     * @param pattern input which may contain '%' or '_' wildcard characters
+     * @return replace %/_ with regex search characters, also handle escaped
+     * characters.
+     *
+     * From tajo code
+     */
+    static private String convertPattern(final String pattern) {
+        if (pattern == null) {
+            return ".*";
+        } else {
+            StringBuilder result = new StringBuilder(pattern.length());
+
+            boolean escaped = false;
+            for (int i = 0, len = pattern.length(); i < len; i++) {
+                char c = pattern.charAt(i);
+                if (escaped) {
+                    if (c != SEARCH_STRING_ESCAPE) {
+                        escaped = false;
+                    }
+                    result.append(c);
+                } else {
+                    if (c == SEARCH_STRING_ESCAPE) {
+                        escaped = true;
+                        continue;
+                    } else if (c == '%') {
+                        result.append(".*");
+                    } else if (c == '_') {
+                        result.append('.');
+                    } else {
+                        result.append(c);
+                    }
+                }
+            }
+
+            return result.toString();
+        }
     }
 
     public void prepare(String sql, int[] oids)

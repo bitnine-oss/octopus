@@ -4,6 +4,7 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
+import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.junit.After;
 import org.junit.Before;
@@ -56,6 +57,10 @@ public class JDOMetaStoreTest
         System.out.println("number of columns: " + columns.size());
         for (MetaColumn metaColumn : columns)
             System.out.println("columnName=" + metaColumn.getName());
+
+        Collection<MetaUser> users = mc.getUsers();
+        for (MetaUser metaUser : users)
+            System.out.println("UserName=" + metaUser.getName());
 
         mc.close();
 

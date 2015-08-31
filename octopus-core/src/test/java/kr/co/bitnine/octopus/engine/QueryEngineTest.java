@@ -90,6 +90,16 @@ public class QueryEngineTest
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
 
+        queryEngine.parse("SHOW TABLES DATASOURCE " + dataMemDb.NAME, "", null);
+        queryEngine.bind("", "", new FormatCode[0], new byte[0][], new FormatCode[0]);
+        qr = queryEngine.execute("", 0);
+        rs = qr.unwrap(ResultSet.class);
+        while (rs.next()) {
+            System.out.println("Datasource:" + rs.getString(1) + " Schema:" + rs.getString(2) +
+                    " Table:" + rs.getString(3) +  " Type:" + rs.getString(4) + " Description:" + rs.getString(5));
+        }
+        qr.close();
+
         mc.close();
         schemaManager.stop();
         metaStoreService.stop();

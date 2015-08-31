@@ -14,22 +14,32 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public abstract class OctopusSqlCommand
-{
-    enum Type
-    {
-        ADD_DATASOURCE,
-        CREATE_USER,
-        ALTER_USER,
-        DROP_USER,
-        CREATE_ROLE,
-        DROP_ROLE,
-        SHOW_TABLES,
-        OTHER
+public class OctopusSqlShowTables extends OctopusSqlCommand {
+    String datasource;
+    String schemapattern;
+    String tablepattern;
+
+    public OctopusSqlShowTables(String datasource, String schemapattern, String tablepattern) {
+        this.datasource = datasource;
+        this.schemapattern = schemapattern;
+        this.tablepattern = tablepattern;
     }
 
+    String getDatasource() {
+        return datasource;
+    }
+
+    String getSchemapattern() {
+        return schemapattern;
+    }
+
+    String getTablepattern() {
+        return tablepattern;
+    }
+
+    @Override
     public OctopusSqlCommand.Type getType()
     {
-        return OctopusSqlCommand.Type.OTHER;
+        return OctopusSqlCommand.Type.SHOW_TABLES;
     }
 }
