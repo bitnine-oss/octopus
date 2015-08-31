@@ -149,7 +149,9 @@ public class QueryEngine
         public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
             String driverName;
-            if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
+            if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
+                driverName = "org.apache.hive.jdbc.HiveDriver";
+            } else if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
                 driverName = "org.sqlite.JDBC";
             } else {
                 throw new RuntimeException("not supported");
