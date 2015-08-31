@@ -14,8 +14,6 @@
 
 package kr.co.bitnine.octopus.postgres.utils;
 
-import org.omg.PortableInterceptor.SUCCESSFUL;
-
 public enum PostgresSQLState
 {
     SUCCESSFUL_COMPLETION   ("00000"),

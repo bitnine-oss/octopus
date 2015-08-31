@@ -22,8 +22,10 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class OctopusSql
+public final class OctopusSql
 {
+    private OctopusSql() { }
+
     private static class Listener extends OctopusSqlBaseListener
     {
         private List<OctopusSqlCommand> commands;

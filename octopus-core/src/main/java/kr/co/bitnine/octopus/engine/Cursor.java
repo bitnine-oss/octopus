@@ -15,20 +15,18 @@
 package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 
-/*
- * portal
- */
-public class Cursor
+public class Cursor extends Portal
 {
-    private final CachedStatement cachedStatement;
     private final FormatCode[] paramFormats;
     private final byte[][] paramValues;
     private final FormatCode[] resultFormats;
 
     public Cursor(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
     {
-        this.cachedStatement = cachedStatement;
+        super(cachedStatement);
+
         this.paramFormats = paramFormats;
         this.paramValues = paramValues;
         this.resultFormats = resultFormats;
@@ -36,6 +34,6 @@ public class Cursor
 
     public CachedStatement getCachedStatement()
     {
-        return cachedStatement;
+        return (CachedStatement) getCachedQuery();
     }
 }

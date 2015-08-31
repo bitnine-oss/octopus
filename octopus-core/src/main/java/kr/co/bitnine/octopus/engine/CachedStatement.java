@@ -15,38 +15,36 @@
 package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import org.apache.calcite.sql.SqlNode;
 
-import java.util.Arrays;
 import java.util.List;
 
-public class CachedStatement
+public class CachedStatement extends CachedQuery
 {
     private boolean isDdl;
 
     private final SqlNode validatedQuery;
-    private final String queryString;
-    private final PostgresType[] paramTypes;
     private final String commandTag;
 
     private List<OctopusSqlCommand> ddlCommands;
 
     public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
     {
+        super(queryString, paramTypes);
+
         isDdl = false;
 
         this.validatedQuery = validatedQuery;
-        this.queryString = queryString;
-        this.paramTypes = paramTypes;
         commandTag = null;
     }
 
     public CachedStatement(List<OctopusSqlCommand> commands)
     {
+        super(null, new PostgresType[0]);
+
         validatedQuery = null;
-        queryString = null;
-        paramTypes = null;
         commandTag = null;
 
         isDdl = true;
@@ -62,11 +60,6 @@ public class CachedStatement
     public SqlNode getValidatedQuery()
     {
         return validatedQuery;
-    }
-
-    public PostgresType[] getParamTypes()
-    {
-        return Arrays.copyOf(paramTypes, paramTypes.length);
     }
 
     public String getCommandTag()
