@@ -58,4 +58,10 @@ public class MColumn implements MetaColumn
     {
         return table;
     }
+
+    @Override
+    public String getDescription()
+    {
+        return description;
+    }
 }

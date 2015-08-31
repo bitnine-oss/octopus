@@ -16,6 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 import org.junit.Test;
 
+import java.sql.ResultSet;
 import java.util.List;
 
 public class OctopusSqlTest
@@ -57,6 +58,13 @@ public class OctopusSqlTest
             }
 
             @Override
+            public ResultSet showUsers() throws Exception
+            {
+                System.out.println("Show users called.");
+                return null;
+            }
+
+            @Override
             public void createRole(String role) throws Exception
             {
                 System.out.println("role=" + role);
@@ -66,6 +74,39 @@ public class OctopusSqlTest
             public void dropRole(String role) throws Exception
             {
                 System.out.println("role=" + role);
+            }
+
+            @Override
+            public ResultSet showDataSources() throws Exception {
+                System.out.println("Show DataSources called.");
+                return null;
+            }
+
+            @Override
+            public ResultSet showSchemas(String datasource, String schemapattern) throws Exception {
+                return null;
+            }
+
+            @Override
+            public ResultSet showTables(String datasource, String schemapattern, String tablepattern) throws Exception
+            {
+                System.out.println("datasource=" + datasource + ", schemapattern=" + schemapattern + ", tablepattern="+tablepattern);
+                return null;
+            }
+
+            @Override
+            public ResultSet showColumns(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception {
+                return null;
+            }
+
+            @Override
+            public ResultSet showTablePrivileges(String datasource, String schemapattern, String tablepattern) throws Exception {
+                return null;
+            }
+
+            @Override
+            public ResultSet showColumnPrivileges(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception {
+                return null;
             }
         };
 

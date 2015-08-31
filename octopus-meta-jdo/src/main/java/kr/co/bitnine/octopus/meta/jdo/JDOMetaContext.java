@@ -32,6 +32,7 @@ import javax.jdo.Query;
 import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.util.Collection;
 import java.util.List;
 
@@ -96,6 +97,18 @@ public class JDOMetaContext implements MetaContext
     public void dropUser(String name) throws MetaException
     {
         pm.deletePersistent(getUserByName(name, false));
+    }
+
+    @Override
+    public Collection<MetaUser> getUsers() throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MUser.class);
+            List<MetaUser> users = (List) query.execute();
+            return users;
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
     }
 
     @Override

@@ -19,22 +19,28 @@ import kr.co.bitnine.octopus.meta.model.MetaRole;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 
+import java.sql.ResultSet;
 import java.util.Collection;
 
 public interface MetaContext
 {
+    /* User */
     boolean userExists(String name) throws MetaException;
     MetaUser createUser(String name, String password) throws MetaException;
     String getUserPasswordByName(String name) throws MetaException;
     void alterUser(String name, String newPassword) throws MetaException;
     void dropUser(String name) throws MetaException;
+    Collection<MetaUser> getUsers() throws MetaException;
 
+    /* DataSource */
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;
     Collection<MetaDataSource> getDataSources() throws MetaException;
     MetaDataSource getDataSourceByName(String name) throws MetaException;
 
+    /* Table */
     MetaTable getTableByName(String name) throws MetaException;
 
+    /* Role */
     MetaRole createRole(String name) throws MetaException;
     void dropRoleByName(String name) throws MetaException;
 

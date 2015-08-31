@@ -71,4 +71,9 @@ public class MTable implements MetaTable
     {
         return schema;
     }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
 }

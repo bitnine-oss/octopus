@@ -19,4 +19,6 @@ public interface MetaColumn
     String getName();
     int getType();
     MetaTable getTable();
+
+    String getDescription();
 }
