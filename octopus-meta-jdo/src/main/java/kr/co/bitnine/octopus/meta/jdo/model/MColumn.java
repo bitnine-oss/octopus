@@ -30,17 +30,15 @@ public class MColumn implements MetaColumn
     long ID;
     String name;
     int type;
-    String description;
+    String comment;
     MTable table;
     int dataCategory;
 
-    public MColumn(String name, int type, String description, int dataCategory, MTable table)
+    public MColumn(String name, int type, MTable table)
     {
         this.name = name;
         this.type = type;
-        this.description = description;
         this.table = table;
-        this.dataCategory = dataCategory;
     }
 
     @Override
@@ -56,9 +54,9 @@ public class MColumn implements MetaColumn
     }
 
     @Override
-    public String getDescription()
+    public String getComment()
     {
-        return description;
+        return comment;
     }
 
     @Override
@@ -77,5 +75,11 @@ public class MColumn implements MetaColumn
     public void setDataCategory(int dataCategory)
     {
         this.dataCategory = dataCategory;
+    }
+
+    @Override
+    public void setComment(String comment)
+    {
+        this.comment = comment;
     }
 }

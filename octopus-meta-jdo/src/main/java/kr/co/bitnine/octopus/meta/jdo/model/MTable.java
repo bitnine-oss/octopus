@@ -33,19 +33,17 @@ public class MTable implements MetaTable
     long ID;
 
     String name;
-    int type;
-    String description;
-    String schema_name;
+    String type;
+    String comment;
     MSchema schema;
 
     @Persistent(mappedBy="table")
     Collection<MColumn> columns;
 
-    public MTable(String name, int type, String description, MSchema schema)
+    public MTable(String name, String type, MSchema schema)
     {
         this.name = name;
         this.type = type;
-        this.description = description;
         this.schema = schema;
     }
 
@@ -62,9 +60,15 @@ public class MTable implements MetaTable
 
 
     @Override
-    public String getDescription()
+    public String getComment()
     {
-        return description;
+        return comment;
+    }
+
+    @Override
+    public String getType()
+    {
+        return type;
     }
 
     @Override
@@ -77,5 +81,11 @@ public class MTable implements MetaTable
     public MetaSchema getSchema()
     {
         return schema;
+    }
+
+    @Override
+    public void setComment(String comment)
+    {
+        this.comment = comment;
     }
 }

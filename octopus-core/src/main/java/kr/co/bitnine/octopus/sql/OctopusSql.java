@@ -31,6 +31,10 @@ public final class OctopusSql
     {
         private List<OctopusSqlCommand> commands;
 
+        /* for Comment On FIXME: */
+        OctopusSqlCommentOn.Target commentOnTargetType;
+        OctopusSqlTargetIdentifier commentOnTarget;
+
         Listener()
         {
             commands = new ArrayList<>();
@@ -134,28 +138,61 @@ public final class OctopusSql
         public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx)
         {
 		    OctopusSqlParser.CommentOnTargetContext targetCtx = ctx.commentOnTarget();
-            OctopusSqlCommentOn.Target targetType = null;
-            String target_name = null, comment = null;
-
-            if (targetCtx.datasource() != null) {
-                targetType = OctopusSqlCommentOn.Target.DATASOURCE;
-                target_name = targetCtx.datasource().getText();
-            }
-            else if (targetCtx.schemaName() != null) {
-                targetType = OctopusSqlCommentOn.Target.SCHEMA;
-                target_name = targetCtx.schemaName().getText();
-            }
-            else if (targetCtx.tableName() != null) {
-                targetType = OctopusSqlCommentOn.Target.TABLE;
-                target_name = targetCtx.tableName().getText();
-            }
-            else if (targetCtx.tableName() != null) {
-                targetType = OctopusSqlCommentOn.Target.COLUMN;
-                target_name = targetCtx.columnName().getText();
-            }
+            String comment = null;
 
             comment = ctx.comment().getText();
-            commands.add(new OctopusSqlCommentOn(targetType, target_name, comment));
+            commands.add(new OctopusSqlCommentOn(commentOnTargetType, commentOnTarget, comment));
+        }
+
+        @Override
+        public void exitCommentDataSource(OctopusSqlParser.CommentDataSourceContext ctx)
+        {
+            commentOnTargetType = OctopusSqlCommentOn.Target.DATASOURCE;
+
+            commentOnTarget = new OctopusSqlTargetIdentifier();
+            commentOnTarget.datasource = ctx.dataSource().getText();
+        }
+
+        @Override
+        public void exitCommentSchema(OctopusSqlParser.CommentSchemaContext ctx)
+        {
+            commentOnTargetType = OctopusSqlCommentOn.Target.SCHEMA;
+
+            commentOnTarget = new OctopusSqlTargetIdentifier();
+            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.schema = ctx.schemaName().getText();
+        }
+
+        @Override
+        public void exitCommentTable(OctopusSqlParser.CommentTableContext ctx)
+        {
+            commentOnTargetType = OctopusSqlCommentOn.Target.TABLE;
+
+            commentOnTarget = new OctopusSqlTargetIdentifier();
+            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.schema = ctx.schemaName().getText();
+            commentOnTarget.table = ctx.tableName().getText();
+        }
+
+        @Override
+        public void exitCommentColumn(OctopusSqlParser.CommentColumnContext ctx)
+        {
+            commentOnTargetType = OctopusSqlCommentOn.Target.COLUMN;
+
+            commentOnTarget = new OctopusSqlTargetIdentifier();
+            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.schema = ctx.schemaName().getText();
+            commentOnTarget.table = ctx.tableName().getText();
+            commentOnTarget.column = ctx.columnName().getText();
+        }
+
+        @Override
+        public void exitCommentUser(OctopusSqlParser.CommentUserContext ctx)
+        {
+            commentOnTargetType = OctopusSqlCommentOn.Target.USER;
+
+            commentOnTarget = new OctopusSqlTargetIdentifier();
+            commentOnTarget.user = ctx.user().getText();
         }
 
         List<OctopusSqlCommand> getSqlCommands()
@@ -208,17 +245,14 @@ public final class OctopusSql
                 break;
             case SHOW_TABLES:
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
-<<<<<<< HEAD
-                return runner.showTables(showTables.getDatasource(), showTables.getSchemapattern(), showTables.getTablepattern());
+                return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
             case SHOW_USERS:
                 OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
                 return runner.showUsers();
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
-
-=======
-                return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
->>>>>>> 16402d0ed56e9f8ff5e5a2d89c9217c2e1d3d3db
+                runner.commentOn(commentOn.getTargetType(), commentOn.getTarget(), commentOn.getComment());
+                break;
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

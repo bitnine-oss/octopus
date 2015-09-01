@@ -29,7 +29,12 @@ public class OctopusSqlTest
                 "DROP USER octopus;\n" +
                 "ALTER USER octopus IDENTIFIED BY 'bitnine';\n" +
                 "CREATE ROLE octopus;\n" +
-                "DROP ROLE octopus;\n";
+                "DROP ROLE octopus;\n" +
+                "COMMENT ON USER USER1 IS 'test';\n" +
+                "COMMENT ON DATASOURCE DS1 IS 'test';\n" +
+                "COMMENT ON SCHEMA DS1.SCHEMA1 IS 'test';\n" +
+                "COMMENT ON TABLE DS1.SCHEMA1.TABLE1 IS 'test';\n" +
+                "COMMENT ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'test';\n";
         List<OctopusSqlCommand> commands = OctopusSql.parse(query);
 
         OctopusSqlRunner runner = new OctopusSqlRunner() {
@@ -74,6 +79,11 @@ public class OctopusSqlTest
             public void dropRole(String role) throws Exception
             {
                 System.out.println("role=" + role);
+            }
+
+            @Override
+            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception {
+                System.out.println("CommentOn. targetType=" + target + " dataSourceName=" + target.datasource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
             }
 
             @Override

@@ -30,6 +30,7 @@ public class MUser implements MetaUser
 
     private String name;
     private String password;
+    private String comment;
 
     public MUser(String name, String password)
     {
@@ -49,8 +50,18 @@ public class MUser implements MetaUser
         return password;
     }
 
+    @Override
+    public String getComment()
+    {
+        return comment;
+    }
+
     public void setPassword(String password)
     {
         this.password = password;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }

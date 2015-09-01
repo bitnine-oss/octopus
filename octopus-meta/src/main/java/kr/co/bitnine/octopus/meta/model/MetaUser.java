@@ -18,4 +18,7 @@ public interface MetaUser
 {
     String getName();
     String getPassword();
+    String getComment();
+
+    void setComment(String comment);
 }

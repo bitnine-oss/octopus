@@ -19,7 +19,11 @@ import java.util.Collection;
 public interface MetaTable
 {
     String getName();
-    String getDescription();
+    String getComment();
+    String getType();
+
     Collection<MetaColumn> getColumns();
     MetaSchema getSchema();
+
+    void setComment(String comment);
 }

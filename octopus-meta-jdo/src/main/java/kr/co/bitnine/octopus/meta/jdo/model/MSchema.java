@@ -33,6 +33,7 @@ public class MSchema implements MetaSchema
     long ID;
 
     String name;
+    String comment;
     MDataSource dataSource;
 
     @Persistent(mappedBy="schema")
@@ -51,6 +52,11 @@ public class MSchema implements MetaSchema
     }
 
     @Override
+    public String getComment() {
+        return comment;
+    }
+
+    @Override
     public Collection<MetaTable> getTables()
     {
         return new ArrayList(tables);
@@ -60,5 +66,10 @@ public class MSchema implements MetaSchema
     public MetaDataSource getDataSource()
     {
         return dataSource;
+    }
+
+    @Override
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }

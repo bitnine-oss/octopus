@@ -21,5 +21,8 @@ public interface MetaDataSource
     String getName();
     String getDriverName();
     String getConnectionString();
+    String getComment();
     Collection<MetaSchema> getSchemas();
+
+    void setComment(String comment);
 }

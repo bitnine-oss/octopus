@@ -24,6 +24,7 @@ public interface OctopusSqlRunner
     void dropUser(String name) throws Exception;
     void createRole(String role) throws Exception;
     void dropRole(String role) throws Exception;
+    void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception;
     TupleSet showDataSources() throws Exception;
     TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception;
     TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception;

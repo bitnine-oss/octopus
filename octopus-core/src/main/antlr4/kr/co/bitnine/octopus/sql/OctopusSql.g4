@@ -122,10 +122,11 @@ commentOn
     ;
 
 commentOnTarget
-    : K_DATASOURCE datasource
-    | K_SCHEMA schemaName
-    | K_TABLE tableName
-    | K_COLUMN columnName
+    : K_DATASOURCE dataSource                               # CommentDataSource
+    | K_SCHEMA dataSource.schemaName                        # CommentSchema
+    | K_TABLE dataSource.schemaName.tableName               # CommentTable
+    | K_COLUMN dataSource.schemaName.tableName.columnName   # CommentColumn
+    | K_USER user                                           # CommentUser
     ;
 
 dataSource
@@ -189,6 +190,9 @@ K_TABLES : T A B L E S ;
 K_COLUMNS : C O L U M N S ;
 K_PRIVILEGES : P R I V I L E G E S ;
 K_USERS : U S E R S ;
+K_COMMENT : C O M M E N T ;
+K_ON : O N ;
+K_IS : I S ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'

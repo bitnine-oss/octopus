@@ -32,10 +32,7 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
-import kr.co.bitnine.octopus.sql.OctopusSql;
-import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
-import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
-import kr.co.bitnine.octopus.sql.TupleSetSql;
+import kr.co.bitnine.octopus.sql.*;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -325,8 +322,8 @@ public class QueryEngine extends AbstractQueryProcessor
                         t.setDatum(0, new DatumVarchar(dsName));
                         t.setDatum(1, new DatumVarchar(schemaName));
                         t.setDatum(2, new DatumVarchar(tableName));
-                        t.setDatum(3, new DatumVarchar("TABLE")); // TODO: set TABLE TYPE
-                        t.setDatum(4, new DatumVarchar(mTable.getDescription()));
+                        t.setDatum(3, new DatumVarchar(mTable.getType()));
+                        t.setDatum(4, new DatumVarchar(mTable.getComment()));
                         t.setDatum(5, new DatumVarchar("NULL"));
                         t.setDatum(6, new DatumVarchar("NULL"));
                         t.setDatum(7, new DatumVarchar("NULL"));
@@ -428,7 +425,7 @@ public class QueryEngine extends AbstractQueryProcessor
                             t.setDatum(8, new DatumVarchar("NULL"));
                             t.setDatum(9, new DatumVarchar("NULL"));
                             t.setDatum(10, new DatumVarchar("NULL"));
-                            t.setDatum(11, new DatumVarchar(mColumn.getDescription()));
+                            t.setDatum(11, new DatumVarchar(mColumn.getComment()));
                             t.setDatum(12, new DatumVarchar("NULL"));
                             t.setDatum(13, new DatumVarchar("NULL"));
                             t.setDatum(14, new DatumVarchar("NULL"));
@@ -501,6 +498,28 @@ public class QueryEngine extends AbstractQueryProcessor
             }
             ts.addTuples(tuples);
             return ts;
+        }
+
+        @Override
+        public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+        {
+            switch (targetType) {
+                case DATASOURCE:
+                    metaContext.commentOnDataSource(target.datasource, comment);
+                    break;
+                case SCHEMA:
+                    metaContext.commentOnSchema(target.datasource, target.schema, comment);
+                    break;
+                case TABLE:
+                    metaContext.commentOnTable(target.datasource, target.schema, target.table, comment);
+                    break;
+                case COLUMN:
+                    metaContext.commentOnColumn(target.datasource, target.schema, target.table, target.column, comment);
+                    break;
+                case USER:
+                    metaContext.commentOnUser(target.user, comment);
+                    break;
+            }
         }
     };
 

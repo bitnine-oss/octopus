@@ -35,18 +35,17 @@ public class MDataSource implements MetaDataSource
     int type;
     String jdbc_driver;
     String jdbc_connectionString;
-    String description;
+    String comment;
 
     @Persistent(mappedBy="dataSource")
     Collection<MSchema> schemas;
 
-    public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString, String description)
+    public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString)
     {
         this.name = name;
         this.type = type;
         this.jdbc_driver = jdbc_driver;
         this.jdbc_connectionString = jdbc_connectionString;
-        this.description = description;
     }
 
     @Override
@@ -71,5 +70,15 @@ public class MDataSource implements MetaDataSource
     public Collection<MetaSchema> getSchemas()
     {
         return new ArrayList(schemas);
+    }
+
+    @Override
+    public String getComment() {
+        return comment;
+    }
+
+    @Override
+    public void setComment(String comment) {
+       this.comment = comment;
     }
 }

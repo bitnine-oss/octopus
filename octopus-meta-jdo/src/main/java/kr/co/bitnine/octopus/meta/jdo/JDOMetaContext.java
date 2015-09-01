@@ -17,10 +17,7 @@ package kr.co.bitnine.octopus.meta.jdo;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.jdo.model.*;
-import kr.co.bitnine.octopus.meta.model.MetaDataSource;
-import kr.co.bitnine.octopus.meta.model.MetaRole;
-import kr.co.bitnine.octopus.meta.model.MetaTable;
-import kr.co.bitnine.octopus.meta.model.MetaUser;
+import kr.co.bitnine.octopus.meta.model.*;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Column;
@@ -111,6 +108,14 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
+    public void commentOnUser(String name, String comment) throws MetaException
+    {
+        MUser user = getUserByName(name, false);
+        user.setComment(comment);
+        pm.makePersistent(user);
+    }
+
+    @Override
     public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException
     {
         // TODO: check if it already exists
@@ -127,7 +132,7 @@ public class JDOMetaContext implements MetaContext
 
             tx.begin();
 
-            MDataSource dataSource = new MDataSource(name, 0, driverName, connectionString, "");
+            MDataSource dataSource = new MDataSource(name, 0, driverName, connectionString);
             pm.makePersistent(dataSource);
 
             for (Schema rawSchema : dc.getSchemas()) {
@@ -141,14 +146,14 @@ public class JDOMetaContext implements MetaContext
                 for (Table rawTable : rawSchema.getTables()) {
                     String tableName = rawTable.getName();
 
-                    MTable table = new MTable(tableName, 0, "", schema);
+                    MTable table = new MTable(tableName, "TABLE", schema); // FIXME: table type
                     pm.makePersistent(table);
 
                     for (Column rawColumn : rawTable.getColumns()) {
                         String columnName = rawColumn.getName();
                         int jdbcType = rawColumn.getType().getJdbcType();
 
-                        MColumn column = new MColumn(columnName, jdbcType, "", -1, table);
+                        MColumn column = new MColumn(columnName, jdbcType, table);
                         pm.makePersistent(column);
                     }
                 }
@@ -195,6 +200,96 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
+    public void commentOnDataSource(String dataSourceName, String comment) throws MetaException {
+        MetaDataSource datasource = getDataSourceByName(dataSourceName);
+        datasource.setComment(comment);
+        pm.makePersistent(datasource);
+    }
+
+    @Override
+    public void commentOnSchema(String dataSourceName, String schemaName, String comment) throws MetaException {
+        MetaSchema schema = getSchemaByQualifiedName(dataSourceName, schemaName);
+        schema.setComment(comment);
+        pm.makePersistent(schema);
+    }
+
+    @Override
+    public MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MSchema.class);
+            query.setFilter("name == '" + schemaName + "'");
+
+            List<MSchema> schemas = (List) query.execute();
+            if (schemas.size() == 0)
+                throw new MetaException("Schema '" + dataSourceName + "." + schemaName + "' does not exist");
+
+            for (MSchema mSchema : schemas) {
+               if (mSchema.getDataSource().getName().equals(dataSourceName))
+                   return mSchema;
+            }
+
+            throw new MetaException("Schema '" + dataSourceName + "." + schemaName + "' does not exist");
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
+    }
+
+    @Override
+    public MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MTable.class);
+            query.setFilter("name == '" + tableName + "'");
+
+            List<MTable> tables = (List) query.execute();
+            if (tables.size() == 0)
+                throw new MetaException("Table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+
+            for (MTable mTable : tables) {
+                MSchema mSchema = (MSchema) mTable.getSchema();
+                MDataSource mDataSource = (MDataSource) mSchema.getDataSource();
+
+                if (mSchema.getName().equals(schemaName) &&
+                    mDataSource.getName().equals(dataSourceName))
+                    return mTable;
+            }
+
+            throw new MetaException("Table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
+    }
+
+    @Override
+    public MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MColumn.class);
+            query.setFilter("name == '" + columnName + "'");
+
+            List<MColumn> columns = (List) query.execute();
+            if (columns.size() == 0)
+                throw new MetaException("Column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+
+            for (MColumn mColumn : columns) {
+                MTable mTable = (MTable) mColumn.getTable();
+                MSchema mSchema = (MSchema) mTable.getSchema();
+                MDataSource mDataSource = (MDataSource) mSchema.getDataSource();
+
+                if (mTable.getName().equals(tableName) &&
+                    mSchema.getName().equals(schemaName) &&
+                    mDataSource.getName().equals(dataSourceName))
+                    return mColumn;
+            }
+
+            throw new MetaException("Column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
+    }
+
+    @Override
     public MetaTable getTableByName(String name) throws MetaException
     {
         try {
@@ -209,6 +304,20 @@ public class JDOMetaContext implements MetaContext
         } catch (RuntimeException e) {
             throw new MetaException(e);
         }
+    }
+
+    @Override
+    public void commentOnTable(String dataSourceName, String schemaName, String tableName, String comment) throws MetaException {
+        MTable mTable = (MTable) getTableByQualifiedName(dataSourceName, schemaName, tableName);
+        mTable.setComment(comment);
+        pm.makePersistent(mTable);
+    }
+
+    @Override
+    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException {
+        MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
+        mColumn.setComment(comment);
+        pm.makePersistent(mColumn);
     }
 
     @Override
