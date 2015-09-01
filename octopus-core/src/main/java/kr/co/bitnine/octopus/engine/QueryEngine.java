@@ -14,47 +14,50 @@
 
 package kr.co.bitnine.octopus.engine;
 
-import kr.co.bitnine.octopus.frame.OctopusException;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
+import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
-import kr.co.bitnine.octopus.postgres.utils.FormatCode;
+import kr.co.bitnine.octopus.postgres.executor.Tuple;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+import kr.co.bitnine.octopus.postgres.tcop.AbstractQueryProcessor;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.postgres.utils.adt.DatumVarchar;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
+import kr.co.bitnine.octopus.sql.TupleSetSql;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.calcite.tools.ValidationException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
-import java.sql.*;
 import java.util.*;
 
-public class QueryEngine
+public class QueryEngine extends AbstractQueryProcessor
 {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
-
-    private ParsedStatement unnamedStatement = null;
-    private ExecutableStatement unnamedExStatement = null;
-
-    // for catalog view pattern matching
-    private static final char SEARCH_STRING_ESCAPE = '\\';
 
     public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
@@ -62,24 +65,15 @@ public class QueryEngine
         this.schemaManager = schemaManager;
     }
 
-    public QueryResult query(String queryString) throws Exception
+    @Override
+    protected CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException
     {
-        parse(queryString, "", new PostgresType[0]);
-        bind("", "", null, null, null);
-        QueryResult qr = execute("", 0);
-        return qr;
-    }
-
-    public void parse(String queryString, String stmtName, PostgresType[] paramTypes) throws Exception
-    {
-        // TODO: use stmtName to cache ParsedStatement
-        if (!stmtName.isEmpty()) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
+        /*
+         * Format of PostgreSQL's parameter is $n (starts from 1)
+         * Format of Calcite's parameter is ? (same as JDBC)
+         */
+        queryString = queryString.replaceAll("\\$\\d+", "?");
+        LOG.debug("refined queryString='" + queryString + "'");
 
         // DDL
 
@@ -90,58 +84,76 @@ public class QueryEngine
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
-        if (commands != null) {
-            unnamedStatement = new ParsedStatement(commands);
-            return;
-        }
-
-        // tag = CreateCommandTag()
+        if (commands != null)
+            return new CachedStatement(commands);
 
         // Query
 
-        SchemaPlus rootSchema = schemaManager.getCurrentSchema();
+        try {
+            SchemaPlus rootSchema = schemaManager.getCurrentSchema();
 
-        FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(rootSchema)
-                .build();
-        Planner planner = Frameworks.getPlanner(config);
+            FrameworkConfig config = Frameworks.newConfigBuilder()
+                    .defaultSchema(rootSchema)
+                    .build();
+            Planner planner = Frameworks.getPlanner(config);
 
-        SqlNode parse = planner.parse(queryString);
+            SqlNode parse = planner.parse(queryString);
 
-        TableNameTranslator.toFQN(schemaManager, parse);
-        LOG.debug("FQN translated: " + parse.toString());
+            TableNameTranslator.toFQN(schemaManager, parse);
+            LOG.debug("FQN translated: " + parse.toString());
 
-        schemaManager.lockRead();
-        SqlNode validated = planner.validate(parse);
-        schemaManager.unlockRead();
+            schemaManager.lockRead();
+            SqlNode validated = planner.validate(parse);
+            schemaManager.unlockRead();
 
-        unnamedStatement = new ParsedStatement(validated, queryString, paramTypes);
+            return new CachedStatement(validated, queryString, paramTypes);
+        } catch (SqlParseException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.SYNTAX_ERROR);
+            throw new PostgresException(edata, e);
+        } catch (ValidationException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "validation failed");
+            throw new PostgresException(edata, e);
+        }
     }
 
-    public void bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws IOException, OctopusException
+    @Override
+    protected Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException
     {
-        ParsedStatement curStmt = null;
-        if (stmtName.isEmpty()) {
-            curStmt = unnamedStatement;
-        } else {
-            // TODO: use stmtName to get cached ParsedStatement
+        CachedStatement cStmt = (CachedStatement) cachedQuery;
+
+        if (cStmt.isDdl())
+            return new CursorDdl(cStmt, ddlRunner);
+
+        SqlNode validatedQuery = cStmt.getValidatedQuery();
+        List<String> dsNames = getDatasourceNames(validatedQuery);
+        if (dsNames.size() > 1) {   // by-pass
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
+                    "only by-pass query is supported");
+            throw new PostgresException(edata);
         }
+        LOG.debug("by-pass query: " + validatedQuery.toString());
 
-        // TODO: use portalName to cache ExecutableStatement
-        if (!portalName.isEmpty()) {
+        // TODO: query on multiple data sources (throw not-implemented feature)
+
+        String jdbcDriver;
+        String jdbcConnectionString;
+        try {
+            MetaDataSource dataSource = metaContext.getDataSourceByName(dsNames.get(0));
+            jdbcDriver = dataSource.getDriverName();
+            jdbcConnectionString = dataSource.getConnectionString();
+        } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
+                    "failed to get DataSource");
+            throw new PostgresException(edata, e);
         }
 
-        unnamedExStatement = new ExecutableStatement(curStmt, paramFormats, paramValues, resultFormats);
+        return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
@@ -149,7 +161,9 @@ public class QueryEngine
         public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
             String driverName;
-            if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
+            if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
+                driverName = "org.apache.hive.jdbc.HiveDriver";
+            } else if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
                 driverName = "org.sqlite.JDBC";
             } else {
                 throw new RuntimeException("not supported");
@@ -190,301 +204,322 @@ public class QueryEngine
         }
 
         @Override
-        public ResultSet showDataSources() throws Exception
+        public TupleSet showDataSources() throws Exception
         {
-            CatalogViewResultSet resultSet = new CatalogViewResultSet();
-            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
-                String datasource_name = mdatasource.getName();
-                resultSet.addTuple(Arrays.asList(datasource_name));
+            PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR)
+            };
+            FormatCode[] resultFormats = new FormatCode[attrs.length];
+            Arrays.fill(resultFormats, FormatCode.TEXT);
+            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
+            TupleSetSql ts = new TupleSetSql(tupDesc);
+
+            List<Tuple> tuples = new ArrayList<>();
+            for (MetaDataSource mds : metaContext.getDataSources()) {
+                String dsName = mds.getName();
+
+                Tuple t = new Tuple(attrs.length);
+                t.setDatum(0, new DatumVarchar(dsName));
+
+                tuples.add(t);
             }
-            return resultSet;
+            Collections.sort(tuples, new Comparator<Tuple>() {
+                @Override
+                public int compare(Tuple tl, Tuple tr)
+                {
+                    return tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                }
+            });
+
+            ts.addTuples(tuples);
+            return ts;
         }
 
         @Override
-        public ResultSet showSchemas(String datasource, String schemapattern) throws Exception
+        public TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception
         {
-            CatalogViewResultSet resultSet = new CatalogViewResultSet();
-            String regSchemaNamePattern = convertPattern(schemapattern);
+            PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR)
+            };
+            FormatCode[] resultFormats = new FormatCode[attrs.length];
+            Arrays.fill(resultFormats, FormatCode.TEXT);
+            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
+            TupleSetSql ts = new TupleSetSql(tupDesc);
 
-            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
-                String datasource_name = mdatasource.getName();
-
-                if (datasource != null && !datasource.equals(datasource_name))
+            List<Tuple> tuples = new ArrayList<>();
+            final String pattern = convertPattern(schemaPattern);
+            for (MetaDataSource mds : metaContext.getDataSources()) {
+                String dsName = mds.getName();
+                if (dataSource != null && !dataSource.equals(dsName))
                     continue;
 
-                for (MetaSchema mschema : mdatasource.getSchemas()) {
-                    String schema_name = mschema.getName();
-
-                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
+                for (MetaSchema mSchema : mds.getSchemas()) {
+                    String schemaName = mSchema.getName();
+                    if (!schemaName.matches(pattern))
                         continue;
 
-                    /* result columns:
-                        1. TABLE_SCHEM String
-                        2. TABLE_CATALOG String
-                     */
-                    resultSet.addTuple(Arrays.asList(datasource_name, schema_name));
+                    Tuple t = new Tuple(attrs.length);
+                    t.setDatum(0, new DatumVarchar(schemaName));
+                    t.setDatum(1, new DatumVarchar(dsName));
+
+                    tuples.add(t);
                 }
             }
-            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
+            // ordered by TABLE_CATALOG and TABLE_SCHEM
+            Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
-                    /* sort by TABLE_SCHEM and TABLE_CATALOG */
-                    int r = t1.get(0).compareTo(t2.get(0));
-                    if (r == 0) {
-                        r = t1.get(1).compareTo(t2.get(1));
+                public int compare(Tuple tl, Tuple tr)
+                {
+                    int r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                    if (r == 0)
+                        return tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                    else
+                        return r;
+                }
+            });
+
+            ts.addTuples(tuples);
+            return ts;
+        }
+
+        @Override
+        public TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception
+        {
+            PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
+                    new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR),
+                    new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR),
+                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR)
+            };
+            FormatCode[] resultFormats = new FormatCode[attrs.length];
+            Arrays.fill(resultFormats, FormatCode.TEXT);
+            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
+            TupleSetSql ts = new TupleSetSql(tupDesc);
+
+            List<Tuple> tuples = new ArrayList<>();
+            final String sPattern = convertPattern(tablePattern);
+            final String tPattern = convertPattern(schemaPattern);
+            for (MetaDataSource mds : metaContext.getDataSources()) {
+                String dsName = mds.getName();
+                if (dataSource != null && !dataSource.equals(dsName))
+                    continue;
+
+                for (MetaSchema mSchema : mds.getSchemas()) {
+                    String schemaName = mSchema.getName();
+                    if (!schemaName.matches(sPattern))
+                        continue;
+
+                    for (MetaTable mTable : mSchema.getTables()) {
+                        String tableName = mTable.getName();
+                        if (!tableName.matches(tPattern))
+                            continue;
+
+                        Tuple t = new Tuple(attrs.length);
+                        t.setDatum(0, new DatumVarchar(dsName));
+                        t.setDatum(1, new DatumVarchar(schemaName));
+                        t.setDatum(2, new DatumVarchar(tableName));
+                        t.setDatum(3, new DatumVarchar("TABLE")); // TODO: set TABLE TYPE
+                        t.setDatum(4, new DatumVarchar(mTable.getDescription()));
+                        t.setDatum(5, new DatumVarchar("NULL"));
+                        t.setDatum(6, new DatumVarchar("NULL"));
+                        t.setDatum(7, new DatumVarchar("NULL"));
+                        t.setDatum(8, new DatumVarchar("NULL"));
+                        t.setDatum(9, new DatumVarchar("NULL"));
+
+                        tuples.add(t);
                     }
+                }
+            }
+            // ordered by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME
+            Collections.sort(tuples, new Comparator<Tuple>() {
+                @Override
+                public int compare(Tuple tl, Tuple tr)
+                {
+                    int r = tl.getDatum(3).out().compareTo(tr.getDatum(3).out());
+                    if (r == 0)
+                        r = tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                    if (r == 0)
+                        r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                    if (r == 0)
+                        r = tl.getDatum(2).out().compareTo(tr.getDatum(2).out());
                     return r;
                 }
             });
 
-            return resultSet;
+            ts.addTuples(tuples);
+            return ts;
         }
 
         @Override
-        public ResultSet showTables(String datasource, String schemapattern, String tablepattern) throws Exception {
-            CatalogViewResultSet resultSet = new CatalogViewResultSet();
-            String regTableNamePattern = convertPattern(tablepattern);
-            String regSchemaNamePattern = convertPattern(schemapattern);
-
-            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
-                String datasource_name = mdatasource.getName();
-
-                if (datasource != null && !datasource.equals(datasource_name))
-                    continue;
-
-                for (MetaSchema mschema : mdatasource.getSchemas()) {
-                    String schema_name = mschema.getName();
-
-                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
-                        continue;
-
-                    for (MetaTable mtable : mschema.getTables()) {
-                        String table_name = mtable.getName();
-
-                        if (regTableNamePattern != null && !table_name.matches(regTableNamePattern))
-                            continue;
-
-                        /* result columns:
-                            1. TABLE_CAT String
-                            2. TABLE_SCHEM String
-                            3. TABLE_NAME String
-                            4. TABLE_TYPE String "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"
-                            5. REMARKS String (description in Octopus)
-                            6. TYPE_CAT String
-                            7. TYPE_SCHEMA String
-                            8. TYPE_NAME String
-                            9. SELE_REFERENCING_COL_NAME String
-                            10. REF_GENERATION String
-                         */
-                        resultSet.addTuple(Arrays.asList(datasource_name, schema_name, table_name,
-                                "TABLE",  /* TODO: set TABLE TYPE */
-                                mtable.getDescription(),
-                                "NULL", "NULL", "NULL", "NULL", "NULL"));
-                    }
-                }
-            }
-            // Order by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME
-            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
-                @Override
-                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
-                    int r = t1.get(3).compareTo(t2.get(3));
-                    if (r == 0) {
-                        r = t1.get(0).compareTo(t2.get(0));
-                    }
-                    if (r == 0) {
-                        r = t1.get(1).compareTo(t2.get(1));
-                    }
-                    if (r == 0) {
-                        r = t1.get(2).compareTo(t2.get(2));
-                    }
-                    return r;
-                }
-            });
-            return resultSet;
-        }
-
-        @Override
-        public ResultSet showColumns(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        public TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
         {
-            CatalogViewResultSet resultSet = new CatalogViewResultSet();
-            String regSchemaNamePattern = convertPattern(schemapattern);
-            String regTableNamePattern = convertPattern(tablepattern);
-            String regColumnNamePattern = convertPattern(columnpattern);
+            PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR),
+                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
+                    new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR),
+                    new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR),
+                    new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR),
+                    new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR),
+                    new PostgresAttribute("NULLABLE", PostgresType.VARCHAR),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
+                    new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR),
+                    new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR),
+                    new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR),
+                    new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR),
+                    new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR),
+                    new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR),
+                    new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR),
+                    new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR),
+                    new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR),
+                    new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR),
+                    new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR),
+                    new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR)
+            };
+            FormatCode[] resultFormats = new FormatCode[attrs.length];
+            Arrays.fill(resultFormats, FormatCode.TEXT);
+            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
+            TupleSetSql ts = new TupleSetSql(tupDesc);
 
-            for (MetaDataSource mdatasource : metaContext.getDataSources()) {
-                String datasource_name = mdatasource.getName();
-
-                if (datasource != null && !datasource.equals(datasource_name))
+            List<Tuple> tuples = new ArrayList<>();
+            final String sPattern = convertPattern(schemaPattern);
+            final String tPattern = convertPattern(tablePattern);
+            final String cPattern = convertPattern(columnPattern);
+            for (MetaDataSource mds : metaContext.getDataSources()) {
+                String dsName = mds.getName();
+                if (dataSource != null && !dataSource.equals(dsName))
                     continue;
 
-                for (MetaSchema mschema : mdatasource.getSchemas()) {
-                    String schema_name = mschema.getName();
-
-                    if (regSchemaNamePattern != null && !schema_name.matches(regSchemaNamePattern))
+                for (MetaSchema mSchema : mds.getSchemas()) {
+                    String schemaName = mSchema.getName();
+                    if (!schemaName.matches(sPattern))
                         continue;
 
-                    for (MetaTable mtable : mschema.getTables()) {
-                        String table_name = mtable.getName();
-
-                        if (regTableNamePattern != null && !table_name.matches(regTableNamePattern))
+                    for (MetaTable mTable : mSchema.getTables()) {
+                        String tableName = mTable.getName();
+                        if (!tableName.matches(tPattern))
                             continue;
 
-                        for (MetaColumn mcolumn : mtable.getColumns()) {
-                            String column_name = mcolumn.getName();
+                        for (MetaColumn mColumn : mTable.getColumns()) {
+                            String colName = mColumn.getName();
 
-                            if (regColumnNamePattern != null && !table_name.matches(regColumnNamePattern))
+                            if (!tableName.matches(cPattern))
                                 continue;
 
-                            /* 1. TABLE_CAT String
-                               2. TABLE_SCHEM String
-                               3. TABLE_NAME String
-                               4. COLUMN_NAME String
-                               5. DATA_TYPE int
-                               6. TYPE_NAME String
-                               7. COLUMN_SIZE int
-                               8. BUFFER_LENGTH ('not used' in JDBC spec.)
-                               9. DECIMAL_DIGIT int
-                               10. NUM_PREC_RADIX
-                               11. NULLABLE int
-                               12. REMARKS (description in Octopus)
-                               13. COLUMN_DEF String
-                               14. SQL_DATA_TYPE int ('not used' in JDBC spec.)
-                               15. SQL_DATETIME_SUB int ('not used' in JDBC spec.)
-                               16. CHAR_OCTET_LENGTH int
-                               17. ORDINAL_POSITION int
-                               18. IS_NULLABLE String
-                               19. SCOPE_CATALOG String
-                               20. SCOPE_SCHEMA String
-                               21. SCOPE_TABLE String
-                               22. SOURCE_DATA_TYPE short
-                               23. IS_AUTOINCREMENT String
-                               24. IS_GENERATEDCOLUMN
-                             */
-                            resultSet.addTuple(Arrays.asList(datasource_name, schema_name, table_name,
-                                    column_name, String.valueOf(mcolumn.getType()), "NON AVAILABLE" /* FIXME: */,
-                                    "NULL", "NULL", "NULL", "NULL", "NULL",
-                                    mcolumn.getDescription(),
-                                    "NULL", "NULL", "NULL", "NULL", "NULL",
-                                    "NULL", "NULL", "NULL", "NULL", "NULL",
-                                    "NULL", "NULL", "NULL"));
+                            Tuple t = new Tuple(attrs.length);
+                            t.setDatum(0, new DatumVarchar(dsName));
+                            t.setDatum(1, new DatumVarchar(schemaName));
+                            t.setDatum(2, new DatumVarchar(tableName));
+                            t.setDatum(3, new DatumVarchar(colName));
+                            t.setDatum(4, new DatumVarchar(String.valueOf(mColumn.getType())));
+                            t.setDatum(5, new DatumVarchar(TypeInfo.postresTypeOfJdbcType(mColumn.getType()).typeName()));
+                            t.setDatum(6, new DatumVarchar("NULL"));
+                            t.setDatum(7, new DatumVarchar("NULL"));
+                            t.setDatum(8, new DatumVarchar("NULL"));
+                            t.setDatum(9, new DatumVarchar("NULL"));
+                            t.setDatum(10, new DatumVarchar("NULL"));
+                            t.setDatum(11, new DatumVarchar(mColumn.getDescription()));
+                            t.setDatum(12, new DatumVarchar("NULL"));
+                            t.setDatum(13, new DatumVarchar("NULL"));
+                            t.setDatum(14, new DatumVarchar("NULL"));
+                            t.setDatum(15, new DatumVarchar("NULL"));
+                            t.setDatum(16, new DatumVarchar("NULL"));
+                            t.setDatum(17, new DatumVarchar("NULL"));
+                            t.setDatum(18, new DatumVarchar("NULL"));
+                            t.setDatum(19, new DatumVarchar("NULL"));
+                            t.setDatum(20, new DatumVarchar("NULL"));
+                            t.setDatum(21, new DatumVarchar("NULL"));
+                            t.setDatum(22, new DatumVarchar("NULL"));
+                            t.setDatum(23, new DatumVarchar("NULL"));
+                            t.setDatum(24, new DatumVarchar("NULL"));
+
+                            tuples.add(t);
                         }
                     }
                 }
             }
-            // Order by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
-            resultSet.sort(new Comparator<CatalogViewResultSet.Tuple>() {
+            // ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
+            Collections.sort(tuples, new Comparator<Tuple>()
+            {
                 @Override
-                public int compare(CatalogViewResultSet.Tuple t1, CatalogViewResultSet.Tuple t2) {
-                    int r = t1.get(16).compareTo(t2.get(16));
-                    if (r == 0) {
-                        r = t1.get(0).compareTo(t2.get(0));
-                    }
-                    if (r == 0) {
-                        r = t1.get(1).compareTo(t2.get(1));
-                    }
-                    if (r == 0) {
-                        r = t1.get(2).compareTo(t2.get(2));
-                    }
+                public int compare(Tuple tl, Tuple tr)
+                {
+                    int r = tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                    if (r == 0)
+                        r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                    if (r == 0)
+                        r = tl.getDatum(2).out().compareTo(tr.getDatum(2).out());
+                    if (r == 0)
+                        r = tl.getDatum(16).out().compareTo(tr.getDatum(16).out());
                     return r;
                 }
             });
-            return resultSet;
+
+            ts.addTuples(tuples);
+            return ts;
         }
 
         @Override
-        public ResultSet showTablePrivileges(String datasource, String schemapattern, String tablepattern) throws Exception
+        public TupleSet showTablePrivileges(String dataSource, String schemapattern, String tablepattern) throws Exception
         {
             //TODO
             return null;
         }
 
         @Override
-        public ResultSet showColumnPrivileges(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        public TupleSet showColumnPrivileges(String dataSource, String schemapattern, String tablepattern, String columnpattern) throws Exception
         {
             // TODO
             return null;
         }
 
         @Override
-        public ResultSet showUsers() throws Exception
+        public TupleSet showUsers() throws Exception
         {
-            CatalogViewResultSet resultSet = new CatalogViewResultSet();
+            List<Tuple> tuples = new ArrayList<>();
+            PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("USER_NAME", PostgresType.VARCHAR)};
+            FormatCode[] resultFormats = new FormatCode[attrs.length];
+            Arrays.fill(resultFormats, FormatCode.TEXT);
+            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
+            TupleSetSql ts = new TupleSetSql(tupDesc);
+
             for (MetaUser muser: metaContext.getUsers()) {
-                resultSet.addTuple(Arrays.asList(muser.getName()));
+                Tuple t = new Tuple(attrs.length);
+                t.setDatum(0, new DatumVarchar(muser.getName()));
+                tuples.add(t);
             }
-            return resultSet;
+            ts.addTuples(tuples);
+            return ts;
         }
     };
 
-    public List<String> getDatasourceNames(SqlNode query) {
+    public List<String> getDatasourceNames(SqlNode query)
+    {
         final Set<String> dsSet = new HashSet<>();
         query.accept(new SqlShuttle() {
             @Override
-            public SqlNode visit(SqlIdentifier identifier) {
+            public SqlNode visit(SqlIdentifier identifier)
+            {
                 // check whether this is fully qualified table name
                 if (identifier.names.size() == 3) {
                     dsSet.add(identifier.names.get(0));
-                    //System.out.println("DS:" + identifier.names.get(0));
                 }
                 return identifier;
             }
         });
 
         return new ArrayList<>(dsSet);
-    }
-
-    public QueryResult executeByPassQuery(SqlNode validatedQuery, String dataSourceName) throws MetaException
-    {
-        MetaDataSource dataSource = metaContext.getDataSourceByName(dataSourceName);
-
-        TableNameTranslator.toDSN(validatedQuery);
-        LOG.debug("by-pass query: " + validatedQuery.toString());
-
-        ResultSet rs = null;
-        try {
-            Class.forName(dataSource.getDriverName());
-            Connection conn = DriverManager.getConnection(dataSource.getConnectionString());
-            Statement stmt = conn.createStatement();
-            rs = stmt.executeQuery(validatedQuery.toString());
-        } catch (ClassNotFoundException | SQLException e) {
-            LOG.error(ExceptionUtils.getStackTrace(e));
-        }
-
-        return new QueryResult(rs);
-    }
-
-    public QueryResult execute(String portalName, int numRows) throws Exception
-    {
-        ExecutableStatement curExStmt = null;
-        if (portalName.isEmpty()) {
-            curExStmt = unnamedExStatement;
-        } else {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgresSQLState.PROTOCOL_VIOLATION,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
-
-        ParsedStatement ps = curExStmt.getParsedStatement();
-        if (ps.isDdl()) {
-            for (OctopusSqlCommand c : ps.getDdlCommands()) {
-                ResultSet result = OctopusSql.run(c, ddlRunner);
-                if (result != null) {
-                    return new QueryResult(result);
-                }
-            }
-
-            return null;
-        }
-
-        SqlNode validatedQuery = ps.getValidatedQuery();
-        List<String> dsNames = getDatasourceNames(validatedQuery);
-        if (dsNames.size() > 1) // by-pass
-            throw new Exception("only by-pass query is supported");
-
-        // TODO: query on multiple data sources (throw not-implemented feature)
-        return executeByPassQuery(validatedQuery, dsNames.get(0));
     }
 
     /**
@@ -495,41 +530,37 @@ public class QueryEngine
      * @return replace %/_ with regex search characters, also handle escaped
      * characters.
      *
-     * From tajo code
+     * Borrowed from Tajo
      */
-    static private String convertPattern(final String pattern) {
+    private String convertPattern(final String pattern)
+    {
+        final char SEARCH_STRING_ESCAPE = '\\';
+
         if (pattern == null) {
             return ".*";
         } else {
             StringBuilder result = new StringBuilder(pattern.length());
 
             boolean escaped = false;
-            for (int i = 0, len = pattern.length(); i < len; i++) {
+            for (int i = 0; i < pattern.length(); i++) {
                 char c = pattern.charAt(i);
                 if (escaped) {
-                    if (c != SEARCH_STRING_ESCAPE) {
+                    if (c != SEARCH_STRING_ESCAPE)
                         escaped = false;
-                    }
                     result.append(c);
                 } else {
-                    if (c == SEARCH_STRING_ESCAPE) {
+                    if (c == SEARCH_STRING_ESCAPE)
                         escaped = true;
-                        continue;
-                    } else if (c == '%') {
+                    else if (c == '%')
                         result.append(".*");
-                    } else if (c == '_') {
+                    else if (c == '_')
                         result.append('.');
-                    } else {
+                    else
                         result.append(c);
-                    }
                 }
             }
 
             return result.toString();
         }
-    }
-
-    public void prepare(String sql, int[] oids)
-    {
     }
 }

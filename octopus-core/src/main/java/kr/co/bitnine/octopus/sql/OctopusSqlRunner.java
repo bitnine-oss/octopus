@@ -14,7 +14,7 @@
 
 package kr.co.bitnine.octopus.sql;
 
-import java.sql.ResultSet;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 
 public interface OctopusSqlRunner
 {
@@ -24,12 +24,12 @@ public interface OctopusSqlRunner
     void dropUser(String name) throws Exception;
     void createRole(String role) throws Exception;
     void dropRole(String role) throws Exception;
-    ResultSet showDataSources() throws Exception;
-    ResultSet showSchemas(String datasource, String schemapattern) throws Exception;
-    ResultSet showTables(String datasource, String schemapattern, String tablepattern) throws Exception;
-    ResultSet showColumns(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception;
-    ResultSet showTablePrivileges(String datasource, String schemapattern, String tablepattern) throws Exception;
-    ResultSet showColumnPrivileges(String datasource, String schemapattern, String tablepattern, String columnpattern) throws Exception;
-    ResultSet showUsers() throws Exception;
+    TupleSet showDataSources() throws Exception;
+    TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception;
+    TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception;
+    TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+    TupleSet showTablePrivileges(String dataSource, String schemaPattern, String tablePattern) throws Exception;
+    TupleSet showColumnPrivileges(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+    TupleSet showUsers() throws Exception;
 }
 

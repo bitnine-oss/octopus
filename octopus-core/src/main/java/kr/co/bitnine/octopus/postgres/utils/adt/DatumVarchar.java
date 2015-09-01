@@ -12,14 +12,28 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.utils.adt;
 
-public interface MetaColumn
+import java.nio.charset.StandardCharsets;
+
+public class DatumVarchar implements Datum
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    private final String str;
+
+    public DatumVarchar(String str)
+    {
+        this.str = str;
+    }
+
+    @Override
+    public String out()
+    {
+        return str;
+    }
+
+    @Override
+    public byte[] send()
+    {
+        return str.getBytes(StandardCharsets.US_ASCII);
+    }
 }

@@ -1,0 +1,73 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package kr.co.bitnine.octopus.postgres.utils.cache;
+
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+
+import java.util.Arrays;
+
+public abstract class Portal
+{
+    private final CachedQuery cachedQuery;
+    private final FormatCode[] paramFormats;
+    private final byte[][] paramValues;
+    private final FormatCode[] resultFormats;
+
+    protected enum State
+    {
+        READY,
+        ACTIVE,
+        DONE,
+        FAILED
+    }
+    protected State state;
+
+    public Portal(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
+    {
+        this.cachedQuery = cachedQuery;
+        this.paramFormats = paramFormats;
+        this.paramValues = paramValues;
+        this.resultFormats = resultFormats;
+
+        state = State.READY;
+    }
+
+    public CachedQuery getCachedQuery()
+    {
+        return cachedQuery;
+    }
+
+    public FormatCode[] getResultFormats()
+    {
+        return Arrays.copyOf(resultFormats, resultFormats.length);
+    }
+
+    public String getCompletionTag()
+    {
+        if (state != State.DONE)
+            return null; // FIXME: throw?
+
+        String cmdTag = cachedQuery.getCommandTag();
+        return cmdTag == null ? null : generateCompletionTag(cmdTag);
+    }
+
+    public abstract TupleDesc describe() throws PostgresException;
+    public abstract TupleSet run(int numRows) throws PostgresException;
+    public abstract String generateCompletionTag(String commandTag);
+    public abstract void close();
+}

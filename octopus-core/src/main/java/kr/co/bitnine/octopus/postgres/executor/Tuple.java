@@ -12,14 +12,31 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.executor;
 
-public interface MetaColumn
+import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
+
+public class Tuple
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    private final Datum[] datums;
+
+    public Tuple(int numAttrs)
+    {
+        datums = new Datum[numAttrs];
+    }
+
+    public void setDatum(int index, Datum datum)
+    {
+        datums[index] = datum;
+    }
+
+    public Datum[] getDatums()
+    {
+        return datums;
+    }
+
+    public Datum getDatum(int index)
+    {
+        return datums[index];
+    }
 }

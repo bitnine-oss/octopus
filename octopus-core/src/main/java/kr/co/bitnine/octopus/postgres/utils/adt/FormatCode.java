@@ -1,4 +1,4 @@
-package kr.co.bitnine.octopus.postgres.utils;
+package kr.co.bitnine.octopus.postgres.utils.adt;
 
 public enum FormatCode
 {

@@ -12,14 +12,16 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.catalog;
 
-public interface MetaColumn
+public class PostgresAttribute
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    public final String name;
+    public final PostgresType type;
+
+    public PostgresAttribute(String name, PostgresType type)
+    {
+        this.name = name;
+        this.type = type;
+    }
 }

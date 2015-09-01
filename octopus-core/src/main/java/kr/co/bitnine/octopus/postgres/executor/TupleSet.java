@@ -12,23 +12,15 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.postgres.xact;
+package kr.co.bitnine.octopus.postgres.executor;
 
-public enum TransactionStatus
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+
+public interface TupleSet
 {
-    IDLE('I'),          // not in transaction
-    TRANSACTION('T'),   // in transaction
-    ERROR('E');         // in failed transaction
+    TupleDesc getTupleDesc();
+    Tuple next() throws PostgresException;
 
-    private final char indicator;
-
-    TransactionStatus(char indicator)
-    {
-        this.indicator = indicator;
-    }
-
-    public char getIndicator()
-    {
-        return indicator;
-    }
+    void close() throws PostgresException; // FIXME: remove
 }

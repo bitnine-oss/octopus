@@ -14,17 +14,19 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class OctopusSql
+public final class OctopusSql
 {
+    private OctopusSql() { }
+
     private static class Listener extends OctopusSqlBaseListener
     {
         private List<OctopusSqlCommand> commands;
@@ -102,34 +104,30 @@ public abstract class OctopusSql
         @Override
         public void exitShowTables(OctopusSqlParser.ShowTablesContext ctx)
         {
-            String datasource = ctx.datasource() == null ? null : ctx.datasource().getText();
-            String schemapattern = ctx.schemapattern() == null ? null : ctx.schemapattern().getText();
-            String tablepattern = ctx.tablepattern() == null ? null : ctx.tablepattern().getText();
-            commands.add(new OctopusSqlShowTables(datasource, schemapattern, tablepattern));
+            String dataSource = ctx.dataSource() == null ? null : ctx.dataSource().getText();
+            String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
+            String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
+            commands.add(new OctopusSqlShowTables(dataSource, schemaPattern, tablePattern));
         }
 
         @Override
         public void exitShowColumns(OctopusSqlParser.ShowColumnsContext ctx)
         {
-
         }
 
         @Override
         public void exitShowUsers(OctopusSqlParser.ShowUsersContext ctx)
         {
-
         }
 
         @Override
         public void exitShowTablePrivileges(OctopusSqlParser.ShowTablePrivilegesContext ctx)
         {
-
         }
 
         @Override
         public void exitShowColumnPrivileges(OctopusSqlParser.ShowColumnPrivilegesContext ctx)
         {
-
         }
 
         @Override
@@ -181,12 +179,12 @@ public abstract class OctopusSql
         return lsnr.getSqlCommands();
     }
 
-    public static ResultSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception
+    public static TupleSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception
     {
         switch (command.getType()) {
             case ADD_DATASOURCE:
                 OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
-                runner.addDataSource(addDataSource.getDatasourceName(), addDataSource.getJdbcConnectionString());
+                runner.addDataSource(addDataSource.getDataSourceName(), addDataSource.getJdbcConnectionString());
                 break;
             case CREATE_USER:
                 OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;
@@ -210,6 +208,7 @@ public abstract class OctopusSql
                 break;
             case SHOW_TABLES:
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
+<<<<<<< HEAD
                 return runner.showTables(showTables.getDatasource(), showTables.getSchemapattern(), showTables.getTablepattern());
             case SHOW_USERS:
                 OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
@@ -217,6 +216,9 @@ public abstract class OctopusSql
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
 
+=======
+                return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
+>>>>>>> 16402d0ed56e9f8ff5e5a2d89c9217c2e1d3d3db
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

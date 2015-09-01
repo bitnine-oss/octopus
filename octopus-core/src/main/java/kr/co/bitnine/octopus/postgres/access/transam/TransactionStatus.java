@@ -12,14 +12,23 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.access.transam;
 
-public interface MetaColumn
+public enum TransactionStatus
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    IDLE('I'),          // not in transaction
+    TRANSACTION('T'),   // in transaction
+    ERROR('E');         // in failed transaction
+
+    private final char indicator;
+
+    TransactionStatus(char indicator)
+    {
+        this.indicator = indicator;
+    }
+
+    public char getIndicator()
+    {
+        return indicator;
+    }
 }

@@ -14,27 +14,32 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public class OctopusSqlShowTables extends OctopusSqlCommand {
-    String datasource;
-    String schemapattern;
-    String tablepattern;
+public class OctopusSqlShowTables extends OctopusSqlCommand
+{
+    private String dataSource;
+    private String schemaPattern;
+    private String tablePattern;
 
-    public OctopusSqlShowTables(String datasource, String schemapattern, String tablepattern) {
-        this.datasource = datasource;
-        this.schemapattern = schemapattern;
-        this.tablepattern = tablepattern;
+    OctopusSqlShowTables(String dataSource, String schemaPattern, String tablePattern)
+    {
+        this.dataSource = dataSource;
+        this.schemaPattern = schemaPattern;
+        this.tablePattern = tablePattern;
     }
 
-    String getDatasource() {
-        return datasource;
+    String getDataSource()
+    {
+        return dataSource;
     }
 
-    String getSchemapattern() {
-        return schemapattern;
+    String getSchemaPattern()
+    {
+        return schemaPattern;
     }
 
-    String getTablepattern() {
-        return tablepattern;
+    String getTablePattern()
+    {
+        return tablePattern;
     }
 
     @Override

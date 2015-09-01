@@ -56,15 +56,15 @@ public class MColumn implements MetaColumn
     }
 
     @Override
-    public MetaTable getTable()
-    {
-        return table;
-    }
-
-    @Override
     public String getDescription()
     {
         return description;
+    }
+
+    @Override
+    public MetaTable getTable()
+    {
+        return table;
     }
 
     @Override

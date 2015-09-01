@@ -60,6 +60,13 @@ public class MTable implements MetaTable
         return name;
     }
 
+
+    @Override
+    public String getDescription()
+    {
+        return description;
+    }
+
     @Override
     public Collection<MetaColumn> getColumns()
     {
@@ -70,10 +77,5 @@ public class MTable implements MetaTable
     public MetaSchema getSchema()
     {
         return schema;
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
     }
 }

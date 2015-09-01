@@ -12,14 +12,10 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.utils.adt;
 
-public interface MetaColumn
+public interface Datum
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    String out();
+    byte[] send();
 }

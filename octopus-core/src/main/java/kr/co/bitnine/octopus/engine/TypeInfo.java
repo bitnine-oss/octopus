@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.frame;
+package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 

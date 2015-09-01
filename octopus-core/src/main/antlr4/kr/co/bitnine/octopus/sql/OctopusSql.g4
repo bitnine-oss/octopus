@@ -94,23 +94,23 @@ showDataSources
     ;
 
 showSchemas
-    : K_SHOW K_SCHEMAS (K_DATASOURCE datasource)? (K_SCHEMA schemapattern)?
+    : K_SHOW K_SCHEMAS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )?
     ;
 
 showTables
-    : K_SHOW K_TABLES (K_DATASOURCE datasource)? (K_SCHEMA schemapattern)? (K_TABLE tablepattern)?
+    : K_SHOW K_TABLES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
     ;
 
 showColumns
-    : K_SHOW K_COLUMNS (K_DATASOURCE datasource)? (K_SCHEMA schemapattern)? (K_TABLE tablepattern)? (K_COLUMN columnpattern)?
+    : K_SHOW K_COLUMNS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
     ;
 
 showTablePrivileges
-    : K_SHOW K_TABLE K_PRIVILEGES (K_DATASOURCE datasource)? (K_SCHEMA schemapattern)? (K_TABLE tablepattern)?
+    : K_SHOW K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
     ;
 
 showColumnPrivileges
-    : K_SHOW K_COLUMN K_PRIVILEGES (K_DATASOURCE datasource)? (K_SCHEMA schemapattern)? (K_TABLE tablepattern)? (K_COLUMN columnpattern)?
+    : K_SHOW K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
     ;
 
 showUsers
@@ -128,19 +128,19 @@ commentOnTarget
     | K_COLUMN columnName
     ;
 
-datasource
+dataSource
     : IDENTIFIER
     ;
 
-schemapattern
+schemaPattern
     : IDENTIFIER
     ;
 
-tablepattern
+tablePattern
     : IDENTIFIER
     ;
 
-columnpattern
+columnPattern
     : IDENTIFIER
     ;
 

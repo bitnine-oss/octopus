@@ -32,7 +32,6 @@ import javax.jdo.Query;
 import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.util.Collection;
 import java.util.List;
 

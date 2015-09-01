@@ -12,14 +12,28 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.utils;
 
-public interface MetaColumn
+public class PostgresException extends Exception
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    private final PostgresErrorData errorData;
+
+    public PostgresException(PostgresErrorData errorData)
+    {
+        super(errorData.message);
+
+        this.errorData = errorData;
+    }
+
+    public PostgresException(PostgresErrorData errorData, Throwable cause)
+    {
+        super(errorData.message, cause);
+
+        this.errorData = errorData;
+    }
+
+    public PostgresErrorData getErrorData()
+    {
+        return errorData;
+    }
 }

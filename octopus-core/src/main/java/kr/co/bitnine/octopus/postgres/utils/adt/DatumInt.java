@@ -12,14 +12,28 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.postgres.utils.adt;
 
-public interface MetaColumn
+import java.nio.ByteBuffer;
+
+public class DatumInt implements Datum
 {
-    String getName();
-    int getType();
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
-    MetaTable getTable();
+    private final int i;
+
+    public DatumInt(int i)
+    {
+        this.i = i;
+    }
+
+    @Override
+    public String out()
+    {
+        return String.valueOf(i);
+    }
+
+    @Override
+    public byte[] send()
+    {
+        return ByteBuffer.allocate(4).putInt(i).array();
+    }
 }

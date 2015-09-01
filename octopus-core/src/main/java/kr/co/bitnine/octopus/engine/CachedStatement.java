@@ -14,44 +14,40 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import org.apache.calcite.sql.SqlNode;
 
-import java.util.Arrays;
 import java.util.List;
 
-public class ParsedStatement
+public class CachedStatement extends CachedQuery
 {
     private boolean isDdl;
-
     private final SqlNode validatedQuery;
-    private final String queryString;
-    private final PostgresType[] paramTypes;
+    private List<OctopusSqlCommand> ddlCommands;
     private final String commandTag;
 
-    private List<OctopusSqlCommand> ddlCommands;
-
-    public ParsedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
+    public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
     {
-        isDdl = false;
+        super(queryString, paramTypes);
 
+        isDdl = false;
         this.validatedQuery = validatedQuery;
-        this.queryString = queryString;
-        this.paramTypes = paramTypes;
-        commandTag = null;
+        ddlCommands = null;
+        commandTag = "SELECT";
     }
 
-    public ParsedStatement(List<OctopusSqlCommand> commands)
+    public CachedStatement(List<OctopusSqlCommand> commands)
     {
-        validatedQuery = null;
-        queryString = null;
-        paramTypes = null;
-        commandTag = null;
+        super(null, new PostgresType[0]);
 
         isDdl = true;
-
+        validatedQuery = null;
         ddlCommands = commands;
+        commandTag = "???";
     }
 
     public boolean isDdl()
@@ -64,18 +60,23 @@ public class ParsedStatement
         return validatedQuery;
     }
 
-    public PostgresType[] getParamTypes()
+    public List<OctopusSqlCommand> getDdlCommands()
     {
-        return Arrays.copyOf(paramTypes, paramTypes.length);
+        return ddlCommands;
     }
 
+    @Override
     public String getCommandTag()
     {
         return commandTag;
     }
 
-    public List<OctopusSqlCommand> getDdlCommands()
+    @Override
+    public TupleDesc describe() throws PostgresException
     {
-        return ddlCommands;
+        return null;
     }
+
+    @Override
+    public void close() { }
 }
