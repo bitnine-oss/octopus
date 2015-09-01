@@ -12,15 +12,13 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.sql;
 
-public interface MetaColumn
-{
-    String getName();
-    int getType();
-    MetaTable getTable();
+public class OctopusSqlShowUsers extends OctopusSqlCommand {
 
-    String getDescription();
-    int getDataCategory();
-    void setDataCategory(int dataCategory);
+    @Override
+    public OctopusSqlCommand.Type getType()
+    {
+        return Type.SHOW_USERS;
+    }
 }

@@ -408,10 +408,11 @@ public class QueryEngine
         @Override
         public ResultSet showUsers() throws Exception
         {
+            CatalogViewResultSet resultSet = new CatalogViewResultSet();
             for (MetaUser muser: metaContext.getUsers()) {
-
+                resultSet.addTuple(Arrays.asList(muser.getName()));
             }
-            return null;
+            return resultSet;
         }
     };
 

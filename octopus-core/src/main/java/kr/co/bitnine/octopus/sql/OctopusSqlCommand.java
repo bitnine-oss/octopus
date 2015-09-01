@@ -25,6 +25,8 @@ public abstract class OctopusSqlCommand
         CREATE_ROLE,
         DROP_ROLE,
         SHOW_TABLES,
+        SHOW_USERS,
+        COMMENT_ON,
         OTHER
     }
 

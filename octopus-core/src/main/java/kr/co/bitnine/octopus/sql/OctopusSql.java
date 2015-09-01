@@ -91,7 +91,6 @@ public abstract class OctopusSql
         @Override
         public void exitShowDataSources(OctopusSqlParser.ShowDataSourcesContext ctx)
         {
-
         }
 
         @Override
@@ -131,6 +130,34 @@ public abstract class OctopusSql
         public void exitShowColumnPrivileges(OctopusSqlParser.ShowColumnPrivilegesContext ctx)
         {
 
+        }
+
+        @Override
+        public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx)
+        {
+		    OctopusSqlParser.CommentOnTargetContext targetCtx = ctx.commentOnTarget();
+            OctopusSqlCommentOn.Target targetType = null;
+            String target_name = null, comment = null;
+
+            if (targetCtx.datasource() != null) {
+                targetType = OctopusSqlCommentOn.Target.DATASOURCE;
+                target_name = targetCtx.datasource().getText();
+            }
+            else if (targetCtx.schemaName() != null) {
+                targetType = OctopusSqlCommentOn.Target.SCHEMA;
+                target_name = targetCtx.schemaName().getText();
+            }
+            else if (targetCtx.tableName() != null) {
+                targetType = OctopusSqlCommentOn.Target.TABLE;
+                target_name = targetCtx.tableName().getText();
+            }
+            else if (targetCtx.tableName() != null) {
+                targetType = OctopusSqlCommentOn.Target.COLUMN;
+                target_name = targetCtx.columnName().getText();
+            }
+
+            comment = ctx.comment().getText();
+            commands.add(new OctopusSqlCommentOn(targetType, target_name, comment));
         }
 
         List<OctopusSqlCommand> getSqlCommands()
@@ -184,6 +211,12 @@ public abstract class OctopusSql
             case SHOW_TABLES:
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
                 return runner.showTables(showTables.getDatasource(), showTables.getSchemapattern(), showTables.getTablepattern());
+            case SHOW_USERS:
+                OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
+                return runner.showUsers();
+            case COMMENT_ON:
+                OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
+
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

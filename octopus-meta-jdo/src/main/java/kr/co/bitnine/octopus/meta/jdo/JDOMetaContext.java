@@ -149,7 +149,7 @@ public class JDOMetaContext implements MetaContext
                         String columnName = rawColumn.getName();
                         int jdbcType = rawColumn.getType().getJdbcType();
 
-                        MColumn column = new MColumn(columnName, jdbcType, "", table);
+                        MColumn column = new MColumn(columnName, jdbcType, "", -1, table);
                         pm.makePersistent(column);
                     }
                 }

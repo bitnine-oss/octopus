@@ -34,6 +34,7 @@ ddlStmt
     | createRole
     | dropRole
     | showTables
+    | commentOn
     ;
 
 alterSystem
@@ -116,6 +117,17 @@ showUsers
     : K_SHOW K_USERS
     ;
 
+commentOn
+    : K_COMMENT K_ON commentOnTarget K_IS comment
+    ;
+
+commentOnTarget
+    : K_DATASOURCE datasource
+    | K_SCHEMA schemaName
+    | K_TABLE tableName
+    | K_COLUMN columnName
+    ;
+
 datasource
     : IDENTIFIER
     ;
@@ -130,6 +142,22 @@ tablepattern
 
 columnpattern
     : IDENTIFIER
+    ;
+
+schemaName
+    : IDENTIFIER
+    ;
+
+tableName
+    : IDENTIFIER
+    ;
+
+columnName
+    : IDENTIFIER
+    ;
+
+comment
+    : STRING_LITERAL
     ;
 
 error
