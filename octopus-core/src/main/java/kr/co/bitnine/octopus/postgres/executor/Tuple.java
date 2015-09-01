@@ -34,4 +34,9 @@ public class Tuple
     {
         return datums;
     }
+
+    public Datum getDatum(int index)
+    {
+        return datums[index];
+    }
 }

@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import org.junit.Test;
 
 import java.util.List;
@@ -33,9 +34,9 @@ public class OctopusSqlTest
 
         OctopusSqlRunner runner = new OctopusSqlRunner() {
             @Override
-            public void addDataSource(String datasourceName, String jdbcConnectionString) throws Exception
+            public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
             {
-                System.out.println("name=" + datasourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+                System.out.println("name=" + dataSourceName + ", jdbcConnectionString=" + jdbcConnectionString);
             }
 
             @Override
@@ -57,6 +58,13 @@ public class OctopusSqlTest
             }
 
             @Override
+            public TupleSet showUsers() throws Exception
+            {
+                System.out.println("SHOW USERS");
+                return null;
+            }
+
+            @Override
             public void createRole(String role) throws Exception
             {
                 System.out.println("role=" + role);
@@ -66,6 +74,44 @@ public class OctopusSqlTest
             public void dropRole(String role) throws Exception
             {
                 System.out.println("role=" + role);
+            }
+
+            @Override
+            public TupleSet showDataSources() throws Exception
+            {
+                System.out.println("SHOW DATASOURCES");
+                return null;
+            }
+
+            @Override
+            public TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception
+            {
+                return null;
+            }
+
+            @Override
+            public TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception
+            {
+                System.out.println("dataSource=" + dataSource + ", schemaPattern=" + schemaPattern + ", tablePattern=" + tablePattern);
+                return null;
+            }
+
+            @Override
+            public TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+            {
+                return null;
+            }
+
+            @Override
+            public TupleSet showTablePrivileges(String dataSource, String schemaPattern, String tablePattern) throws Exception
+            {
+                return null;
+            }
+
+            @Override
+            public TupleSet showColumnPrivileges(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+            {
+                return null;
             }
         };
 

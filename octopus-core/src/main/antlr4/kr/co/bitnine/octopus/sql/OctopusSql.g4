@@ -33,6 +33,7 @@ ddlStmt
     | dropUser
     | createRole
     | dropRole
+    | showTables
     ;
 
 alterSystem
@@ -87,6 +88,50 @@ role
     : IDENTIFIER
     ;
 
+showDataSources
+    : K_SHOW K_DATASOURCES
+    ;
+
+showSchemas
+    : K_SHOW K_SCHEMAS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )?
+    ;
+
+showTables
+    : K_SHOW K_TABLES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+    ;
+
+showColumns
+    : K_SHOW K_COLUMNS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+    ;
+
+showTablePrivileges
+    : K_SHOW K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+    ;
+
+showColumnPrivileges
+    : K_SHOW K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+    ;
+
+showUsers
+    : K_SHOW K_USERS
+    ;
+
+dataSource
+    : IDENTIFIER
+    ;
+
+schemaPattern
+    : IDENTIFIER
+    ;
+
+tablePattern
+    : IDENTIFIER
+    ;
+
+columnPattern
+    : IDENTIFIER
+    ;
+
 error
     : UNEXPECTED_CHAR
         {
@@ -100,12 +145,22 @@ K_BY : B Y ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
 K_DATASOURCE : D A T A S O U R C E ;
+K_SCHEMA : S C H E M A ;
+K_TABLE : T A B L E ;
+K_COLUMN : C O L U M N ;
 K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
 K_REPLACE : R E P L A C E ;
 K_ROLE : R O L E ;
 K_SYSTEM : S Y S T E M ;
 K_USER : U S E R ;
+K_SHOW : S H O W ;
+K_DATASOURCES : D A T A S O U R C E S ;
+K_SCHEMAS : S C H E M A S ;
+K_TABLES : T A B L E S ;
+K_COLUMNS : C O L U M N S ;
+K_PRIVILEGES : P R I V I L E G E S ;
+K_USERS : U S E R S ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'

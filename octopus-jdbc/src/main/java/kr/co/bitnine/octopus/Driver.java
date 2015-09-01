@@ -32,7 +32,6 @@ import java.util.Properties;
 
 import org.postgresql.PGProperty;
 import org.postgresql.core.Logger;
-import org.postgresql.jdbc4.Jdbc4Connection;
 import org.postgresql.util.PSQLException;
 import org.postgresql.util.PSQLState;
 import org.postgresql.util.GT;

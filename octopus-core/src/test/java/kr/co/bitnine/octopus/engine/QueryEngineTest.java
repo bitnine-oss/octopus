@@ -96,6 +96,19 @@ public class QueryEngineTest
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
 
+        p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME);
+        ts = p.run(0);
+        while (true) {
+            Tuple t = ts.next();
+            if (t == null)
+                break;
+
+            Datum[] datums = t.getDatums();
+            for (int i = 0; i < datums.length; i++)
+                System.out.println("  " + datums[i].out());
+        }
+        ts.close();
+
         mc.close();
         schemaManager.stop();
         metaStoreService.stop();

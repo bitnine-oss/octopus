@@ -16,18 +16,18 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlAddDataSource extends OctopusSqlCommand
 {
-    private String datasourceName;
+    private String dataSourceName;
     private String jdbcConnectionString;
 
-    OctopusSqlAddDataSource(String datasourceName, String jdbcConnectionString)
+    OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString)
     {
-        this.datasourceName = datasourceName;
+        this.dataSourceName = dataSourceName;
         this.jdbcConnectionString = jdbcConnectionString;
     }
 
-    String getDatasourceName()
+    String getDataSourceName()
     {
-        return datasourceName;
+        return dataSourceName;
     }
 
     String getJdbcConnectionString()

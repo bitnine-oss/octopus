@@ -60,6 +60,13 @@ public class MTable implements MetaTable
         return name;
     }
 
+
+    @Override
+    public String getDescription()
+    {
+        return description;
+    }
+
     @Override
     public Collection<MetaColumn> getColumns()
     {

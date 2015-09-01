@@ -99,6 +99,18 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
+    public Collection<MetaUser> getUsers() throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MUser.class);
+            List<MetaUser> users = (List) query.execute();
+            return users;
+        } catch (RuntimeException e) {
+            throw new MetaException(e);
+        }
+    }
+
+    @Override
     public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException
     {
         // TODO: check if it already exists

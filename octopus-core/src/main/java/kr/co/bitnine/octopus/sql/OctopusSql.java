@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -89,6 +90,47 @@ public final class OctopusSql
             commands.add(new OctopusSqlDropRole(name));
         }
 
+        @Override
+        public void exitShowDataSources(OctopusSqlParser.ShowDataSourcesContext ctx)
+        {
+
+        }
+
+        @Override
+        public void exitShowSchemas(OctopusSqlParser.ShowSchemasContext ctx)
+        {
+
+        }
+
+        @Override
+        public void exitShowTables(OctopusSqlParser.ShowTablesContext ctx)
+        {
+            String dataSource = ctx.dataSource() == null ? null : ctx.dataSource().getText();
+            String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
+            String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
+            commands.add(new OctopusSqlShowTables(dataSource, schemaPattern, tablePattern));
+        }
+
+        @Override
+        public void exitShowColumns(OctopusSqlParser.ShowColumnsContext ctx)
+        {
+        }
+
+        @Override
+        public void exitShowUsers(OctopusSqlParser.ShowUsersContext ctx)
+        {
+        }
+
+        @Override
+        public void exitShowTablePrivileges(OctopusSqlParser.ShowTablePrivilegesContext ctx)
+        {
+        }
+
+        @Override
+        public void exitShowColumnPrivileges(OctopusSqlParser.ShowColumnPrivilegesContext ctx)
+        {
+        }
+
         List<OctopusSqlCommand> getSqlCommands()
         {
             return commands;
@@ -110,12 +152,12 @@ public final class OctopusSql
         return lsnr.getSqlCommands();
     }
 
-    public static void run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception
+    public static TupleSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception
     {
         switch (command.getType()) {
             case ADD_DATASOURCE:
                 OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
-                runner.addDataSource(addDataSource.getDatasourceName(), addDataSource.getJdbcConnectionString());
+                runner.addDataSource(addDataSource.getDataSourceName(), addDataSource.getJdbcConnectionString());
                 break;
             case CREATE_USER:
                 OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;
@@ -137,8 +179,12 @@ public final class OctopusSql
                 OctopusSqlDropRole dropRole = (OctopusSqlDropRole) command;
                 runner.dropRole(dropRole.getName());
                 break;
+            case SHOW_TABLES:
+                OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
+                return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }
+        return null;
     }
 }

@@ -46,18 +46,15 @@ public class CursorDdl extends Portal
     public TupleSet run(int numRows) throws PostgresException
     {
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
-        for (OctopusSqlCommand c : cStmt.getDdlCommands()) {
-            try {
-                OctopusSql.run(c, sqlRunner);
-            } catch (Exception e) {
-                PostgresErrorData edata = new PostgresErrorData(
-                        PostgresSeverity.ERROR,
-                        "failed to run DDL");
-                throw new PostgresException(edata, e);
-            }
+        OctopusSqlCommand c = cStmt.getDdlCommands().get(0);
+        try {
+            return OctopusSql.run(c, sqlRunner);
+        } catch (Exception e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "failed to run DDL");
+            throw new PostgresException(edata, e);
         }
-
-        return null;
     }
 
     @Override
