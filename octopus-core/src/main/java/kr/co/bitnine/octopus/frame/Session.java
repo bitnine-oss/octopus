@@ -15,18 +15,25 @@
 package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.engine.QueryEngine;
-import kr.co.bitnine.octopus.engine.QueryResult;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.access.transam.TransactionStatus;
+import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.executor.Tuple;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import kr.co.bitnine.octopus.postgres.libpq.Message;
 import kr.co.bitnine.octopus.postgres.libpq.MessageStream;
 import kr.co.bitnine.octopus.postgres.libpq.ProtocolConstants;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -36,8 +43,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.Properties;
 import java.util.Random;
@@ -370,70 +375,57 @@ class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
-    private void sendRowDescription(QueryResult qr, FormatCode[] formats) throws Exception
+    private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws Exception
     {
-        ResultSet rs = qr.unwrap(ResultSet.class);
-        ResultSetMetaData rsmd = rs.getMetaData();
-
-        int colCnt = rsmd.getColumnCount();
+        PostgresAttribute[] attrs = tupDesc.getAttributes();
 
         // RowDescription
-        Message.Builder msgBld = Message.builder('T').putShort((short) colCnt);
-        for (int i = 1; i <= colCnt; i++) {
-            String colName = rsmd.getColumnName(i);
-            int colType = rsmd.getColumnType(i);
-            PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
-
-            msgBld.putCString(colName)
-                    .putInt(0)                                  // table OID
-                    .putShort((short) 0)                        // attribute number
-                    .putInt(type.oid())                         // data type OID
-                    .putShort((short) type.typeLength())        // data type size
-                    .putInt(-1)                                 // type-specific type modifier
-                    .putShort((short) FormatCode.TEXT.code());  // FIXME: not yet known
+        Message.Builder msgBld = Message.builder('T').putShort((short) attrs.length);
+        for (int i = 0; i < attrs.length; i++) {
+            msgBld.putCString(attrs[i].name)
+                    .putInt(0)                                      // table OID
+                    .putShort((short) 0)                            // attribute number
+                    .putInt(attrs[i].type.oid())                    // data type OID
+                    .putShort((short) attrs[i].type.typeLength())   // data type size
+                    .putInt(-1);                                    // type-specific type modifier
+            if (resultFormats.length > 0)
+                msgBld.putShort((short) resultFormats[i].code());
+            else
+                msgBld.putShort((short) FormatCode.TEXT.code());
         }
         messageStream.putMessage(msgBld.build());
     }
 
-    private int sendDataRow(QueryResult qr) throws Exception
+    private void sendDataRow(TupleSet ts, int numRows) throws Exception
     {
-        ResultSet rs = qr.unwrap(ResultSet.class);
-        ResultSetMetaData rsmd = rs.getMetaData();
+        TupleDesc td = ts.getTupleDesc();
 
-        int colCnt = rsmd.getColumnCount();
+        int numAttrs = td.getNumAttributes();
+        FormatCode[] resultFormats = td.getResultFormats();
 
         // DataRow
-        int rowCnt = 0;
-        while (rs.next()) {
-            Message.Builder msgBld = Message.builder('D').putShort((short) colCnt);
-            for (int i = 1; i <= colCnt; i++) {
-                switch (rsmd.getColumnType(i)) {
-                    case Types.INTEGER:
-                        byte[] iBytes = String.valueOf(rs.getInt(i)).getBytes(StandardCharsets.US_ASCII);
-                        msgBld.putInt(iBytes.length)
-                                .putBytes(iBytes);
-                        break;
-                    case Types.VARCHAR:
-                        byte[] vBytes = rs.getString(i).getBytes(StandardCharsets.US_ASCII);
-                        msgBld.putInt(vBytes.length)
-                                .putBytes(vBytes);
-                        break;
-                    default:
-                        PostgresErrorData edata = new PostgresErrorData(
-                                PostgresSeverity.ERROR,
-                                PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                                "currently data type " + rsmd.getColumnType(i) + " is not supported");
-                        new OctopusException(edata).emitErrorReport();
-                }
+        while (true) {
+            Tuple t = ts.next();
+            if (t == null)
+                break;
+
+            Message.Builder msgBld = Message.builder('D').putShort((short) numAttrs);
+            Datum[] datums = t.getDatums();
+            for (int i = 0; i < datums.length; i++) {
+                byte[] bytes;
+
+                if (resultFormats[i] == FormatCode.TEXT)
+                    bytes = datums[i].out().getBytes(StandardCharsets.US_ASCII);
+                else
+                    bytes = datums[i].send();
+
+                msgBld.putInt(bytes.length)
+                        .putBytes(bytes);
             }
             messageStream.putMessage(msgBld.build());
-
-            rowCnt++;
         }
 
-        qr.close();
-
-        return rowCnt;
+        ts.close(); // FIXME: remove
     }
 
     private void handleQuery(Message msg) throws Exception
@@ -441,22 +433,17 @@ class Session implements Runnable
         String queryString = msg.getCString();
         LOG.debug("queryString: " + queryString);
 
-        QueryResult qr = queryEngine.query(queryString);
+        // TODO: support multiple queries in a single queryString
 
-        // DDL
-        if (qr == null) {
-            sendCommandComplete("");
-            return;
-        }
+        Portal p = queryEngine.query(queryString);
+        if (p.getCachedQuery().getCommandTag() == null)
+            sendEmptyQueryResponse();
 
-        // Query
+        TupleSet ts = p.run(0);
+        if (ts != null)
+            sendDataRow(ts, 0);
 
-//        sendEmptyQueryResponse();
-
-        sendRowDescription(qr, new FormatCode[0]);
-        int rowCnt = sendDataRow(qr);
-
-        sendCommandComplete("SELECT " + rowCnt);
+        sendCommandComplete(p.getCompletionTag());
     }
 
     private void handleParse(Message msg) throws Exception
@@ -473,13 +460,6 @@ class Session implements Runnable
             for (short i = 0; i < paramTypes.length; i++)
                 LOG.debug("paramTypes[" + i + "]=" + paramTypes[i].name());
         }
-
-        /*
-         * Format of PostgreSQL's parameter is $n (starts from 1)
-         * Format of Calcite's parameter is ? (same as JDBC)
-         */
-        queryString = queryString.replaceAll("\\$\\d+", "?");
-        LOG.debug("refined queryString='" + queryString + "'");
 
         queryEngine.parse(queryString, stmtName, paramTypes);
 
@@ -526,9 +506,6 @@ class Session implements Runnable
         messageStream.putMessage(Message.builder('2').build());
     }
 
-    // FIXME: describe and execute (refactor code)
-    QueryResult queryResult;
-
     private void handleExecute(Message msg) throws Exception
     {
         String portalName = msg.getCString();
@@ -536,29 +513,58 @@ class Session implements Runnable
 
         LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
 
-        if (queryResult == null) { // DDL
-            sendCommandComplete("");
-            return;
-        }
+        Portal p = queryEngine.getPortal(portalName);
+        if (p.getCachedQuery().getCommandTag() == null)
+            sendEmptyQueryResponse();
 
-//        sendEmptyQueryResponse();
+        TupleSet ts = p.run(numRows);
+        if (ts != null)
+            sendDataRow(ts, numRows);
 
-        int rowCnt = sendDataRow(queryResult);
-        queryResult = null;
-
-        sendCommandComplete("SELECT " + rowCnt);
+        sendCommandComplete(p.getCompletionTag());
     }
 
-    private void handleClose(Message msg) throws IOException
+    private void handleClose(Message msg) throws IOException, OctopusException
     {
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
         LOG.debug("close (type='" + type + "', name=" + name + ")");
 
-        // FIXME
+        try {
+            switch (type) {
+                case 'S':
+                    queryEngine.closeCachedQuery(name);
+                    break;
+                case 'P':
+                    queryEngine.closePortal(name);
+                    break;
+                default:
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.ERROR,
+                            PostgresSQLState.PROTOCOL_VIOLATION,
+                            "invalid CLOSE message subtype '" + type + "'");
+                    new OctopusException(edata).emitErrorReport();
+            }
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
+        }
+
         // CloseComplete
         messageStream.putMessage(Message.builder('3').build());
+    }
+
+    private void sendParameterDescription(PostgresType[] paramTypes) throws Exception
+    {
+        Message.Builder msgBld = Message.builder('t').putShort((short) paramTypes.length);
+        for (PostgresType type : paramTypes)
+            msgBld.putInt(type.oid());
+        messageStream.putMessage(msgBld.build());
+    }
+
+    private void sendNoData() throws Exception
+    {
+        messageStream.putMessage(Message.builder('n').build());
     }
 
     private void handleDescribe(Message msg) throws Exception
@@ -568,6 +574,33 @@ class Session implements Runnable
 
         LOG.debug("describe (type='" + type + "', name=" + name + ")");
 
+        TupleDesc tupDesc;
+        switch (type) {
+            case 'S':
+                CachedQuery cq = queryEngine.getCachedQuery(name);
+                sendParameterDescription(cq.getParamTypes());
+                tupDesc = cq.describe();
+                if (tupDesc == null)
+                    sendNoData();
+                else
+                    sendRowDescription(tupDesc, new FormatCode[0]);
+                break;
+            case 'P':
+                Portal p = queryEngine.getPortal(name);
+                tupDesc = p.describe();
+                if (tupDesc == null)
+                    sendNoData();
+                else
+                    sendRowDescription(tupDesc, tupDesc.getResultFormats());
+                break;
+            default:
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.PROTOCOL_VIOLATION,
+                        "invalid DESCRIBE message subtype '" + type + "'");
+                new OctopusException(edata).emitErrorReport();
+        }
+
         if (type == 'S') {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
@@ -575,16 +608,6 @@ class Session implements Runnable
                     "unsupported frontend protocol");
             new OctopusException(edata).emitErrorReport();
         }
-
-        QueryResult qr = queryEngine.execute(name, 0);
-        if (qr == null /*&& parsedStatement.isDdl()*/) {
-            // NoData
-            messageStream.putMessage(Message.builder('n').build());
-            return;
-        }
-
-        queryResult = qr;
-        sendRowDescription(queryResult, new FormatCode[0]);
     }
 
     void close()

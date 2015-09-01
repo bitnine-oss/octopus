@@ -14,15 +14,18 @@
 
 package kr.co.bitnine.octopus.engine;
 
-import kr.co.bitnine.octopus.frame.OctopusException;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.tcop.AbstractQueryProcessor;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -31,30 +34,27 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.calcite.tools.ValidationException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class QueryEngine
+public class QueryEngine extends AbstractQueryProcessor
 {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
-
-    private CachedStatement unnamedStatement = null;
-    private Cursor unnamedExStatement = null;
 
     public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
     {
@@ -62,24 +62,15 @@ public class QueryEngine
         this.schemaManager = schemaManager;
     }
 
-    public QueryResult query(String queryString) throws Exception
+    @Override
+    protected CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException
     {
-        parse(queryString, "", new PostgresType[0]);
-        bind("", "", null, null, null);
-        QueryResult qr = execute("", 0);
-        return qr;
-    }
-
-    public void parse(String queryString, String stmtName, PostgresType[] paramTypes) throws Exception
-    {
-        // TODO: use stmtName to cache ParsedStatement
-        if (!stmtName.isEmpty()) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
+        /*
+         * Format of PostgreSQL's parameter is $n (starts from 1)
+         * Format of Calcite's parameter is ? (same as JDBC)
+         */
+        queryString = queryString.replaceAll("\\$\\d+", "?");
+        LOG.debug("refined queryString='" + queryString + "'");
 
         // DDL
 
@@ -90,58 +81,76 @@ public class QueryEngine
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
-        if (commands != null) {
-            unnamedStatement = new CachedStatement(commands);
-            return;
-        }
-
-        // tag = CreateCommandTag()
+        if (commands != null)
+            return new CachedStatement(commands);
 
         // Query
 
-        SchemaPlus rootSchema = schemaManager.getCurrentSchema();
+        try {
+            SchemaPlus rootSchema = schemaManager.getCurrentSchema();
 
-        FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(rootSchema)
-                .build();
-        Planner planner = Frameworks.getPlanner(config);
+            FrameworkConfig config = Frameworks.newConfigBuilder()
+                    .defaultSchema(rootSchema)
+                    .build();
+            Planner planner = Frameworks.getPlanner(config);
 
-        SqlNode parse = planner.parse(queryString);
+            SqlNode parse = planner.parse(queryString);
 
-        TableNameTranslator.toFQN(schemaManager, parse);
-        LOG.debug("FQN translated: " + parse.toString());
+            TableNameTranslator.toFQN(schemaManager, parse);
+            LOG.debug("FQN translated: " + parse.toString());
 
-        schemaManager.lockRead();
-        SqlNode validated = planner.validate(parse);
-        schemaManager.unlockRead();
+            schemaManager.lockRead();
+            SqlNode validated = planner.validate(parse);
+            schemaManager.unlockRead();
 
-        unnamedStatement = new CachedStatement(validated, queryString, paramTypes);
+            return new CachedStatement(validated, queryString, paramTypes);
+        } catch (SqlParseException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.SYNTAX_ERROR);
+            throw new PostgresException(edata, e);
+        } catch (ValidationException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "validation failed");
+            throw new PostgresException(edata, e);
+        }
     }
 
-    public void bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws IOException, OctopusException
+    @Override
+    protected Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException
     {
-        CachedStatement curStmt = null;
-        if (stmtName.isEmpty()) {
-            curStmt = unnamedStatement;
-        } else {
-            // TODO: use stmtName to get cached ParsedStatement
+        CachedStatement cStmt = (CachedStatement) cachedQuery;
+
+        if (cStmt.isDdl())
+            return new CursorDdl(cStmt, ddlRunner);
+
+        SqlNode validatedQuery = cStmt.getValidatedQuery();
+        List<String> dsNames = getDatasourceNames(validatedQuery);
+        if (dsNames.size() > 1) {   // by-pass
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
+                    "only by-pass query is supported");
+            throw new PostgresException(edata);
         }
+        LOG.debug("by-pass query: " + validatedQuery.toString());
 
-        // TODO: use portalName to cache ExecutableStatement
-        if (!portalName.isEmpty()) {
+        // TODO: query on multiple data sources (throw not-implemented feature)
+
+        String jdbcDriver;
+        String jdbcConnectionString;
+        try {
+            MetaDataSource datasource = metaContext.getDataSourceByName(dsNames.get(0));
+            jdbcDriver = datasource.getDriverName();
+            jdbcConnectionString = datasource.getConnectionString();
+        } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
+                    "failed to get datasource");
+            throw new PostgresException(edata, e);
         }
 
-        unnamedExStatement = new Cursor(curStmt, paramFormats, paramValues, resultFormats);
+        return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
@@ -190,74 +199,21 @@ public class QueryEngine
         }
     };
 
-    public List<String> getDatasourceNames(SqlNode query) {
+    public List<String> getDatasourceNames(SqlNode query)
+    {
         final Set<String> dsSet = new HashSet<>();
         query.accept(new SqlShuttle() {
             @Override
-            public SqlNode visit(SqlIdentifier identifier) {
+            public SqlNode visit(SqlIdentifier identifier)
+            {
                 // check whether this is fully qualified table name
                 if (identifier.names.size() == 3) {
                     dsSet.add(identifier.names.get(0));
-                    //System.out.println("DS:" + identifier.names.get(0));
                 }
                 return identifier;
             }
         });
 
         return new ArrayList<>(dsSet);
-    }
-
-    public QueryResult executeByPassQuery(SqlNode validatedQuery, String dataSourceName) throws MetaException
-    {
-        MetaDataSource dataSource = metaContext.getDataSourceByName(dataSourceName);
-
-        TableNameTranslator.toDSN(validatedQuery);
-        LOG.debug("by-pass query: " + validatedQuery.toString());
-
-        ResultSet rs = null;
-        try {
-            Class.forName(dataSource.getDriverName());
-            Connection conn = DriverManager.getConnection(dataSource.getConnectionString());
-            Statement stmt = conn.createStatement();
-            rs = stmt.executeQuery(validatedQuery.toString());
-        } catch (ClassNotFoundException | SQLException e) {
-            LOG.error(ExceptionUtils.getStackTrace(e));
-        }
-
-        return new QueryResult(rs);
-    }
-
-    public QueryResult execute(String portalName, int numRows) throws Exception
-    {
-        Cursor curExStmt = null;
-        if (portalName.isEmpty()) {
-            curExStmt = unnamedExStatement;
-        } else {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgresSQLState.PROTOCOL_VIOLATION,
-                    "named prepared statement is not supported");
-            new OctopusException(edata).emitErrorReport();
-        }
-
-        CachedStatement ps = curExStmt.getCachedStatement();
-        if (ps.isDdl()) {
-            for (OctopusSqlCommand c : ps.getDdlCommands())
-                OctopusSql.run(c, ddlRunner);
-
-            return null;
-        }
-
-        SqlNode validatedQuery = ps.getValidatedQuery();
-        List<String> dsNames = getDatasourceNames(validatedQuery);
-        if (dsNames.size() > 1) // by-pass
-            throw new Exception("only by-pass query is supported");
-
-        // TODO: query on multiple data sources (throw not-implemented feature)
-        return executeByPassQuery(validatedQuery, dsNames.get(0));
-    }
-
-    public void prepare(String sql, int[] oids)
-    {
     }
 }

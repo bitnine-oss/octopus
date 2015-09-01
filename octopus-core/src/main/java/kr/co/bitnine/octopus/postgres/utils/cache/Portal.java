@@ -14,17 +14,60 @@
 
 package kr.co.bitnine.octopus.postgres.utils.cache;
 
-public class Portal
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+
+import java.util.Arrays;
+
+public abstract class Portal
 {
     private final CachedQuery cachedQuery;
+    private final FormatCode[] paramFormats;
+    private final byte[][] paramValues;
+    private final FormatCode[] resultFormats;
 
-    public Portal(CachedQuery cachedQuery)
+    protected enum State
+    {
+        READY,
+        ACTIVE,
+        DONE,
+        FAILED
+    }
+    protected State state;
+
+    public Portal(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
     {
         this.cachedQuery = cachedQuery;
+        this.paramFormats = paramFormats;
+        this.paramValues = paramValues;
+        this.resultFormats = resultFormats;
+
+        state = State.READY;
     }
 
     public CachedQuery getCachedQuery()
     {
         return cachedQuery;
     }
+
+    public FormatCode[] getResultFormats()
+    {
+        return Arrays.copyOf(resultFormats, resultFormats.length);
+    }
+
+    public String getCompletionTag()
+    {
+        if (state != State.DONE)
+            return null; // FIXME: throw?
+
+        String cmdTag = cachedQuery.getCommandTag();
+        return cmdTag == null ? null : generateCompletionTag(cmdTag);
+    }
+
+    public abstract TupleDesc describe() throws PostgresException;
+    public abstract TupleSet run(int numRows) throws PostgresException;
+    public abstract String generateCompletionTag(String commandTag);
+    public abstract void close();
 }

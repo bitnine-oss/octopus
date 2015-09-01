@@ -42,6 +42,11 @@ public class PostgresErrorData
         this(severity, sqlState, "missing error text");
     }
 
+    public PostgresErrorData(PostgresSeverity severity, String message)
+    {
+        this(severity, PostgresSQLState.defaultOf(severity), message);
+    }
+
     public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState, String message)
     {
         this.severity = severity;

@@ -14,7 +14,9 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import org.apache.calcite.sql.SqlNode;
@@ -24,32 +26,28 @@ import java.util.List;
 public class CachedStatement extends CachedQuery
 {
     private boolean isDdl;
-
     private final SqlNode validatedQuery;
-    private final String commandTag;
-
     private List<OctopusSqlCommand> ddlCommands;
+    private final String commandTag;
 
     public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
     {
         super(queryString, paramTypes);
 
         isDdl = false;
-
         this.validatedQuery = validatedQuery;
-        commandTag = null;
+        ddlCommands = null;
+        commandTag = "SELECT";
     }
 
     public CachedStatement(List<OctopusSqlCommand> commands)
     {
         super(null, new PostgresType[0]);
 
-        validatedQuery = null;
-        commandTag = null;
-
         isDdl = true;
-
+        validatedQuery = null;
         ddlCommands = commands;
+        commandTag = "???";
     }
 
     public boolean isDdl()
@@ -62,13 +60,23 @@ public class CachedStatement extends CachedQuery
         return validatedQuery;
     }
 
+    public List<OctopusSqlCommand> getDdlCommands()
+    {
+        return ddlCommands;
+    }
+
+    @Override
     public String getCommandTag()
     {
         return commandTag;
     }
 
-    public List<OctopusSqlCommand> getDdlCommands()
+    @Override
+    public TupleDesc describe() throws PostgresException
     {
-        return ddlCommands;
+        return null;
     }
+
+    @Override
+    public void close() { }
 }

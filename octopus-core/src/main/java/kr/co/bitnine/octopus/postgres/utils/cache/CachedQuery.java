@@ -14,11 +14,13 @@
 
 package kr.co.bitnine.octopus.postgres.utils.cache;
 
+import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 
 import java.util.Arrays;
 
-public class CachedQuery
+public abstract class CachedQuery
 {
     private final String queryString;
     private final PostgresType[] paramTypes;
@@ -38,4 +40,8 @@ public class CachedQuery
     {
         return Arrays.copyOf(paramTypes, paramTypes.length);
     }
+
+    public abstract String getCommandTag();
+    public abstract TupleDesc describe() throws PostgresException;
+    public abstract void close();
 }

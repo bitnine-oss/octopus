@@ -20,7 +20,11 @@ import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.postgres.executor.Tuple;
+import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
@@ -77,16 +81,18 @@ public class QueryEngineTest
         schemaManager.addDataSource(metaDataSource);
 
         QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
-        queryEngine.parse("SELECT ID, NAME FROM BITNINE", "", null);
-        queryEngine.bind("", "", new FormatCode[0], new byte[0][], new FormatCode[0]);
-        QueryResult qr = queryEngine.execute("", 0);
-        ResultSet rs = qr.unwrap(ResultSet.class);
-        while (rs.next()) {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            System.out.println("id=" + id + ", name=" + name);
+        Portal p = queryEngine.query("SELECT ID, NAME FROM BITNINE");
+        TupleSet ts = p.run(0);
+        while (true) {
+            Tuple t = ts.next();
+            if (t == null)
+                break;
+
+            Datum[] datums = t.getDatums();
+            for (int i = 0; i < datums.length; i++)
+                System.out.println("  " + datums[i].out());
         }
-        qr.close();
+        ts.close();
 
 //        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
 

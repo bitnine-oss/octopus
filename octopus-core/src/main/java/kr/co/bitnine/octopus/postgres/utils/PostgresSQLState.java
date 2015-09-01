@@ -23,6 +23,7 @@ public enum PostgresSQLState
     UNDEFINED_PSTATEMENT    ("26000"),
     INVALID_PASSWORD        ("28P01"),
     UNDEFINED_CURSOR        ("34000"),
+    SYNTAX_ERROR            ("42601"),
     DUPLICATE_CURSOR        ("42P03"),
     DUPLICATE_PSTATEMENT    ("42P05"),
     TOO_MANY_CONNECTIONS    ("53300"),
