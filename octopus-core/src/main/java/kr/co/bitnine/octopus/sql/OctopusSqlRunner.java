@@ -14,7 +14,10 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+
+import java.util.List;
 
 public interface OctopusSqlRunner
 {
@@ -24,8 +27,8 @@ public interface OctopusSqlRunner
     void dropUser(String name) throws Exception;
     void createRole(String role) throws Exception;
     void dropRole(String role) throws Exception;
-    void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception;
-    void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception;
+    void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception;
+    void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception;
     TupleSet showDataSources() throws Exception;
     TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception;
     TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
@@ -33,5 +36,7 @@ public interface OctopusSqlRunner
     TupleSet showTablePrivileges(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
     TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
     TupleSet showUsers() throws Exception;
+    void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception;
+    void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception;
 }
 

@@ -17,14 +17,12 @@ package kr.co.bitnine.octopus.meta.jdo.model;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 import java.util.HashSet;
 import java.util.Set;
 
 @PersistenceCapable
+@Unique(name="MUSER_NAME_IDX", members={"name"})
 public class MUser implements MetaUser
 {
     @PrimaryKey

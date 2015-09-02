@@ -22,24 +22,24 @@ import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.hadoop.conf.Configuration;
-
-import static org.junit.Assert.*;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.net.InetSocketAddress;
 import java.sql.*;
 import java.util.Properties;
 
+import static org.junit.Assert.assertFalse;
+
 public class SessionServerTest
 {
-    private MemoryDatabase metaMemDb;
-    private MemoryDatabase dataMemDb;
+    private static MemoryDatabase metaMemDb;
+    private static MemoryDatabase dataMemDb;
+    private static MetaStoreService metaStoreService;
+    private static SchemaManager schemaManager;
+    private static SessionServer sessionServer;
 
-    @Before
-    public void setUp() throws Exception
+    @BeforeClass
+    public static void setUpClass() throws Exception
     {
         Class.forName("kr.co.bitnine.octopus.Driver");
 
@@ -49,18 +49,7 @@ public class SessionServerTest
         dataMemDb = new MemoryDatabase("DATA");
         dataMemDb.start();
         dataMemDb.init();
-    }
 
-    @After
-    public void tearDown() throws Exception
-    {
-        dataMemDb.stop();
-        metaMemDb.stop();
-    }
-
-    @Test
-    public void testStartup() throws Exception
-    {
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
         conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
@@ -68,34 +57,55 @@ public class SessionServerTest
         conf.set("metastore.jdo.connection.password", "");
 
         MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
-        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService = new MetaStoreService(metaStore);
         metaStoreService.init(conf);
         metaStoreService.start();
 
-        SchemaManager schemaManager = new SchemaManager(metaStore);
+        schemaManager = new SchemaManager(metaStore);
         schemaManager.init(conf);
         schemaManager.start();
 
-        SessionServer server = new SessionServer(metaStore, schemaManager);
-        server.init(conf);
-        server.start();
+        sessionServer = new SessionServer(metaStore, schemaManager);
+        sessionServer.init(conf);
+        sessionServer.start();
 
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        stmt.close();
+        conn.close();
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception
+    {
+        sessionServer.stop();
+        schemaManager.stop();
+        metaStoreService.stop();
+
+        dataMemDb.stop();
+        metaMemDb.stop();
+    }
+
+    private static Connection getConnection(String user, String password) throws Exception
+    {
         InetSocketAddress addr = NetUtils.createSocketAddr("127.0.0.1:58000");
         String url = "jdbc:octopus://" + NetUtils.getHostPortString(addr) + "/db";
 
         Properties info = new Properties();
-        info.setProperty("user", "octopus");
-        info.setProperty("password", "bitnine");
+        info.setProperty("user", user);
+        info.setProperty("password", password);
 
-        Connection conn = DriverManager.getConnection(url, info);
-        assertFalse(conn.isClosed());
+        return DriverManager.getConnection(url, info);
+    }
 
-        String query = "ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'";
+    @Test
+    public void testSelect() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+
+        String query = "SELECT ID, NAME FROM BITNINE;";
         Statement stmt = conn.createStatement();
-        stmt.execute(query);
-
-        query = "SELECT ID, NAME FROM BITNINE;";
-        stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(query);
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -117,70 +127,74 @@ public class SessionServerTest
         rs.close();
         pstmt.close();
 
-        query = "CREATE USER jsyang IDENTIFIED BY '0009';";
-        stmt = conn.createStatement();
-        stmt.execute(query);
+        conn.close();
+    }
+
+    @Test
+    public void testUser() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009';");
         stmt.close();
-
         conn.close();
 
-        info.setProperty("user", "jsyang");
-        info.setProperty("password", "0009");
-        conn = DriverManager.getConnection(url, info);
+        conn = getConnection("jsyang", "0009");
         assertFalse(conn.isClosed());
+        conn.close();
 
-        query = "ALTER USER jsyang IDENTIFIED BY 'jsyang' REPLACE '0009';";
+        conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute(query);
+        stmt.execute("ALTER USER jsyang IDENTIFIED BY 'jsyang' REPLACE '0009';");
         stmt.close();
-
         conn.close();
 
-        info.setProperty("user", "jsyang");
-        info.setProperty("password", "jsyang");
-        conn = DriverManager.getConnection(url, info);
+        conn = getConnection("jsyang", "jsyang");
         assertFalse(conn.isClosed());
-
         conn.close();
 
-        info.setProperty("user", "octopus");
-        info.setProperty("password", "bitnine");
-        conn = DriverManager.getConnection(url, info);
-        assertFalse(conn.isClosed());
-
-        query = "DROP USER jsyang;";
+        conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute(query);
+        stmt.execute("DROP USER jsyang;");
         stmt.close();
-
         conn.close();
+    }
 
-        info.setProperty("user", "octopus");
-        info.setProperty("password", "bitnine");
-        conn = DriverManager.getConnection(url, info);
-        assertFalse(conn.isClosed());
+    @Test
+    public void testRole() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
 
-        query = "CREATE ROLE bmkim;";
-        stmt = conn.createStatement();
-        stmt.execute(query);
+        stmt.execute("CREATE ROLE rnd;");
+        stmt.execute("DROP ROLE rnd;");
+
         stmt.close();
-
         conn.close();
+    }
 
-        info.setProperty("user", "octopus");
-        info.setProperty("password", "bitnine");
-        conn = DriverManager.getConnection(url, info);
-        assertFalse(conn.isClosed());
+    @Test
+    public void testGrantRevokeSysPrivs() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
 
-        query = "DROP ROLE bmkim;";
-        stmt = conn.createStatement();
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009';");
+
+        stmt.execute("GRANT ALL PRIVILEGES TO jsyang;");
+
+        String query = "REVOKE ALTER SYSTEM, " +
+                "CREATE USER, ALTER USER, DROP USER, " +
+                "COMMENT ANY, " +
+                "GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE " +
+                "FROM jsyang;";
         stmt.execute(query);
+
+        stmt.execute("REVOKE ALL PRIVILEGES FROM jsyang;");
+
+        stmt.execute("DROP USER jsyang;");
+
         stmt.close();
-
         conn.close();
-
-        server.stop();
-        schemaManager.stop();
-        metaStoreService.stop();
     }
 }

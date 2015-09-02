@@ -25,9 +25,9 @@ public class OctopusSqlCommentOn extends OctopusSqlCommand
         USER
     }
 
-    private Target targetType;
-    private OctopusSqlTargetIdentifier target;
-    private String comment;
+    private final Target targetType;
+    private final OctopusSqlTargetIdentifier target;
+    private final String comment;
 
     OctopusSqlCommentOn(Target targetType, OctopusSqlTargetIdentifier target, String comment)
     {
@@ -36,23 +36,23 @@ public class OctopusSqlCommentOn extends OctopusSqlCommand
         this.comment = comment;
     }
 
-    public Target getTargetType()
+    Target getTargetType()
     {
         return this.targetType;
     }
 
-    public OctopusSqlTargetIdentifier getTarget()
+    OctopusSqlTargetIdentifier getTarget()
     {
         return this.target;
     }
 
-    public String getComment()
+    String getComment()
     {
         return this.comment;
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
         return Type.COMMENT_ON;
     }

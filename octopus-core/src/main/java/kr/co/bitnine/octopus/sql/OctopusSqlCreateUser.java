@@ -16,8 +16,8 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlCreateUser extends OctopusSqlCommand
 {
-    private String name;
-    private String password;
+    private final String name;
+    private final String password;
 
     OctopusSqlCreateUser(String name, String password)
     {

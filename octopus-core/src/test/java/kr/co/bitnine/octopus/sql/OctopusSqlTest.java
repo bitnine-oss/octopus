@@ -14,83 +14,79 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
 
 public class OctopusSqlTest
 {
-    @Test
-    public void test() throws Exception
-    {
-        String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';\n" +
-                "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n" +
-                "DROP USER octopus;\n" +
-                "ALTER USER octopus IDENTIFIED BY 'bitnine';\n" +
-                "CREATE ROLE octopus;\n" +
-                "DROP ROLE octopus;\n" +
-                "COMMENT ON USER USER1 IS 'test';\n" +
-                "COMMENT ON DATASOURCE DS1 IS 'test';\n" +
-                "COMMENT ON SCHEMA DS1.SCHEMA1 IS 'test';\n" +
-                "COMMENT ON TABLE DS1.SCHEMA1.TABLE1 IS 'test';\n" +
-                "COMMENT ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'test';\n";
-        List<OctopusSqlCommand> commands = OctopusSql.parse(query);
+    private static OctopusSqlRunner runner;
 
-        OctopusSqlRunner runner = new OctopusSqlRunner() {
+    @BeforeClass
+    public static void setUpClass()
+    {
+        runner = new OctopusSqlRunner() {
             @Override
             public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
             {
-                System.out.println("name=" + dataSourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+                System.out.println("ADD DATASOURCE name=" + dataSourceName + ", jdbcConnectionString=" + jdbcConnectionString);
             }
 
             @Override
             public void createUser(String name, String password) throws Exception
             {
-                System.out.println("name=" + name + ", password=" + password);
+                System.out.println("CREATE USER name=" + name + ", password=" + password);
             }
 
             @Override
-            public void alterUser(String name, String password, String old_password) throws Exception
+            public void alterUser(String name, String password, String oldPassword) throws Exception
             {
-                System.out.println("name=" + name + ", password=" + password + ", old_password=" + old_password);
+                System.out.println("ALTER USER name=" + name + ", password=" + password + ", oldPassword=" + oldPassword);
             }
 
             @Override
             public void dropUser(String name) throws Exception
             {
-                System.out.println("name=" + name);
-            }
-
-            @Override
-            public TupleSet showUsers() throws Exception
-            {
-                System.out.println("SHOW USERS");
-                return null;
+                System.out.println("DROP USER " + name);
             }
 
             @Override
             public void createRole(String role) throws Exception
             {
-                System.out.println("role=" + role);
+                System.out.println("CREATE ROLE " + role);
             }
 
             @Override
             public void dropRole(String role) throws Exception
             {
-                System.out.println("role=" + role);
+                System.out.println("DROP ROLE " + role);
             }
 
             @Override
-            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+            public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees)
             {
-                System.out.println("CommentOn. targetType=" + target + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
+                System.out.print("GRANT [");
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    System.out.print(sysPriv.name() + ",");
+                System.out.print("] TO [");
+                for (String grantee : grantees)
+                    System.out.print(grantee + ",");
+                System.out.println("]");
             }
 
             @Override
-            public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+            public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees)
             {
-                System.out.println("SetDataCategoryOn. "  + " dataSourceName=" + dataSource + " schemaName=" + schema + " tableName=" + table + " columnName=" + column + " category=" + category);
+                System.out.print("REVOKE [");
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    System.out.print(sysPriv.name() + ",");
+                System.out.print("] FROM [");
+                for (String revokee : revokees)
+                    System.out.print(revokee + ",");
+                System.out.println("]");
             }
 
             @Override
@@ -101,38 +97,127 @@ public class OctopusSqlTest
             }
 
             @Override
-            public TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception
+            public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception
             {
+                System.out.println("SHOW SCHEMAS " + dataSourceName + "/" + schemaPattern);
                 return null;
             }
 
             @Override
-            public TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception
+            public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
             {
-                System.out.println("dataSource=" + dataSource + ", schemaPattern=" + schemaPattern + ", tablePattern=" + tablePattern);
+                System.out.println("SHOW TABLES " + dataSourceName + "/" + schemaPattern + "/" + tablePattern);
                 return null;
             }
 
             @Override
-            public TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+            public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
             {
+                System.out.println("SHOW COLUMNS " + dataSourceName + "/" + schemaPattern + "/" + tablePattern + "/" + columnPattern);
                 return null;
             }
 
             @Override
-            public TupleSet showTablePrivileges(String dataSource, String schemaPattern, String tablePattern) throws Exception
+            public TupleSet showTablePrivileges(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
             {
+                System.out.println("SHOW TABLE PRIVILEGES " + dataSourceName + "/" + schemaPattern + "/" + tablePattern);
                 return null;
             }
 
             @Override
-            public TupleSet showColumnPrivileges(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+            public TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
             {
+                System.out.println("SHOW COLUMN PRIVILEGES " + dataSourceName + "/" + schemaPattern + "/" + tablePattern + "/" + columnPattern);
                 return null;
+            }
+
+            @Override
+            public TupleSet showUsers() throws Exception
+            {
+                System.out.println("SHOW USERS");
+                return null;
+            }
+
+            @Override
+            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+            {
+                System.out.println("COMMENT ON targetType=" + targetType.name() + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
+            }
+
+            @Override
+            public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+            {
+                System.out.println("SET DATACATEGORY ON dataSourceName=" + dataSource + " schemaName=" + schema + " tableName=" + table + " columnName=" + column + " category=" + category);
             }
         };
+    }
 
-        for (OctopusSqlCommand c : commands)
+    private void parseAndRun(String query) throws Exception
+    {
+        for (OctopusSqlCommand c : OctopusSql.parse(query))
             OctopusSql.run(c, runner);
+    }
+
+    @Test
+    public void testAlterSystem() throws Exception
+    {
+        String query = "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testUser() throws Exception
+    {
+        String query = "CREATE USER octopus IDENTIFIED BY 'bitnine';\n" +
+                "ALTER USER octopus IDENTIFIED BY 'bitnine';\n" +
+                "DROP USER octopus;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testRole() throws Exception
+    {
+        String query = "CREATE ROLE octopus;\n" +
+                "DROP ROLE octopus;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testGrantRevokeSysPrivs() throws Exception
+    {
+        String query = "GRANT GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE TO octopus, jsyang;\n" +
+                "REVOKE ALL PRIVILEGES FROM octopus;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testShow() throws Exception
+    {
+        String query = "SHOW DATASOURCES;\n" +
+                "SHOW SCHEMAS SCHEMA 'SCHMEA_';\n" +
+                "SHOW TABLES DATASOURCE DS1 TABLE 'TBL%';\n" +
+                "SHOW COLUMNS COLUMN '%\\_COL';\n" +
+                "SHOW TABLE PRIVILEGES DATASOURCE DS1;\n" +
+                "SHOW COLUMN PRIVILEGES COLUMN '_COL\\%';\n" +
+                "SHOW USERS;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testCommentOn() throws Exception
+    {
+        String query = "COMMENT ON USER USER1 IS 'test';\n" +
+                "COMMENT ON DATASOURCE DS1 IS 'test';\n" +
+                "COMMENT ON SCHEMA DS1.SCHEMA1 IS 'test';\n" +
+                "COMMENT ON TABLE DS1.SCHEMA1.TABLE1 IS 'test';\n" +
+                "COMMENT ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'test';\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testSetDataCategoryOn() throws Exception
+    {
+        String query = "SET DATACATEGORY ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'category';\n";
+        parseAndRun(query);
     }
 }

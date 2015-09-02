@@ -17,6 +17,7 @@ package kr.co.bitnine.octopus.engine;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
@@ -47,7 +48,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import javax.ws.rs.POST;
 import java.util.*;
 
 public class QueryEngine extends AbstractQueryProcessor
@@ -199,6 +199,18 @@ public class QueryEngine extends AbstractQueryProcessor
         public void dropRole(String role) throws Exception
         {
             metaContext.dropRoleByName(role);
+        }
+
+        @Override
+        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
+        {
+            metaContext.addSystemPrivileges(sysPrivs, grantees);
+        }
+
+        @Override
+        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
+        {
+            metaContext.addSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override

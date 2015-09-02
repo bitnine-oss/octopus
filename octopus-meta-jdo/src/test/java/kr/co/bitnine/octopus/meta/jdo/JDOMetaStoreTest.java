@@ -11,6 +11,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
@@ -77,8 +78,9 @@ public class JDOMetaStoreTest
 
         MetaUser user = mc.createUser("octopus", "bitnine");
 
-        mc.addSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, user.getName());
-        mc.addSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, user.getName());
+        mc.addSystemPrivileges(
+                Arrays.asList(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, SystemPrivilege.GRANT_ANY_PRIVILEGE),
+                Arrays.asList(user.getName()));
 
         mc.close();
 
@@ -89,7 +91,9 @@ public class JDOMetaStoreTest
         for (SystemPrivilege sysPriv : sysPrivs)
             System.out.println(sysPriv.name());
 
-        mc.removeSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, user.getName());
+        mc.removeSystemPrivileges(
+                Arrays.asList(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE),
+                Arrays.asList(user.getName()));
 
         mc.close();
 

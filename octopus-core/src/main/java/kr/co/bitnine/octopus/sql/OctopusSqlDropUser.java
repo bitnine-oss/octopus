@@ -16,7 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlDropUser extends OctopusSqlCommand
 {
-    private String name;
+    private final String name;
 
     OctopusSqlDropUser(String name)
     {
@@ -29,8 +29,8 @@ class OctopusSqlDropUser extends OctopusSqlCommand
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.DROP_USER;
+        return Type.DROP_USER;
     }
 }

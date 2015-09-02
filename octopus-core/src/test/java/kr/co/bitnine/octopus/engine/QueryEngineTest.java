@@ -27,17 +27,20 @@ import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class QueryEngineTest
 {
-    private MemoryDatabase metaMemDb;
-    private MemoryDatabase dataMemDb;
+    private static MemoryDatabase metaMemDb;
+    private static MemoryDatabase dataMemDb;
+    private static MetaStore metaStore;
+    private static MetaStoreService metaStoreService;
+    private static SchemaManager schemaManager;
 
-    @Before
-    public void setUp() throws Exception
+    @BeforeClass
+    public static void setUpClass() throws Exception
     {
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();
@@ -45,11 +48,34 @@ public class QueryEngineTest
         dataMemDb = new MemoryDatabase("DATA");
         dataMemDb.start();
         dataMemDb.init();
+
+        Configuration conf = new OctopusConfiguration();
+        conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
+        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
+        conf.set("metastore.jdo.connection.username", "");
+        conf.set("metastore.jdo.connection.password", "");
+
+        metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService.init(conf);
+        metaStoreService.start();
+
+        schemaManager = new SchemaManager(metaStore);
+        schemaManager.init(conf);
+        schemaManager.start();
+
+        MetaContext mc = metaStore.getMetaContext();
+        MetaDataSource metaDataSource = mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        schemaManager.addDataSource(metaDataSource);
+        mc.close();
     }
 
-    @After
-    public void tearDown() throws Exception
+    @AfterClass
+    public static void tearDownClass() throws Exception
     {
+        schemaManager.stop();
+        metaStoreService.stop();
+
         dataMemDb.stop();
         metaMemDb.stop();
     }
@@ -57,25 +83,7 @@ public class QueryEngineTest
     @Test
     public void test() throws Exception
     {
-        Configuration conf = new OctopusConfiguration();
-        conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
-        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
-        conf.set("metastore.jdo.connection.username", "");
-        conf.set("metastore.jdo.connection.password", "");
-
-        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
-        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
-        metaStoreService.init(conf);
-        metaStoreService.start();
-
-        SchemaManager schemaManager = new SchemaManager(metaStore);
-        schemaManager.init(conf);
-        schemaManager.start();
-
         MetaContext mc = metaStore.getMetaContext();
-
-        MetaDataSource metaDataSource = mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
-        schemaManager.addDataSource(metaDataSource);
 
         QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
         Portal p = queryEngine.query("SELECT ID, NAME FROM BITNINE");
@@ -105,7 +113,5 @@ public class QueryEngineTest
         ts.close();
 
         mc.close();
-        schemaManager.stop();
-        metaStoreService.stop();
     }
 }

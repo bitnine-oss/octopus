@@ -176,7 +176,7 @@ public class JDOMetaContext implements MetaContext
 
             return dataSource;
         } catch (Exception e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to add data source" , e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
@@ -370,29 +370,51 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public boolean addSystemPrivilege(SystemPrivilege sysPriv, String userName) throws MetaException
+    public void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
     {
-        MUser mUser = (MUser) getUser(userName);
-        boolean added = mUser.addSystemPrivilege(sysPriv);
+        Transaction tx = pm.currentTransaction();
         try {
-            pm.makePersistent(mUser);
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to add system privilege " + sysPriv.name() + " to user '" + userName + "'");
+            tx.begin();
+
+            for (String userName : userNames) {
+                MUser mUser = (MUser) getUser(userName);
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    mUser.addSystemPrivilege(sysPriv);
+
+                pm.makePersistent(mUser);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to add privileges to users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
-        return added;
     }
 
     @Override
-    public boolean removeSystemPrivilege(SystemPrivilege sysPriv, String userName) throws MetaException
+    public void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
     {
-        MUser mUser = (MUser) getUser(userName);
-        boolean removed = mUser.removeSystemPrivilege(sysPriv);
+        Transaction tx = pm.currentTransaction();
         try {
-            pm.makePersistent(mUser);
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to remove system privilege " + sysPriv.name() + " from user '" + userName + "'");
+            tx.begin();
+
+            for (String userName : userNames) {
+                MUser mUser = (MUser) getUser(userName);
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    mUser.removeSystemPrivilege(sysPriv);
+
+                pm.makePersistent(mUser);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to remove privileges from users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
-        return removed;
     }
 
     @Override

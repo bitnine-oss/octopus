@@ -14,14 +14,16 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static kr.co.bitnine.octopus.sql.OctopusSqlSystemPrivileges.*;
 
 public final class OctopusSql
 {
@@ -31,6 +33,8 @@ public final class OctopusSql
     {
         private List<OctopusSqlCommand> commands;
 
+        private Set<SystemPrivilege> sysPrivs;
+
         // for commentOnTarget rule. FIXME
         OctopusSqlCommentOn.Target commentOnTargetType;
         OctopusSqlTargetIdentifier commentOnTarget;
@@ -38,6 +42,8 @@ public final class OctopusSql
         Listener()
         {
             commands = new ArrayList<>();
+
+            sysPrivs = null;
         }
 
         @Override
@@ -92,6 +98,108 @@ public final class OctopusSql
         {
             String name = ctx.role().getText();
             commands.add(new OctopusSqlDropRole(name));
+        }
+
+        @Override
+        public void exitGrantSystemPrivileges(OctopusSqlParser.GrantSystemPrivilegesContext ctx)
+        {
+            assert this.sysPrivs != null;
+
+            List<SystemPrivilege> sysPrivs = new ArrayList<>(this.sysPrivs);
+
+            Set<String> grantees = new HashSet<>();
+            for (OctopusSqlParser.GranteeContext grantee : ctx.grantees().grantee())
+                grantees.add(grantee.getText());
+
+            commands.add(new OctopusSqlGrantSysPrivs(sysPrivs, new ArrayList<>(grantees)));
+
+            this.sysPrivs = null;
+        }
+
+        @Override
+        public void exitRevokeSystemPrivileges(OctopusSqlParser.RevokeSystemPrivilegesContext ctx)
+        {
+            assert this.sysPrivs != null;
+
+            List<SystemPrivilege> sysPrivs = new ArrayList<>(this.sysPrivs);
+
+            Set<String> revokees = new HashSet<>();
+            for (OctopusSqlParser.GranteeContext revokee : ctx.grantees().grantee())
+                revokees.add(revokee.getText());
+
+            commands.add(new OctopusSqlRevokeSysPrivs(sysPrivs, new ArrayList<>(revokees)));
+
+            this.sysPrivs = null;
+        }
+
+        @Override
+        public void enterSystemPrivileges(OctopusSqlParser.SystemPrivilegesContext ctx)
+        {
+            assert sysPrivs == null;
+            sysPrivs = new HashSet<>();
+        }
+
+        @Override
+        public void exitSysPrivAlterSystem(OctopusSqlParser.SysPrivAlterSystemContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.ALTER_SYSTEM);
+        }
+
+        @Override
+        public void exitSysPrivSelectAnyTable(OctopusSqlParser.SysPrivSelectAnyTableContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.SELECT_ANY_TABLE);
+        }
+
+        @Override
+        public void exitSysPrivCreateUser(OctopusSqlParser.SysPrivCreateUserContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.CREATE_USER);
+        }
+
+        @Override
+        public void exitSysPrivAlterUser(OctopusSqlParser.SysPrivAlterUserContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.ALTER_USER);
+        }
+
+        @Override
+        public void exitSysPrivDropUser(OctopusSqlParser.SysPrivDropUserContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.DROP_USER);
+        }
+
+        @Override
+        public void exitSysPrivCommentAny(OctopusSqlParser.SysPrivCommentAnyContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.COMMENT_ANY);
+        }
+
+        @Override
+        public void exitSysPrivGrantAnyObjPriv(OctopusSqlParser.SysPrivGrantAnyObjPrivContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
+        }
+
+        @Override
+        public void exitSysPrivGrantAnyPriv(OctopusSqlParser.SysPrivGrantAnyPrivContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.add(SystemPrivilege.GRANT_ANY_PRIVILEGE);
+        }
+
+        @Override
+        public void exitSysPrivAllPrivs(OctopusSqlParser.SysPrivAllPrivsContext ctx)
+        {
+            assert sysPrivs != null;
+            sysPrivs.addAll(Arrays.asList(SystemPrivilege.values()));
         }
 
         @Override
@@ -254,6 +362,14 @@ public final class OctopusSql
                 OctopusSqlDropRole dropRole = (OctopusSqlDropRole) command;
                 runner.dropRole(dropRole.getName());
                 break;
+            case GRANT_SYS_PRIVS:
+                OctopusSqlGrantSysPrivs grant = (OctopusSqlGrantSysPrivs) command;
+                runner.grantSystemPrivileges(grant.getSysPrivs(), grant.getGrantees());
+                break;
+            case REVOKE_SYS_PRIVS:
+                OctopusSqlRevokeSysPrivs revoke = (OctopusSqlRevokeSysPrivs) command;
+                runner.revokeSystemPrivileges(revoke.getSysPrivs(), revoke.getGrantees());
+                break;
             case SHOW_TABLES:
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
                 return runner.showTables(showTables.getDataSourceName(), showTables.getSchemaPattern(), showTables.getTablePattern());
@@ -266,6 +382,7 @@ public final class OctopusSql
             case SET_DATACATEGORY_ON:
                 OctopusSqlSetDataCategoryOn setDataCategoryOn = (OctopusSqlSetDataCategoryOn) command;
                 runner.setDataCategoryOn(setDataCategoryOn.getDataSource(), setDataCategoryOn.getSchema(), setDataCategoryOn.getTable(), setDataCategoryOn.getColumn(), setDataCategoryOn.getCategory());
+                break;
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

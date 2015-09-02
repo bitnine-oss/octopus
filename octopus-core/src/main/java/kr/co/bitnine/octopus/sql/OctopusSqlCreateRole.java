@@ -16,7 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlCreateRole extends OctopusSqlCommand
 {
-    private String role;
+    private final String role;
 
     OctopusSqlCreateRole(String role)
     {
@@ -29,8 +29,8 @@ class OctopusSqlCreateRole extends OctopusSqlCommand
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.CREATE_ROLE;
+        return Type.CREATE_ROLE;
     }
 }

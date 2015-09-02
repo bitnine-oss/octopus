@@ -33,7 +33,9 @@ ddlStmt
     | dropUser
     | createRole
     | dropRole
-    | showTables
+    | grant
+    | revoke
+    | show
     | commentOn
     | setDataCategoryOn
     ;
@@ -90,28 +92,74 @@ role
     : IDENTIFIER
     ;
 
-showDataSources
-    : K_SHOW K_DATASOURCES
+grant
+    : K_GRANT grantSystemPrivileges
+    | K_GRANT grantObjectPrivileges
     ;
 
-showSchemas
-    : K_SHOW K_SCHEMAS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )?
+grantSystemPrivileges
+    : systemPrivileges K_TO grantees
     ;
 
-showTables
-    : K_SHOW K_TABLES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+grantObjectPrivileges
+    :
     ;
 
-showColumns
-    : K_SHOW K_COLUMNS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+revoke
+    : K_REVOKE revokeSystemPrivileges
+    | K_REVOKE revokeObjectPrivileges
     ;
 
-showTablePrivileges
-    : K_SHOW K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+revokeSystemPrivileges
+    : systemPrivileges K_FROM grantees
     ;
 
-showColumnPrivileges
-    : K_SHOW K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+revokeObjectPrivileges
+    :
+    ;
+
+systemPrivileges
+    : systemPrivilege ( ',' systemPrivilege )*
+    ;
+
+systemPrivilege
+    : K_ALTER K_SYSTEM                      # SysPrivAlterSystem
+    | K_SELECT K_ANY K_TABLE                # SysPrivSelectAnyTable
+    | K_CREATE K_USER                       # SysPrivCreateUser
+    | K_ALTER K_USER                        # SysPrivAlterUser
+    | K_DROP K_USER                         # SysPrivDropUser
+    | K_COMMENT K_ANY                       # SysPrivCommentAny
+    | K_GRANT K_ANY K_OBJECT K_PRIVILEGE    # SysPrivGrantAnyObjPriv
+    | K_GRANT K_ANY K_PRIVILEGE             # SysPrivGrantAnyPriv
+    | K_ALL K_PRIVILEGES                    # SysPrivAllPrivs
+    | role                                  # SysPrivRole
+    ;
+
+objectPrivilege
+    : K_SELECT
+    ;
+
+grantees
+    : grantee ( ',' grantee )*
+    ;
+
+// user or role
+grantee
+    : IDENTIFIER
+    ;
+
+show
+    : K_SHOW showTargets
+    ;
+
+showTargets
+    : K_DATASOURCES                                                                                                                             # ShowDataSources
+    | K_SCHEMAS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )?                                                                    # ShowSchemas
+    | K_TABLES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                                           # ShowTables
+    | K_COLUMNS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?              # ShowColumns
+    | K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                               # ShowTablePrivileges
+    | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowColumnPrivileges
+    | K_USERS                                                                                                                                   # ShowUsers
     ;
 
 schemaPattern
@@ -124,10 +172,6 @@ tablePattern
 
 columnPattern
     : STRING_LITERAL
-    ;
-
-showUsers
-    : K_SHOW K_USERS
     ;
 
 commentOn
@@ -174,7 +218,9 @@ error
     ;
 
 K_ADD : A D D ;
+K_ALL : A L L ;
 K_ALTER : A L T E R ;
+K_ANY : A N Y ;
 K_BY : B Y ;
 K_COLUMN : C O L U M N ;
 K_COLUMNS : C O L U M N S ;
@@ -185,19 +231,26 @@ K_DATACATEGORY : D A T A C A T E G O R Y ;
 K_DATASOURCE : D A T A S O U R C E ;
 K_DATASOURCES : D A T A S O U R C E S ;
 K_DROP : D R O P ;
+K_FROM : F R O M ;
+K_GRANT : G R A N T ;
 K_IDENTIFIED : I D E N T I F I E D ;
 K_IS : I S ;
+K_OBJECT : O B J E C T ;
 K_ON : O N ;
+K_PRIVILEGE : P R I V I L E G E ;
 K_PRIVILEGES : P R I V I L E G E S ;
 K_REPLACE : R E P L A C E ;
+K_REVOKE : R E V O K E ;
 K_ROLE : R O L E ;
 K_SCHEMA : S C H E M A ;
 K_SCHEMAS : S C H E M A S ;
+K_SELECT : S E L E C T ;
 K_SET : S E T ;
 K_SHOW : S H O W ;
 K_SYSTEM : S Y S T E M ;
 K_TABLE : T A B L E ;
 K_TABLES : T A B L E S ;
+K_TO : T O ;
 K_USER : U S E R ;
 K_USERS : U S E R S ;
 

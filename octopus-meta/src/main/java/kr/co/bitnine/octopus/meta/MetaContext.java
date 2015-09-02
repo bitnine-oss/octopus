@@ -18,6 +18,7 @@ import kr.co.bitnine.octopus.meta.model.*;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface MetaContext
 {
@@ -54,8 +55,8 @@ public interface MetaContext
     void dropRoleByName(String name) throws MetaException;
 
     // Privilege
-    boolean addSystemPrivilege(SystemPrivilege sysPriv, String userName) throws MetaException;
-    boolean removeSystemPrivilege(SystemPrivilege sysPriv, String userName) throws MetaException;
+    void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
+    void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
 
     void close();
 }
