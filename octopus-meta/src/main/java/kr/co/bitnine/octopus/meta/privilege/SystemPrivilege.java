@@ -12,15 +12,16 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.meta.privilege;
 
-import java.util.Collection;
-
-public interface MetaDataSource
+public enum SystemPrivilege
 {
-    String getName();
-    String getDriverName();
-    String getConnectionString();
-    String getComment();
-    Collection<MetaSchema> getSchemas();
+    ALTER_SYSTEM,
+    SELECT_ANY_TABLE,
+    CREATE_USER,
+    ALTER_USER,
+    DROP_USER,
+    COMMENT_ANY,
+    GRANT_ANY_OBJECT_PRIVILEGE,
+    GRANT_ANY_PRIVILEGE
 }

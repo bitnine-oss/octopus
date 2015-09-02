@@ -27,10 +27,9 @@ public class MRole implements MetaRole
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long id;
+    private long id;
 
-    String name;
-    Date createtime;
+    private String name;
 
     public MRole(String name)
     {

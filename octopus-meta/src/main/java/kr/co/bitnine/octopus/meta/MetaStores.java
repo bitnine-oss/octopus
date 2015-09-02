@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.meta;
 
 import kr.co.bitnine.octopus.meta.model.MetaUser;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
 import java.lang.reflect.Constructor;
 
@@ -37,6 +38,15 @@ public final class MetaStores
             return;
 
         MetaUser user = mc.createUser("octopus", "bitnine");
+
+        mc.addSystemPrivilege(SystemPrivilege.ALTER_SYSTEM, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.CREATE_USER, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.ALTER_USER, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.DROP_USER, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.COMMENT_ANY, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, user.getName());
+        mc.addSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, user.getName());
 
         mc.close();
     }

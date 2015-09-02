@@ -30,14 +30,14 @@ public class MSchema implements MetaSchema
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long ID;
+    private long id;
 
-    String name;
-    String comment;
-    MDataSource dataSource;
+    private String name;
+    private MDataSource dataSource;
+    private String comment;
 
     @Persistent(mappedBy="schema")
-    Collection<MTable> tables;
+    private Collection<MTable> tables;
 
     public MSchema(String name, MDataSource dataSource)
     {
@@ -52,26 +52,25 @@ public class MSchema implements MetaSchema
     }
 
     @Override
-    public String getComment()
-    {
-        return comment;
-    }
-
-    @Override
-    public Collection<MetaTable> getTables()
-    {
-        return new ArrayList(tables);
-    }
-
-    @Override
     public MetaDataSource getDataSource()
     {
         return dataSource;
     }
 
     @Override
+    public String getComment()
+    {
+        return comment;
+    }
+
     public void setComment(String comment)
     {
         this.comment = comment;
+    }
+
+    @Override
+    public Collection<MetaTable> getTables()
+    {
+        return new ArrayList<MetaTable>(tables);
     }
 }

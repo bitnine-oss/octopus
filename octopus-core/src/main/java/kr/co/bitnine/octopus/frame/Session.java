@@ -229,7 +229,7 @@ class Session implements Runnable
         String username = clientParams.getProperty(CLIENT_PARAM_USER);
         try {
             String password = msg.getCString();
-            String currentPassword = metaContext.getUserPasswordByName(username);
+            String currentPassword = metaContext.getUser(username).getPassword();
             if (!password.equals(currentPassword)) {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.FATAL,

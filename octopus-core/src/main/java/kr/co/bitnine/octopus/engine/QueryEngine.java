@@ -141,7 +141,7 @@ public class QueryEngine extends AbstractQueryProcessor
         String jdbcDriver;
         String jdbcConnectionString;
         try {
-            MetaDataSource dataSource = metaContext.getDataSourceByName(dsNames.get(0));
+            MetaDataSource dataSource = metaContext.getDataSource(dsNames.get(0));
             jdbcDriver = dataSource.getDriverName();
             jdbcConnectionString = dataSource.getConnectionString();
         } catch (MetaException e) {
@@ -508,19 +508,19 @@ public class QueryEngine extends AbstractQueryProcessor
         {
             switch (targetType) {
                 case DATASOURCE:
-                    metaContext.commentOnDataSource(target.datasource, comment);
+                    metaContext.commentOnDataSource(comment, target.datasource);
                     break;
                 case SCHEMA:
-                    metaContext.commentOnSchema(target.datasource, target.schema, comment);
+                    metaContext.commentOnSchema(comment, target.datasource, target.schema);
                     break;
                 case TABLE:
-                    metaContext.commentOnTable(target.datasource, target.schema, target.table, comment);
+                    metaContext.commentOnTable(comment, target.datasource, target.schema, target.table);
                     break;
                 case COLUMN:
-                    metaContext.commentOnColumn(target.datasource, target.schema, target.table, target.column, comment);
+                    metaContext.commentOnColumn(comment, target.datasource, target.schema, target.table, target.column);
                     break;
                 case USER:
-                    metaContext.commentOnUser(target.user, comment);
+                    metaContext.commentOnUser(comment, target.user);
                     break;
             }
         }
@@ -528,7 +528,7 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
         {
-            metaContext.setDataCategoryOn(dataSource, schema, table, column, category);
+            metaContext.setDataCategoryOn(category, dataSource, schema, table, column);
         }
     };
 

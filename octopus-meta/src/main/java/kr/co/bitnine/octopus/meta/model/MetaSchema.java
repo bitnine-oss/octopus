@@ -19,9 +19,7 @@ import java.util.Collection;
 public interface MetaSchema
 {
     String getName();
+    MetaDataSource getDataSource();
     String getComment();
     Collection<MetaTable> getTables();
-    MetaDataSource getDataSource();
-
-    void setComment(String comment);
 }
