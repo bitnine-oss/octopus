@@ -27,11 +27,11 @@ public interface OctopusSqlRunner
     void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception;
     void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception;
     TupleSet showDataSources() throws Exception;
-    TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception;
-    TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception;
-    TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
-    TupleSet showTablePrivileges(String dataSource, String schemaPattern, String tablePattern) throws Exception;
-    TupleSet showColumnPrivileges(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+    TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception;
+    TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
+    TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+    TupleSet showTablePrivileges(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
+    TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
     TupleSet showUsers() throws Exception;
 }
 

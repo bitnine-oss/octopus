@@ -31,7 +31,7 @@ public final class OctopusSql
     {
         private List<OctopusSqlCommand> commands;
 
-        /* for Comment On FIXME: */
+        // for commentOnTarget rule. FIXME
         OctopusSqlCommentOn.Target commentOnTargetType;
         OctopusSqlTargetIdentifier commentOnTarget;
 
@@ -102,16 +102,15 @@ public final class OctopusSql
         @Override
         public void exitShowSchemas(OctopusSqlParser.ShowSchemasContext ctx)
         {
-
         }
 
         @Override
         public void exitShowTables(OctopusSqlParser.ShowTablesContext ctx)
         {
-            String dataSource = ctx.dataSource() == null ? null : ctx.dataSource().getText();
+            String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
-            commands.add(new OctopusSqlShowTables(dataSource, schemaPattern, tablePattern));
+            commands.add(new OctopusSqlShowTables(dataSourceName, schemaPattern, tablePattern));
         }
 
         @Override
@@ -122,6 +121,7 @@ public final class OctopusSql
         @Override
         public void exitShowUsers(OctopusSqlParser.ShowUsersContext ctx)
         {
+            commands.add(new OctopusSqlShowUsers());
         }
 
         @Override
@@ -137,10 +137,7 @@ public final class OctopusSql
         @Override
         public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx)
         {
-		    OctopusSqlParser.CommentOnTargetContext targetCtx = ctx.commentOnTarget();
-            String comment = null;
-
-            comment = ctx.comment().getText();
+            String comment = ctx.comment().getText();
             commands.add(new OctopusSqlCommentOn(commentOnTargetType, commentOnTarget, comment));
         }
 
@@ -150,7 +147,7 @@ public final class OctopusSql
             commentOnTargetType = OctopusSqlCommentOn.Target.DATASOURCE;
 
             commentOnTarget = new OctopusSqlTargetIdentifier();
-            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.dataSource = ctx.dataSourceName().getText();
         }
 
         @Override
@@ -159,7 +156,7 @@ public final class OctopusSql
             commentOnTargetType = OctopusSqlCommentOn.Target.SCHEMA;
 
             commentOnTarget = new OctopusSqlTargetIdentifier();
-            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.dataSource = ctx.dataSourceName().getText();
             commentOnTarget.schema = ctx.schemaName().getText();
         }
 
@@ -169,7 +166,7 @@ public final class OctopusSql
             commentOnTargetType = OctopusSqlCommentOn.Target.TABLE;
 
             commentOnTarget = new OctopusSqlTargetIdentifier();
-            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.dataSource = ctx.dataSourceName().getText();
             commentOnTarget.schema = ctx.schemaName().getText();
             commentOnTarget.table = ctx.tableName().getText();
         }
@@ -180,7 +177,7 @@ public final class OctopusSql
             commentOnTargetType = OctopusSqlCommentOn.Target.COLUMN;
 
             commentOnTarget = new OctopusSqlTargetIdentifier();
-            commentOnTarget.datasource = ctx.dataSource().getText();
+            commentOnTarget.dataSource = ctx.dataSourceName().getText();
             commentOnTarget.schema = ctx.schemaName().getText();
             commentOnTarget.table = ctx.tableName().getText();
             commentOnTarget.column = ctx.columnName().getText();
@@ -198,17 +195,16 @@ public final class OctopusSql
         @Override
         public void exitSetDataCategoryOn(OctopusSqlParser.SetDataCategoryOnContext ctx)
         {
-            String datasource, schema, table, column, category;
+            String dataSource, schema, table, column, category;
 
-            datasource = ctx.dataSource().getText();
+            dataSource = ctx.dataSourceName().getText();
             schema = ctx.schemaName().getText();
             table = ctx.tableName().getText();
             column = ctx.columnName().getText();
             category = ctx.category().getText();
 
-            commands.add(new OctopusSqlSetDataCategoryOn(datasource, schema, table, column, category));
+            commands.add(new OctopusSqlSetDataCategoryOn(dataSource, schema, table, column, category));
         }
-
 
         List<OctopusSqlCommand> getSqlCommands()
         {
@@ -260,9 +256,8 @@ public final class OctopusSql
                 break;
             case SHOW_TABLES:
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
-                return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
+                return runner.showTables(showTables.getDataSourceName(), showTables.getSchemaPattern(), showTables.getTablePattern());
             case SHOW_USERS:
-                //OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
                 return runner.showUsers();
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;

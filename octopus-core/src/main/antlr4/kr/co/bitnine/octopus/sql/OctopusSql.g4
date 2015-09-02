@@ -95,23 +95,35 @@ showDataSources
     ;
 
 showSchemas
-    : K_SHOW K_SCHEMAS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )?
+    : K_SHOW K_SCHEMAS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )?
     ;
 
 showTables
-    : K_SHOW K_TABLES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+    : K_SHOW K_TABLES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
     ;
 
 showColumns
-    : K_SHOW K_COLUMNS ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+    : K_SHOW K_COLUMNS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
     ;
 
 showTablePrivileges
-    : K_SHOW K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
+    : K_SHOW K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?
     ;
 
 showColumnPrivileges
-    : K_SHOW K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSource )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+    : K_SHOW K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?
+    ;
+
+schemaPattern
+    : STRING_LITERAL
+    ;
+
+tablePattern
+    : STRING_LITERAL
+    ;
+
+columnPattern
+    : STRING_LITERAL
     ;
 
 showUsers
@@ -122,32 +134,16 @@ commentOn
     : K_COMMENT K_ON commentOnTarget K_IS comment
     ;
 
+comment
+    : STRING_LITERAL
+    ;
+
 commentOnTarget
-    : K_DATASOURCE dataSource                               # CommentDataSource
-    | K_SCHEMA dataSource.schemaName                        # CommentSchema
-    | K_TABLE dataSource.schemaName.tableName               # CommentTable
-    | K_COLUMN dataSource.schemaName.tableName.columnName   # CommentColumn
-    | K_USER user                                           # CommentUser
-    ;
-
-setDataCategoryOn
-    : K_SET K_DATACATEGORY K_ON K_COLUMN dataSource.schemaName.tableName.columnName K_IS category
-    ;
-
-dataSource
-    : IDENTIFIER
-    ;
-
-schemaPattern
-    : IDENTIFIER
-    ;
-
-tablePattern
-    : IDENTIFIER
-    ;
-
-columnPattern
-    : IDENTIFIER
+    : K_DATASOURCE dataSourceName                               # CommentDataSource
+    | K_SCHEMA dataSourceName.schemaName                        # CommentSchema
+    | K_TABLE dataSourceName.schemaName.tableName               # CommentTable
+    | K_COLUMN dataSourceName.schemaName.tableName.columnName   # CommentColumn
+    | K_USER user                                               # CommentUser
     ;
 
 schemaName
@@ -162,8 +158,8 @@ columnName
     : IDENTIFIER
     ;
 
-comment
-    : STRING_LITERAL
+setDataCategoryOn
+    : K_SET K_DATACATEGORY K_ON K_COLUMN dataSourceName.schemaName.tableName.columnName K_IS category
     ;
 
 category
@@ -177,33 +173,33 @@ error
         }
     ;
 
-K_SET : S E T ;
 K_ADD : A D D ;
 K_ALTER : A L T E R ;
 K_BY : B Y ;
+K_COLUMN : C O L U M N ;
+K_COLUMNS : C O L U M N S ;
+K_COMMENT : C O M M E N T ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
+K_DATACATEGORY : D A T A C A T E G O R Y ;
 K_DATASOURCE : D A T A S O U R C E ;
-K_SCHEMA : S C H E M A ;
-K_TABLE : T A B L E ;
-K_COLUMN : C O L U M N ;
+K_DATASOURCES : D A T A S O U R C E S ;
 K_DROP : D R O P ;
 K_IDENTIFIED : I D E N T I F I E D ;
+K_IS : I S ;
+K_ON : O N ;
+K_PRIVILEGES : P R I V I L E G E S ;
 K_REPLACE : R E P L A C E ;
 K_ROLE : R O L E ;
-K_SYSTEM : S Y S T E M ;
-K_USER : U S E R ;
-K_SHOW : S H O W ;
-K_DATASOURCES : D A T A S O U R C E S ;
+K_SCHEMA : S C H E M A ;
 K_SCHEMAS : S C H E M A S ;
+K_SET : S E T ;
+K_SHOW : S H O W ;
+K_SYSTEM : S Y S T E M ;
+K_TABLE : T A B L E ;
 K_TABLES : T A B L E S ;
-K_COLUMNS : C O L U M N S ;
-K_PRIVILEGES : P R I V I L E G E S ;
+K_USER : U S E R ;
 K_USERS : U S E R S ;
-K_COMMENT : C O M M E N T ;
-K_ON : O N ;
-K_IS : I S ;
-K_DATACATEGORY : D A T A C A T E G O R Y ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'

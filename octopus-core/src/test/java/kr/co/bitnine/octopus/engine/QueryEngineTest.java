@@ -91,9 +91,7 @@ public class QueryEngineTest
         }
         ts.close();
 
-//        queryEngine.executeQuery("SELECT ID FROM SQLITE.__DEFAULT.BITNINE WHERE id IN (SELECT id FROM SQLITE.__DEFAULT.BITNINE)");
-
-        p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME);
+        p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME + " SCHEMA '%DEFAULT'");
         ts = p.run(0);
         while (true) {
             Tuple t = ts.next();

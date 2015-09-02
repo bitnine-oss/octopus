@@ -82,12 +82,14 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception {
-                System.out.println("CommentOn. targetType=" + target + " dataSourceName=" + target.datasource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
+            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+            {
+                System.out.println("CommentOn. targetType=" + target + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
             }
 
             @Override
-            public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception {
+            public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+            {
                 System.out.println("SetDataCategoryOn. "  + " dataSourceName=" + dataSource + " schemaName=" + schema + " tableName=" + table + " columnName=" + column + " category=" + category);
             }
 
