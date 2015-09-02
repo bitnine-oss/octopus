@@ -73,12 +73,14 @@ public class MDataSource implements MetaDataSource
     }
 
     @Override
-    public String getComment() {
+    public String getComment()
+    {
         return comment;
     }
 
     @Override
-    public void setComment(String comment) {
+    public void setComment(String comment)
+    {
        this.comment = comment;
     }
 }

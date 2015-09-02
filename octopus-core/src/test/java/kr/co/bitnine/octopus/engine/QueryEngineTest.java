@@ -23,7 +23,6 @@ import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.postgres.executor.Tuple;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
-import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
@@ -31,8 +30,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.sql.ResultSet;
 
 public class QueryEngineTest
 {

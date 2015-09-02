@@ -52,7 +52,8 @@ public class MSchema implements MetaSchema
     }
 
     @Override
-    public String getComment() {
+    public String getComment()
+    {
         return comment;
     }
 
@@ -69,7 +70,8 @@ public class MSchema implements MetaSchema
     }
 
     @Override
-    public void setComment(String comment) {
+    public void setComment(String comment)
+    {
         this.comment = comment;
     }
 }

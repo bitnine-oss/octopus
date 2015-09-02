@@ -526,7 +526,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception {
+        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+        {
             metaContext.setDataCategoryOn(dataSource, schema, table, column, category);
         }
     };

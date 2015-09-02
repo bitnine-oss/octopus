@@ -61,7 +61,8 @@ public class MUser implements MetaUser
         this.password = password;
     }
 
-    public void setComment(String comment) {
+    public void setComment(String comment)
+    {
         this.comment = comment;
     }
 }

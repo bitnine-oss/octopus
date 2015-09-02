@@ -14,8 +14,10 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public class OctopusSqlCommentOn extends OctopusSqlCommand {
-    public enum Target {
+public class OctopusSqlCommentOn extends OctopusSqlCommand
+{
+    public enum Target
+    {
         DATASOURCE,
         SCHEMA,
         TABLE,
@@ -27,21 +29,25 @@ public class OctopusSqlCommentOn extends OctopusSqlCommand {
     private OctopusSqlTargetIdentifier target;
     private String comment;
 
-    public OctopusSqlCommentOn (Target targetType, OctopusSqlTargetIdentifier target, String comment) {
+    OctopusSqlCommentOn(Target targetType, OctopusSqlTargetIdentifier target, String comment)
+    {
         this.targetType = targetType;
         this.target = target;
         this.comment = comment;
     }
 
-    public Target getTargetType() {
+    public Target getTargetType()
+    {
         return this.targetType;
     }
 
-    public OctopusSqlTargetIdentifier getTarget() {
+    public OctopusSqlTargetIdentifier getTarget()
+    {
         return this.target;
     }
 
-    public String getComment() {
+    public String getComment()
+    {
         return this.comment;
     }
 

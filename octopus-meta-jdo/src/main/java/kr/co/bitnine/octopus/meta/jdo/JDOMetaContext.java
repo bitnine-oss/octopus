@@ -200,14 +200,16 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnDataSource(String dataSourceName, String comment) throws MetaException {
+    public void commentOnDataSource(String dataSourceName, String comment) throws MetaException
+    {
         MetaDataSource datasource = getDataSourceByName(dataSourceName);
         datasource.setComment(comment);
         pm.makePersistent(datasource);
     }
 
     @Override
-    public void commentOnSchema(String dataSourceName, String schemaName, String comment) throws MetaException {
+    public void commentOnSchema(String dataSourceName, String schemaName, String comment) throws MetaException
+    {
         MetaSchema schema = getSchemaByQualifiedName(dataSourceName, schemaName);
         schema.setComment(comment);
         pm.makePersistent(schema);
@@ -307,21 +309,24 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnTable(String dataSourceName, String schemaName, String tableName, String comment) throws MetaException {
+    public void commentOnTable(String dataSourceName, String schemaName, String tableName, String comment) throws MetaException
+    {
         MTable mTable = (MTable) getTableByQualifiedName(dataSourceName, schemaName, tableName);
         mTable.setComment(comment);
         pm.makePersistent(mTable);
     }
 
     @Override
-    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException {
+    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException
+    {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setComment(comment);
         pm.makePersistent(mColumn);
     }
 
     @Override
-    public void setDataCategoryOn(String dataSourceName, String schemaName, String tableName, String columnName, String category) throws MetaException {
+    public void setDataCategoryOn(String dataSourceName, String schemaName, String tableName, String columnName, String category) throws MetaException
+    {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setDataCategory(category);
         pm.makePersistent(mColumn);
