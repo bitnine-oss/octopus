@@ -14,6 +14,8 @@
 
 package kr.co.bitnine.octopus.meta;
 
+import kr.co.bitnine.octopus.meta.model.MetaUser;
+
 import java.lang.reflect.Constructor;
 
 public final class MetaStores
@@ -25,5 +27,17 @@ public final class MetaStores
         Class<?> clazz = Class.forName(className);
         Constructor<?> ctor = clazz.getConstructor();
         return (MetaStore) ctor.newInstance();
+    }
+
+    public static void initialize(MetaStore metaStore) throws MetaException
+    {
+        MetaContext mc = metaStore.getMetaContext();
+
+        if (mc.userExists("octopus"))
+            return;
+
+        MetaUser user = mc.createUser("octopus", "bitnine");
+
+        mc.close();
     }
 }

@@ -50,8 +50,6 @@ public class JDOMetaStore implements MetaStore
         }
 
         pmf = JDOHelper.getPersistenceManagerFactory(props);
-
-        initialize();
     }
 
     @Override
@@ -64,15 +62,5 @@ public class JDOMetaStore implements MetaStore
     public MetaContext getMetaContext()
     {
         return new JDOMetaContext(pmf.getPersistenceManager());
-    }
-
-    private void initialize() throws MetaException
-    {
-        MetaContext mc = getMetaContext();
-
-        if (!mc.userExists("octopus"))
-            mc.createUser("octopus", "bitnine");
-
-        mc.close();
     }
 }

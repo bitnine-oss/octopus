@@ -44,6 +44,7 @@ public class MetaStoreService extends AbstractService
     protected final void serviceStart() throws Exception
     {
         metaStore.start(props);
+        MetaStores.initialize(metaStore);
 
         super.serviceStart();
     }
