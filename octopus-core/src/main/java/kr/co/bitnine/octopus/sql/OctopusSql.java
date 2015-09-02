@@ -195,6 +195,21 @@ public final class OctopusSql
             commentOnTarget.user = ctx.user().getText();
         }
 
+        @Override
+        public void exitSetDataCategoryOn(OctopusSqlParser.SetDataCategoryOnContext ctx)
+        {
+            String datasource, schema, table, column, category;
+
+            datasource = ctx.dataSource().getText();
+            schema = ctx.schemaName().getText();
+            table = ctx.tableName().getText();
+            column = ctx.columnName().getText();
+            category = ctx.category().getText();
+
+            commands.add(new OctopusSqlSetDataCategoryOn(datasource, schema, table, column, category));
+        }
+
+
         List<OctopusSqlCommand> getSqlCommands()
         {
             return commands;
@@ -247,12 +262,15 @@ public final class OctopusSql
                 OctopusSqlShowTables showTables = (OctopusSqlShowTables) command;
                 return runner.showTables(showTables.getDataSource(), showTables.getSchemaPattern(), showTables.getTablePattern());
             case SHOW_USERS:
-                OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
+                //OctopusSqlShowUsers showUsers = (OctopusSqlShowUsers) command;
                 return runner.showUsers();
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
                 runner.commentOn(commentOn.getTargetType(), commentOn.getTarget(), commentOn.getComment());
                 break;
+            case SET_DATACATEGORY_ON:
+                OctopusSqlSetDataCategoryOn setDataCategoryOn = (OctopusSqlSetDataCategoryOn) command;
+                runner.setDataCategoryOn(setDataCategoryOn.getDataSource(), setDataCategoryOn.getSchema(), setDataCategoryOn.getTable(), setDataCategoryOn.getColumn(), setDataCategoryOn.getCategory());
             default:
                 throw new RuntimeException("invalid Octopus SQL command");
         }

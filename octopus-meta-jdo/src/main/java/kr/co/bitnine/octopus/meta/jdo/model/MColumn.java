@@ -32,7 +32,7 @@ public class MColumn implements MetaColumn
     int type;
     String comment;
     MTable table;
-    int dataCategory;
+    String dataCategory;
 
     public MColumn(String name, int type, MTable table)
     {
@@ -66,13 +66,13 @@ public class MColumn implements MetaColumn
     }
 
     @Override
-    public int getDataCategory()
+    public String getDataCategory()
     {
         return dataCategory;
     }
 
     @Override
-    public void setDataCategory(int dataCategory)
+    public void setDataCategory(String dataCategory)
     {
         this.dataCategory = dataCategory;
     }

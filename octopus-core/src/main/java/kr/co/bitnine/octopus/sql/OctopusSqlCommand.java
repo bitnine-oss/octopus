@@ -27,6 +27,7 @@ public abstract class OctopusSqlCommand
         SHOW_TABLES,
         SHOW_USERS,
         COMMENT_ON,
+        SET_DATACATEGORY_ON,
         OTHER
     }
 

@@ -87,6 +87,11 @@ public class OctopusSqlTest
             }
 
             @Override
+            public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception {
+                System.out.println("SetDataCategoryOn. "  + " dataSourceName=" + dataSource + " schemaName=" + schema + " tableName=" + table + " columnName=" + column + " category=" + category);
+            }
+
+            @Override
             public TupleSet showDataSources() throws Exception
             {
                 System.out.println("SHOW DATASOURCES");

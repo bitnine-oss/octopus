@@ -48,11 +48,11 @@ public interface MetaContext
     /* Column */
     MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException;
     void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException;
+    void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws MetaException;
 
     /* Role */
     MetaRole createRole(String name) throws MetaException;
     void dropRoleByName(String name) throws MetaException;
 
     void close();
-
 }

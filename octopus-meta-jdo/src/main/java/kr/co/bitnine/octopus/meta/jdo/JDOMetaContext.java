@@ -321,6 +321,13 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
+    public void setDataCategoryOn(String dataSourceName, String schemaName, String tableName, String columnName, String category) throws MetaException {
+        MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
+        mColumn.setDataCategory(category);
+        pm.makePersistent(mColumn);
+    }
+
+    @Override
     public MetaRole createRole(String name) throws MetaException
     {
         try {

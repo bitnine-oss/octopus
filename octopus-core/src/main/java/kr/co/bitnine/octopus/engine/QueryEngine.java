@@ -47,6 +47,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.ws.rs.POST;
 import java.util.*;
 
 public class QueryEngine extends AbstractQueryProcessor
@@ -381,7 +382,8 @@ public class QueryEngine extends AbstractQueryProcessor
                     new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR),
                     new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR),
                     new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR),
-                    new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR)
+                    new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR),
+                    new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR)
             };
             FormatCode[] resultFormats = new FormatCode[attrs.length];
             Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -439,6 +441,7 @@ public class QueryEngine extends AbstractQueryProcessor
                             t.setDatum(22, new DatumVarchar("NULL"));
                             t.setDatum(23, new DatumVarchar("NULL"));
                             t.setDatum(24, new DatumVarchar("NULL"));
+                            t.setDatum(25, new DatumVarchar(mColumn.getDataCategory()));
 
                             tuples.add(t);
                         }
@@ -520,6 +523,11 @@ public class QueryEngine extends AbstractQueryProcessor
                     metaContext.commentOnUser(target.user, comment);
                     break;
             }
+        }
+
+        @Override
+        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception {
+            metaContext.setDataCategoryOn(dataSource, schema, table, column, category);
         }
     };
 

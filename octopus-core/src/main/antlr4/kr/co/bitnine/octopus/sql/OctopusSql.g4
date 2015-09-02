@@ -35,6 +35,7 @@ ddlStmt
     | dropRole
     | showTables
     | commentOn
+    | setDataCategoryOn
     ;
 
 alterSystem
@@ -129,6 +130,10 @@ commentOnTarget
     | K_USER user                                           # CommentUser
     ;
 
+setDataCategoryOn
+    : K_SET K_DATACATEGORY K_ON K_COLUMN dataSource.schemaName.tableName.columnName K_IS category
+    ;
+
 dataSource
     : IDENTIFIER
     ;
@@ -161,6 +166,10 @@ comment
     : STRING_LITERAL
     ;
 
+category
+    : STRING_LITERAL
+    ;
+
 error
     : UNEXPECTED_CHAR
         {
@@ -168,6 +177,7 @@ error
         }
     ;
 
+K_SET : S E T ;
 K_ADD : A D D ;
 K_ALTER : A L T E R ;
 K_BY : B Y ;
@@ -193,6 +203,7 @@ K_USERS : U S E R S ;
 K_COMMENT : C O M M E N T ;
 K_ON : O N ;
 K_IS : I S ;
+K_DATACATEGORY : D A T A C A T E G O R Y ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'
