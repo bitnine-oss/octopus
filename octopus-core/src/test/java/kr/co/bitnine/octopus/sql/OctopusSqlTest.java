@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.sql;
 
+import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import org.junit.BeforeClass;
@@ -84,6 +85,30 @@ public class OctopusSqlTest
                 for (SystemPrivilege sysPriv : sysPrivs)
                     System.out.print(sysPriv.name() + ",");
                 System.out.print("] FROM [");
+                for (String revokee : revokees)
+                    System.out.print(revokee + ",");
+                System.out.println("]");
+            }
+
+            @Override
+            public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees) throws Exception
+            {
+                System.out.print("GRANT [");
+                for (ObjectPrivilege objPriv : objPrivs)
+                    System.out.print(objPriv.name() + ",");
+                System.out.print("] ON [" + objName + "] TO [");
+                for (String grantee : grantees)
+                    System.out.print(grantee + ",");
+                System.out.println("]");
+            }
+
+            @Override
+            public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees) throws Exception
+            {
+                System.out.print("REVOKE [");
+                for (ObjectPrivilege objPriv : objPrivs)
+                    System.out.print(objPriv.name() + ",");
+                System.out.print("] ON [" + objName + "] TO [");
                 for (String revokee : revokees)
                     System.out.print(revokee + ",");
                 System.out.println("]");
@@ -187,6 +212,14 @@ public class OctopusSqlTest
     {
         String query = "GRANT GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE TO octopus, jsyang;\n" +
                 "REVOKE ALL PRIVILEGES FROM octopus;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testGrantRevokeObjPrivs() throws Exception
+    {
+        String query = "GRANT SELECT, COMMENT ON \"schema\" TO octopus, jsyang;\n" +
+                "REVOKE ALL ON \"schema\" FROM octopus;\n";
         parseAndRun(query);
     }
 

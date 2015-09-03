@@ -18,6 +18,7 @@ import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
@@ -329,6 +330,18 @@ public class QueryEngine extends AbstractQueryProcessor
         {
             checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.addSystemPrivileges(sysPrivs, revokees);
+        }
+
+        @Override
+        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees) throws Exception
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees) throws Exception
+        {
+            throw new UnsupportedOperationException();
         }
 
         @Override

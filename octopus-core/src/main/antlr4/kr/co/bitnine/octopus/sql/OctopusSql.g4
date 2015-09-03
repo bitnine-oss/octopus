@@ -102,7 +102,7 @@ grantSystemPrivileges
     ;
 
 grantObjectPrivileges
-    :
+    : objectPrivileges K_ON object K_TO grantees
     ;
 
 revoke
@@ -115,7 +115,7 @@ revokeSystemPrivileges
     ;
 
 revokeObjectPrivileges
-    :
+    : objectPrivileges K_ON object K_FROM grantees
     ;
 
 systemPrivileges
@@ -135,12 +135,22 @@ systemPrivilege
     | role                                  # SysPrivRole
     ;
 
+objectPrivileges
+    : objectPrivilege ( ',' objectPrivilege )*
+    ;
+
 objectPrivilege
-    : K_SELECT
+    : K_SELECT                  # ObjPrivSelect
+    | K_COMMENT                 # ObjPrivComment
+    | K_ALL ( K_PRIVILEGES )?   # ObjPrivAllPrivs
     ;
 
 grantees
     : grantee ( ',' grantee )*
+    ;
+
+object
+    : schemaName
     ;
 
 // user or role
@@ -183,11 +193,11 @@ comment
     ;
 
 commentOnTarget
-    : K_DATASOURCE dataSourceName                               # CommentDataSource
-    | K_SCHEMA dataSourceName.schemaName                        # CommentSchema
-    | K_TABLE dataSourceName.schemaName.tableName               # CommentTable
-    | K_COLUMN dataSourceName.schemaName.tableName.columnName   # CommentColumn
-    | K_USER user                                               # CommentUser
+    : K_DATASOURCE dataSourceName                                           # CommentDataSource
+    | K_SCHEMA dataSourceName '.' schemaName                                # CommentSchema
+    | K_TABLE dataSourceName '.' schemaName '.' tableName                   # CommentTable
+    | K_COLUMN dataSourceName '.' schemaName '.' tableName '.' columnName   # CommentColumn
+    | K_USER user                                                           # CommentUser
     ;
 
 schemaName
@@ -203,7 +213,7 @@ columnName
     ;
 
 setDataCategoryOn
-    : K_SET K_DATACATEGORY K_ON K_COLUMN dataSourceName.schemaName.tableName.columnName K_IS category
+    : K_SET K_DATACATEGORY K_ON K_COLUMN dataSourceName '.' schemaName '.' tableName '.' columnName K_IS category
     ;
 
 category

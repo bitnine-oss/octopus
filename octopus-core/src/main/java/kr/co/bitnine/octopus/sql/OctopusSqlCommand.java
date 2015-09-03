@@ -26,6 +26,8 @@ public abstract class OctopusSqlCommand
         DROP_ROLE,
         GRANT_SYS_PRIVS,
         REVOKE_SYS_PRIVS,
+        GRANT_OBJ_PRIVS,
+        REVOKE_OBJ_PRIVS,
         SHOW_DATASOURCES,
         SHOW_SCHEMAS,
         SHOW_TABLES,
