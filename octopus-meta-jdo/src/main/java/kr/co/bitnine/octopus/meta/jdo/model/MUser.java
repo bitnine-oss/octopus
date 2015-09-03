@@ -22,14 +22,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 @PersistenceCapable
-@Unique(name="MUSER_NAME_IDX", members={"name"})
 public class MUser implements MetaUser
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
     private long id;
 
+    @Persistent
+    @Unique(name="NAME_IDX")
     private String name;
+
     private String password;
     private Set<SystemPrivilege> sysPrivs;
     private String comment;

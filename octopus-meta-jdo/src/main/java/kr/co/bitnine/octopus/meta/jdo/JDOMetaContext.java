@@ -18,9 +18,9 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Column;
@@ -38,6 +38,7 @@ import java.util.List;
 public class JDOMetaContext implements MetaContext
 {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
+
     private final PersistenceManager pm;
 
     public JDOMetaContext(PersistenceManager persistenceManager)

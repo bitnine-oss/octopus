@@ -47,7 +47,7 @@ import java.sql.Types;
 import java.util.Properties;
 import java.util.Random;
 
-class Session implements Runnable
+public class Session implements Runnable
 {
     private static final Log LOG = LogFactory.getLog(Session.class);
 
@@ -86,8 +86,12 @@ class Session implements Runnable
 
     private static final ThreadLocal<Session> localSession = new ThreadLocal<>();
 
-    static Session currentSession()
+    public static Session currentSession()
     {
+        Session currSess = localSession.get();
+        if (currSess == null)
+            throw new RuntimeException("current session does not exist");
+
         return localSession.get();
     }
 
@@ -130,11 +134,16 @@ class Session implements Runnable
         close();
     }
 
-    private final String CLIENT_PARAM_USER = "user";
-    private final String CLIENT_PARAM_DATABASE = "database";
-    private final String CLIENT_PARAM_ENCODING = "client_encoding";
+    public static final String CLIENT_PARAM_USER = "user";
+    public static final String CLIENT_PARAM_DATABASE = "database";
+    public static final String CLIENT_PARAM_ENCODING = "client_encoding";
 
     private Properties clientParams;
+
+    public String getClientParam(String key)
+    {
+        return clientParams.getProperty(key);
+    }
 
     private boolean doStartup() throws IOException, OctopusException
     {
@@ -280,46 +289,65 @@ class Session implements Runnable
                 }
 
                 Message msg = messageStream.getMessage();
+                char type = msg.getType();
+
+                switch (type) {
+                    case 'Q':
+                        break;
+                    case 'P':
+                    case 'B':
+                    case 'E':
+                    case 'C':
+                    case 'D':
+                    case 'H':
+                        doingExtendedQueryMessage = true;
+                        break;
+                    case 'S':
+                    case 'X':
+                        ignoreTillSync = false;
+                        break;
+                    case 'd':
+                    case 'c':
+                    case 'f':
+                        break;
+                    default:
+                        PostgresErrorData edata = new PostgresErrorData(
+                                PostgresSeverity.FATAL,
+                                PostgresSQLState.PROTOCOL_VIOLATION,
+                                "invalid frontend message type '" + type + "'");
+                        new OctopusException(edata).emitErrorReport();
+                }
 
                 if (ignoreTillSync)
                     continue;
 
-                char type = msg.getType();
                 switch (type) {
                     case 'Q':
                         handleQuery(msg);
                         sendReadyForQuery = true;
                         break;
                     case 'P':
-                        doingExtendedQueryMessage = true;
                         handleParse(msg);
                         break;
                     case 'B':
-                        doingExtendedQueryMessage = true;
                         handleBind(msg);
                         break;
                     case 'E':
-                        doingExtendedQueryMessage = true;
                         handleExecute(msg);
                         break;
                     case 'C':
-                        doingExtendedQueryMessage = true;
                         handleClose(msg);
                         break;
                     case 'D':
-                        doingExtendedQueryMessage = true;
                         handleDescribe(msg);
                         break;
                     case 'H':
-                        doingExtendedQueryMessage = true;
                         messageStream.flush();
                         break;
                     case 'S':
-                        ignoreTillSync = false;
                         sendReadyForQuery = true;
                         break;
                     case 'X':
-                        ignoreTillSync = false;
                         LOG.info("Terminate received");
                         return;
                     case 'd':   // copy data

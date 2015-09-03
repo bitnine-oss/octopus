@@ -104,9 +104,8 @@ public class SessionServerTest
     {
         Connection conn = getConnection("octopus", "bitnine");
 
-        String query = "SELECT ID, NAME FROM BITNINE;";
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
+        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
         while (rs.next()) {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -115,8 +114,8 @@ public class SessionServerTest
         rs.close();
         stmt.close();
 
-        query = "SELECT ID, NAME FROM BITNINE WHERE NAME = ?";
-        PreparedStatement pstmt = conn.prepareStatement(query);
+/*
+        PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE NAME = ?");
         pstmt.setString(1, "octopus");
         rs = pstmt.executeQuery();
         while (rs.next()) {
@@ -126,6 +125,7 @@ public class SessionServerTest
         }
         rs.close();
         pstmt.close();
+ */
 
         conn.close();
     }
@@ -194,6 +194,33 @@ public class SessionServerTest
 
         stmt.execute("DROP USER jsyang;");
 
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
+    public void testSystemPrivileges() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009'");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+        try {
+            stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        } finally {
+            stmt.close();
+            conn.close();
+        }
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("DROP USER jsyang;");
         stmt.close();
         conn.close();
     }

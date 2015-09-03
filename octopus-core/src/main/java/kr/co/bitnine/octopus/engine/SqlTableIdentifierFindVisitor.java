@@ -78,11 +78,9 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
     public SqlNode visit(SqlIdentifier identifier)
     {
         // check whether this is fully qualified table name
-        if (nodeStack.peek() == State.FROM) {
+        if (nodeStack.peek() == State.FROM)
             tableIds.add(identifier);
-            //System.out.println("Table Name: " + identifier.toString());
-            //System.out.println("To Table Name: " + identifier.toString());
-        }
+
         return identifier;
     }
 }

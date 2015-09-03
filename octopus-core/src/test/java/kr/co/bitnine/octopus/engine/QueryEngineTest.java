@@ -27,9 +27,7 @@ import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 public class QueryEngineTest
 {
@@ -38,6 +36,8 @@ public class QueryEngineTest
     private static MetaStore metaStore;
     private static MetaStoreService metaStoreService;
     private static SchemaManager schemaManager;
+    private static MetaContext metaContext;
+    private static QueryEngine queryEngine;
 
     @BeforeClass
     public static void setUpClass() throws Exception
@@ -64,15 +64,19 @@ public class QueryEngineTest
         schemaManager.init(conf);
         schemaManager.start();
 
-        MetaContext mc = metaStore.getMetaContext();
-        MetaDataSource metaDataSource = mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        metaContext = metaStore.getMetaContext();
+
+        MetaDataSource metaDataSource = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
         schemaManager.addDataSource(metaDataSource);
-        mc.close();
+
+        queryEngine = new QueryEngine(metaContext, schemaManager);
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception
     {
+        metaContext.close();
+
         schemaManager.stop();
         metaStoreService.stop();
 
@@ -81,11 +85,8 @@ public class QueryEngineTest
     }
 
     @Test
-    public void test() throws Exception
+    public void testQuery() throws Exception
     {
-        MetaContext mc = metaStore.getMetaContext();
-
-        QueryEngine queryEngine = new QueryEngine(mc, schemaManager);
         Portal p = queryEngine.query("SELECT ID, NAME FROM BITNINE");
         TupleSet ts = p.run(0);
         while (true) {
@@ -98,9 +99,13 @@ public class QueryEngineTest
                 System.out.println("  " + datums[i].out());
         }
         ts.close();
+    }
 
-        p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME + " SCHEMA '%DEFAULT'");
-        ts = p.run(0);
+    @Test
+    public void testShow() throws Exception
+    {
+        Portal p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME + " SCHEMA '%DEFAULT'");
+        TupleSet ts = p.run(0);
         while (true) {
             Tuple t = ts.next();
             if (t == null)
@@ -111,7 +116,5 @@ public class QueryEngineTest
                 System.out.println("  " + datums[i].out());
         }
         ts.close();
-
-        mc.close();
     }
 }

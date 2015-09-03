@@ -49,6 +49,8 @@ public class CursorDdl extends Portal
         OctopusSqlCommand c = cStmt.getDdlCommands().get(0);
         try {
             return OctopusSql.run(c, sqlRunner);
+        } catch (PostgresException e) {
+            throw e;
         } catch (Exception e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,

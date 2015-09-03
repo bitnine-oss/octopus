@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.*;
@@ -126,17 +127,18 @@ public class QueryEngine extends AbstractQueryProcessor
         if (cStmt.isDdl())
             return new CursorDdl(cStmt, ddlRunner);
 
+        // TODO: query on multiple data sources
         SqlNode validatedQuery = cStmt.getValidatedQuery();
         List<String> dsNames = getDatasourceNames(validatedQuery);
         if (dsNames.size() > 1) {   // by-pass
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
+                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
                     "only by-pass query is supported");
             throw new PostgresException(edata);
         }
-        LOG.debug("by-pass query: " + validatedQuery.toString());
 
-        // TODO: query on multiple data sources (throw not-implemented feature)
+        LOG.debug("by-pass query: " + validatedQuery.toString());
 
         String jdbcDriver;
         String jdbcConnectionString;
@@ -158,13 +160,27 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
+            String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
+            Set<SystemPrivilege> userSysPrivs = metaContext.getUser(userName).getSystemPrivileges();
+            if (!userSysPrivs.contains(SystemPrivilege.ALTER_SYSTEM)) {
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.INSUFFICIENT_PRIVILEGE,
+                        "must have ALTER SYSTEM privilege");
+                throw new PostgresException(edata);
+            }
+
             String driverName;
             if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
                 driverName = "org.apache.hive.jdbc.HiveDriver";
             } else if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
                 driverName = "org.sqlite.JDBC";
             } else {
-                throw new RuntimeException("not supported");
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                        "JDBC connection string \"" + jdbcConnectionString + "\" not supported");
+                throw new PostgresException(edata);
             }
 
             // FIXME: all or nothing

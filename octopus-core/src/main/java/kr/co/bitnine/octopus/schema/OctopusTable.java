@@ -34,7 +34,7 @@ public class OctopusTable extends AbstractTable
         name = metaTable.getName();
 
         try {
-            //tableType = Schema.TableType.valueOf(table.getType().name());
+//            tableType = Schema.TableType.valueOf(table.getType().name());
             tableType = Schema.TableType.TABLE; // FIXME
         } catch (IllegalArgumentException e) {
             tableType = Schema.TableType.TABLE;
@@ -45,12 +45,11 @@ public class OctopusTable extends AbstractTable
         for (MetaColumn metaColumn : metaTable.getColumns()) {
             String name = metaColumn.getName();
 
-            //int jdbcType = metaColumn.getType().getJdbcType();
+//            int jdbcType = metaColumn.getType().getJdbcType();
             int jdbcType = metaColumn.getType(); //FIXME
             SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
             RelDataType sqlType = typeFactory.createSqlType(typeName);
 
-            System.out.println("column=" + name + ", type=" +sqlType);
             fieldInfo.add(name, sqlType);
         }
         protoRowType = RelDataTypeImpl.proto(fieldInfo.build());
