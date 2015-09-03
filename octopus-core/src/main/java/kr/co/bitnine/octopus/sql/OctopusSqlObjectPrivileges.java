@@ -21,10 +21,10 @@ import java.util.List;
 abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand
 {
     private final List<ObjectPrivilege> objPrivs;
-    private final String objName;
+    private final String[] objName;
     private final List<String> grantees;
 
-    OctopusSqlObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees)
+    OctopusSqlObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees)
     {
         this.objPrivs = objPrivs;
         this.objName = objName;
@@ -36,7 +36,7 @@ abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand
         return objPrivs;
     }
 
-    String getObjName()
+    String[] getObjName()
     {
         return objName;
     }
@@ -48,7 +48,7 @@ abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand
 
     static class OctopusSqlGrantObjPrivs extends OctopusSqlObjectPrivileges
     {
-        OctopusSqlGrantObjPrivs(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees)
+        OctopusSqlGrantObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees)
         {
             super(objPrivs, objName, grantees);
         }
@@ -62,7 +62,7 @@ abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand
 
     static class OctopusSqlRevokeObjPrivs extends OctopusSqlObjectPrivileges
     {
-        OctopusSqlRevokeObjPrivs(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees)
+        OctopusSqlRevokeObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees)
         {
             super(objPrivs, objName, revokees);
         }

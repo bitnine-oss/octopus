@@ -150,7 +150,7 @@ grantees
     ;
 
 object
-    : schemaName
+    : dataSourceName '.' schemaName
     ;
 
 // user or role

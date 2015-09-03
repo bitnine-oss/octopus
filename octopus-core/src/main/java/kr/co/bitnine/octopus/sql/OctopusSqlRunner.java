@@ -30,8 +30,8 @@ public interface OctopusSqlRunner
     void dropRole(String role) throws Exception;
     void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception;
     void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception;
-    void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees) throws Exception;
-    void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees) throws Exception;
+    void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception;
+    void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception;
     TupleSet showDataSources() throws Exception;
     TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception;
     TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;

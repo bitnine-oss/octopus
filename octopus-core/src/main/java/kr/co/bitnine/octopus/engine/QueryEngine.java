@@ -333,13 +333,13 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees) throws Exception
+        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees) throws Exception
+        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
         {
             throw new UnsupportedOperationException();
         }

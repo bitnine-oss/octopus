@@ -91,24 +91,24 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> grantees) throws Exception
+            public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
             {
                 System.out.print("GRANT [");
                 for (ObjectPrivilege objPriv : objPrivs)
                     System.out.print(objPriv.name() + ",");
-                System.out.print("] ON [" + objName + "] TO [");
+                System.out.print("] ON [" + objName[0] + "." + objName[1] + "] TO [");
                 for (String grantee : grantees)
                     System.out.print(grantee + ",");
                 System.out.println("]");
             }
 
             @Override
-            public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String objName, List<String> revokees) throws Exception
+            public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
             {
                 System.out.print("REVOKE [");
                 for (ObjectPrivilege objPriv : objPrivs)
                     System.out.print(objPriv.name() + ",");
-                System.out.print("] ON [" + objName + "] TO [");
+                System.out.print("] ON [" + objName[0] + "." + objName[1] + "] FROM [");
                 for (String revokee : revokees)
                     System.out.print(revokee + ",");
                 System.out.println("]");
@@ -218,8 +218,8 @@ public class OctopusSqlTest
     @Test
     public void testGrantRevokeObjPrivs() throws Exception
     {
-        String query = "GRANT SELECT, COMMENT ON \"schema\" TO octopus, jsyang;\n" +
-                "REVOKE ALL ON \"schema\" FROM octopus;\n";
+        String query = "GRANT SELECT, COMMENT ON \"dataSource\".\"schema\" TO octopus, jsyang;\n" +
+                "REVOKE ALL ON \"dataSource\".\"schema\" FROM octopus;\n";
         parseAndRun(query);
     }
 
