@@ -40,6 +40,8 @@ public class MColumn implements MetaColumn
         this.name = name;
         this.type = type;
         this.table = table;
+        comment = "";
+        dataCategory = "";
     }
 
     @Override

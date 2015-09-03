@@ -83,8 +83,91 @@ public class QueryEngine extends AbstractQueryProcessor
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
-        if (commands != null)
-            return new CachedStatement(commands);
+        if (commands != null) {
+            TupleDesc tupDesc;
+            switch (commands.get(0).getType()) {
+                case SHOW_DATASOURCES:
+                    PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                    };
+                    FormatCode[] resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
+                case SHOW_SCHEMAS:
+                    attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                    };
+                    resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
+                case SHOW_TABLES:
+                    attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
+                            new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR),
+                            new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR),
+                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR)
+                    };
+                    resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
+                case SHOW_COLUMNS:
+                    attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR),
+                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR),
+                            new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR),
+                            new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR),
+                            new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR),
+                            new PostgresAttribute("NULLABLE", PostgresType.VARCHAR),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
+                            new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR),
+                            new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR),
+                            new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR),
+                            new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR),
+                            new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR),
+                            new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR),
+                            new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR),
+                            new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR),
+                            new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR),
+                            new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR),
+                            new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR),
+                            new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR),
+                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR)
+                    };
+                    resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
+                case SHOW_USERS:
+                    attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("USER_NAME", PostgresType.VARCHAR),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                    };
+                    resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
+                default:
+                    tupDesc = null;
+            }
+            return new CachedStatement(commands, tupDesc);
+        }
 
         // Query
 
@@ -251,24 +334,18 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public TupleSet showDataSources() throws Exception
         {
-            PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR)
-            };
-            FormatCode[] resultFormats = new FormatCode[attrs.length];
-            Arrays.fill(resultFormats, FormatCode.TEXT);
-            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
-            TupleSetSql ts = new TupleSetSql(tupDesc);
+            TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            for (MetaDataSource mds : metaContext.getDataSources()) {
-                String dsName = mds.getName();
-
-                Tuple t = new Tuple(attrs.length);
-                t.setDatum(0, new DatumVarchar(dsName));
+            for (MetaDataSource mDs : metaContext.getDataSources()) {
+                Tuple t = new Tuple(2);
+                t.setDatum(0, new DatumVarchar(mDs.getName()));
+                t.setDatum(1, new DatumVarchar(mDs.getComment()));
 
                 tuples.add(t);
             }
-            Collections.sort(tuples, new Comparator<Tuple>() {
+            Collections.sort(tuples, new Comparator<Tuple>()
+            {
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
@@ -283,36 +360,31 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception
         {
-            PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR)
-            };
-            FormatCode[] resultFormats = new FormatCode[attrs.length];
-            Arrays.fill(resultFormats, FormatCode.TEXT);
-            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
-            TupleSetSql ts = new TupleSetSql(tupDesc);
+            TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
             final String pattern = convertPattern(schemaPattern);
-            for (MetaDataSource mds : metaContext.getDataSources()) {
-                String dsName = mds.getName();
+            for (MetaDataSource mDs : metaContext.getDataSources()) {
+                String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
-                for (MetaSchema mSchema : mds.getSchemas()) {
+                for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
                     if (!schemaName.matches(pattern))
                         continue;
 
-                    Tuple t = new Tuple(attrs.length);
+                    Tuple t = new Tuple(3);
                     t.setDatum(0, new DatumVarchar(schemaName));
                     t.setDatum(1, new DatumVarchar(dsName));
+                    t.setDatum(2, new DatumVarchar(mSchema.getComment()));
 
                     tuples.add(t);
                 }
             }
             // ordered by TABLE_CATALOG and TABLE_SCHEM
-            Collections.sort(tuples, new Comparator<Tuple>() {
+            Collections.sort(tuples, new Comparator<Tuple>()
+            {
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
@@ -331,32 +403,17 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
         {
-            PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR),
-                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
-                    new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR),
-                    new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR),
-                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR)
-            };
-            FormatCode[] resultFormats = new FormatCode[attrs.length];
-            Arrays.fill(resultFormats, FormatCode.TEXT);
-            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
-            TupleSetSql ts = new TupleSetSql(tupDesc);
+            TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
             final String sPattern = convertPattern(schemaPattern);
             final String tPattern = convertPattern(tablePattern);
-            for (MetaDataSource mds : metaContext.getDataSources()) {
-                String dsName = mds.getName();
+            for (MetaDataSource mDs : metaContext.getDataSources()) {
+                String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
-                for (MetaSchema mSchema : mds.getSchemas()) {
+                for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
                     if (!schemaName.matches(sPattern))
                         continue;
@@ -366,7 +423,7 @@ public class QueryEngine extends AbstractQueryProcessor
                         if (!tableName.matches(tPattern))
                             continue;
 
-                        Tuple t = new Tuple(attrs.length);
+                        Tuple t = new Tuple(10);
                         t.setDatum(0, new DatumVarchar(dsName));
                         t.setDatum(1, new DatumVarchar(schemaName));
                         t.setDatum(2, new DatumVarchar(tableName));
@@ -405,48 +462,18 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
         {
-            PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR),
-                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
-                    new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR),
-                    new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR),
-                    new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR),
-                    new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR),
-                    new PostgresAttribute("NULLABLE", PostgresType.VARCHAR),
-                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
-                    new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR),
-                    new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR),
-                    new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR),
-                    new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR),
-                    new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR),
-                    new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR),
-                    new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR),
-                    new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR),
-                    new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR),
-                    new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR),
-                    new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR),
-                    new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR),
-                    new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR)
-            };
-            FormatCode[] resultFormats = new FormatCode[attrs.length];
-            Arrays.fill(resultFormats, FormatCode.TEXT);
-            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
-            TupleSetSql ts = new TupleSetSql(tupDesc);
+            TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
             final String sPattern = convertPattern(schemaPattern);
             final String tPattern = convertPattern(tablePattern);
             final String cPattern = convertPattern(columnPattern);
-            for (MetaDataSource mds : metaContext.getDataSources()) {
-                String dsName = mds.getName();
+            for (MetaDataSource mDs : metaContext.getDataSources()) {
+                String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
-                for (MetaSchema mSchema : mds.getSchemas()) {
+                for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
                     if (!schemaName.matches(sPattern))
                         continue;
@@ -462,7 +489,7 @@ public class QueryEngine extends AbstractQueryProcessor
                             if (!tableName.matches(cPattern))
                                 continue;
 
-                            Tuple t = new Tuple(attrs.length);
+                            Tuple t = new Tuple(25);
                             t.setDatum(0, new DatumVarchar(dsName));
                             t.setDatum(1, new DatumVarchar(schemaName));
                             t.setDatum(2, new DatumVarchar(tableName));
@@ -487,8 +514,7 @@ public class QueryEngine extends AbstractQueryProcessor
                             t.setDatum(21, new DatumVarchar("NULL"));
                             t.setDatum(22, new DatumVarchar("NULL"));
                             t.setDatum(23, new DatumVarchar("NULL"));
-                            t.setDatum(24, new DatumVarchar("NULL"));
-                            t.setDatum(25, new DatumVarchar(mColumn.getDataCategory()));
+                            t.setDatum(24, new DatumVarchar(mColumn.getDataCategory()));
 
                             tuples.add(t);
                         }
@@ -533,30 +559,27 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public TupleSet showUsers() throws Exception
         {
-            List<Tuple> tuples = new ArrayList<>();
-            PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                    new PostgresAttribute("USER_NAME", PostgresType.VARCHAR)};
-            FormatCode[] resultFormats = new FormatCode[attrs.length];
-            Arrays.fill(resultFormats, FormatCode.TEXT);
-            TupleDesc tupDesc = new TupleDesc(attrs, resultFormats);
-            TupleSetSql ts = new TupleSetSql(tupDesc);
+            TupleSetSql ts = new TupleSetSql();
 
-            for (MetaUser muser: metaContext.getUsers()) {
-                Tuple t = new Tuple(attrs.length);
-                t.setDatum(0, new DatumVarchar(muser.getName()));
+            List<Tuple> tuples = new ArrayList<>();
+            for (MetaUser mUser: metaContext.getUsers()) {
+                Tuple t = new Tuple(2);
+                t.setDatum(0, new DatumVarchar(mUser.getName()));
+                t.setDatum(1, new DatumVarchar(mUser.getComment()));
                 tuples.add(t);
             }
+
             ts.addTuples(tuples);
             return ts;
         }
 
         @Override
-        public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+        public void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception
         {
             if (true /* TODO: if user does not have object privilege */)
                 checkSystemPrivilege(SystemPrivilege.COMMENT_ANY);
 
-            switch (targetType) {
+            switch (target.type) {
                 case DATASOURCE:
                     metaContext.commentOnDataSource(comment, target.dataSource);
                     break;

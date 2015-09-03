@@ -321,12 +321,12 @@ public class JDOMetaContext implements MetaContext
 
             throw new MetaException("column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "'", e);
         }
     }
 
     @Override
-    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException
+    public void commentOnColumn(String comment, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
     {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setComment(comment);

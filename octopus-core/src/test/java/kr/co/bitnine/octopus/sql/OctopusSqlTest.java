@@ -139,9 +139,9 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void commentOn(OctopusSqlCommentOn.Target targetType, OctopusSqlTargetIdentifier target, String comment) throws Exception
+            public void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception
             {
-                System.out.println("COMMENT ON targetType=" + targetType.name() + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
+                System.out.println("COMMENT ON targetType=" + target.type.name() + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
             }
 
             @Override
@@ -206,11 +206,11 @@ public class OctopusSqlTest
     @Test
     public void testCommentOn() throws Exception
     {
-        String query = "COMMENT ON USER USER1 IS 'test';\n" +
-                "COMMENT ON DATASOURCE DS1 IS 'test';\n" +
+        String query = "COMMENT ON DATASOURCE DS1 IS 'test';\n" +
                 "COMMENT ON SCHEMA DS1.SCHEMA1 IS 'test';\n" +
                 "COMMENT ON TABLE DS1.SCHEMA1.TABLE1 IS 'test';\n" +
-                "COMMENT ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'test';\n";
+                "COMMENT ON COLUMN DS1.SCHEMA1.TABLE1.COLUMN1 IS 'test';\n" +
+                "COMMENT ON USER USER1 IS 'test';\n";
         parseAndRun(query);
     }
 

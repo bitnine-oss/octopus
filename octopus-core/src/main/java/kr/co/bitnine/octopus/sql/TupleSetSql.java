@@ -25,15 +25,15 @@ import java.util.List;
 
 public class TupleSetSql implements TupleSet
 {
-    private final TupleDesc tupDesc;
-    private final List<Tuple> tuples = new ArrayList<>();
+    private TupleDesc tupDesc;
+    private final List<Tuple> tuples;
     private Iterator<Tuple> iter;
     private Tuple cursor;
 
-    public TupleSetSql(TupleDesc tupDesc)
+    public TupleSetSql()
     {
-        this.tupDesc = tupDesc;
-
+        tupDesc = null;
+        tuples = new ArrayList<>();
         iter = null;
         cursor = null;
     }
@@ -42,6 +42,11 @@ public class TupleSetSql implements TupleSet
     public TupleDesc getTupleDesc()
     {
         return tupDesc;
+    }
+
+    public void setTupleDesc(TupleDesc tupDesc)
+    {
+        this.tupDesc = tupDesc;
     }
 
     @Override

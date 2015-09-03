@@ -59,8 +59,10 @@ public abstract class Portal
 
     public String getCompletionTag()
     {
+/*
         if (state != State.DONE)
             return null; // FIXME: throw?
+ */
 
         String cmdTag = cachedQuery.getCommandTag();
         return cmdTag == null ? null : generateCompletionTag(cmdTag);

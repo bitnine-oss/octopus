@@ -16,32 +16,16 @@ package kr.co.bitnine.octopus.sql;
 
 public class OctopusSqlCommentOn extends OctopusSqlCommand
 {
-    public enum Target
-    {
-        DATASOURCE,
-        SCHEMA,
-        TABLE,
-        COLUMN,
-        USER
-    }
-
-    private final Target targetType;
-    private final OctopusSqlTargetIdentifier target;
+    private final OctopusSqlCommentTarget target;
     private final String comment;
 
-    OctopusSqlCommentOn(Target targetType, OctopusSqlTargetIdentifier target, String comment)
+    OctopusSqlCommentOn(OctopusSqlCommentTarget target, String comment)
     {
-        this.targetType = targetType;
         this.target = target;
         this.comment = comment;
     }
 
-    Target getTargetType()
-    {
-        return this.targetType;
-    }
-
-    OctopusSqlTargetIdentifier getTarget()
+    OctopusSqlCommentTarget getTarget()
     {
         return this.target;
     }

@@ -21,9 +21,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class OctopusConnection extends Jdbc4Connection
+class OctopusConnection extends Jdbc4Connection
 {
-    public OctopusConnection(HostSpec[] hostSpecs, String user, String database, Properties info, String url) throws SQLException
+    OctopusConnection(HostSpec[] hostSpecs, String user, String database, Properties info, String url) throws SQLException
     {
         super(hostSpecs, user, database, info, url);
     }
@@ -32,11 +32,14 @@ public class OctopusConnection extends Jdbc4Connection
      * We override getMetaData() to return OctopusDatabaseMetaData.
      * This is the main reason why we made this class.
      */
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException
     {
         checkClosed();
+
         if (metadata == null)
             metadata = new OctopusDatabaseMetaData(this);
+
         return metadata;
     }
 }

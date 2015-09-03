@@ -465,12 +465,16 @@ public class Session implements Runnable
 
         try {
             Portal p = queryEngine.query(queryString);
-            if (p.getCachedQuery().getCommandTag() == null)
+            if (p.getCachedQuery().getCommandTag() == null) {
                 sendEmptyQueryResponse();
+                return;
+            }
 
-                TupleSet ts = p.run(0);
-                if (ts != null)
-                    sendDataRow(ts, 0);
+            TupleSet ts = p.run(0);
+            if (ts != null) {
+                sendRowDescription(ts.getTupleDesc(), ts.getTupleDesc().getResultFormats());
+                sendDataRow(ts, 0);
+            }
 
             sendCommandComplete(p.getCompletionTag());
         } catch (PostgresException e) {
@@ -555,8 +559,10 @@ public class Session implements Runnable
 
         try {
             Portal p = queryEngine.getPortal(portalName);
-            if (p.getCachedQuery().getCommandTag() == null)
+            if (p.getCachedQuery().getCommandTag() == null) {
                 sendEmptyQueryResponse();
+                return;
+            }
 
             TupleSet ts = p.run(numRows);
             if (ts != null)
@@ -622,6 +628,13 @@ public class Session implements Runnable
             TupleDesc tupDesc;
             switch (type) {
                 case 'S':
+/*
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.FATAL,
+                            PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                            "unsupported frontend protocol");
+                    new OctopusException(edata).emitErrorReport();
+ */
                     CachedQuery cq = queryEngine.getCachedQuery(name);
                     sendParameterDescription(cq.getParamTypes());
                     tupDesc = cq.describe();
@@ -647,14 +660,6 @@ public class Session implements Runnable
             }
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
-        }
-
-        if (type == 'S') {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.FATAL,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "unsupported frontend protocol");
-            new OctopusException(edata).emitErrorReport();
         }
     }
 

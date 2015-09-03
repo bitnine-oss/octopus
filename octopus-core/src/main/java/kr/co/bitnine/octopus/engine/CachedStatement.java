@@ -28,6 +28,7 @@ public class CachedStatement extends CachedQuery
     private boolean isDdl;
     private final SqlNode validatedQuery;
     private List<OctopusSqlCommand> ddlCommands;
+    private final TupleDesc tupDesc;
     private final String commandTag;
 
     public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
@@ -37,16 +38,18 @@ public class CachedStatement extends CachedQuery
         isDdl = false;
         this.validatedQuery = validatedQuery;
         ddlCommands = null;
+        tupDesc = null;
         commandTag = "SELECT";
     }
 
-    public CachedStatement(List<OctopusSqlCommand> commands)
+    public CachedStatement(List<OctopusSqlCommand> commands, TupleDesc tupDesc)
     {
         super(null, new PostgresType[0]);
 
         isDdl = true;
         validatedQuery = null;
         ddlCommands = commands;
+        this.tupDesc = tupDesc;
         commandTag = "???";
     }
 
@@ -74,7 +77,7 @@ public class CachedStatement extends CachedQuery
     @Override
     public TupleDesc describe() throws PostgresException
     {
-        return null;
+        return tupDesc;
     }
 
     @Override

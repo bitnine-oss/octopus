@@ -45,6 +45,7 @@ public class MTable implements MetaTable
         this.name = name;
         this.type = type;
         this.schema = schema;
+        comment = "";
     }
 
     @Override

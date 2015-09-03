@@ -267,4 +267,72 @@ public class SessionServerTest
         stmt.close();
         conn.close();
     }
+
+    @Test
+    public void testShow() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+
+        System.out.println("* DataSources");
+        DatabaseMetaData metaData = conn.getMetaData();
+        ResultSet rs = metaData.getCatalogs();
+        while (rs.next())
+             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        System.out.println("* Schemas");
+        rs = metaData.getSchemas("DATA", "%DEFAULT");
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_CATALOG") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        System.out.println("* Tables");
+        rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        System.out.println("* Columns");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("COLUMN_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        System.out.println("* Users");
+        Statement stmt = conn.createStatement();
+        rs = stmt.executeQuery("SHOW USERS");
+        while (rs.next())
+            System.out.println("  " + rs.getString("USER_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+        stmt.close();
+
+        conn.close();
+    }
+
+    @Test
+    public void testComment() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        stmt.execute("COMMENT ON DATASOURCE DATA IS 'dataSource'");
+        stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'table'");
+        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
+        stmt.execute("COMMENT ON USER octopus IS 'superuser'");
+
+        stmt.close();
+        conn.close();
+    }
 }

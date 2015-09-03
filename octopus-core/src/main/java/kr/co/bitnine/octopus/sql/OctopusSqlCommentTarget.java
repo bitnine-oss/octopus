@@ -14,11 +14,21 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlShowUsers extends OctopusSqlCommand
+public class OctopusSqlCommentTarget
 {
-    @Override
-    public OctopusSqlCommand.Type getType()
+    public enum Type
     {
-        return Type.SHOW_USERS;
+        DATASOURCE,
+        SCHEMA,
+        TABLE,
+        COLUMN,
+        USER
     }
+    public Type type = null;
+
+    public String dataSource = null;
+    public String schema = null;
+    public String table = null;
+    public String column = null;
+    public String user = null;
 }

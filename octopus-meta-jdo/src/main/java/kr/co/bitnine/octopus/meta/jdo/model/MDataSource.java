@@ -46,6 +46,7 @@ public class MDataSource implements MetaDataSource
         this.type = type;
         this.jdbcDriverName = jdbcDriverName;
         this.jdbcConnectionString = jdbcConnectionString;
+        comment = "";
     }
 
     @Override

@@ -41,6 +41,7 @@ public class MUser implements MetaUser
         this.name = name;
         this.password = password;
         sysPrivs = new HashSet<>();
+        comment = "";
     }
 
     @Override

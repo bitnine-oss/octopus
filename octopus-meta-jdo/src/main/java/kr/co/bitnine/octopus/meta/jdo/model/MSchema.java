@@ -43,6 +43,7 @@ public class MSchema implements MetaSchema
     {
         this.name = name;
         this.dataSource = dataSource;
+        comment = "";
     }
 
     @Override

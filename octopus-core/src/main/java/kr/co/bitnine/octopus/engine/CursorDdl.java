@@ -24,6 +24,7 @@ import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
+import kr.co.bitnine.octopus.sql.TupleSetSql;
 
 public class CursorDdl extends Portal
 {
@@ -37,9 +38,9 @@ public class CursorDdl extends Portal
     }
 
     @Override
-    public TupleDesc describe()
+    public TupleDesc describe() throws PostgresException
     {
-        return null;
+        return getCachedQuery().describe();
     }
 
     @Override
@@ -48,7 +49,10 @@ public class CursorDdl extends Portal
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         OctopusSqlCommand c = cStmt.getDdlCommands().get(0);
         try {
-            return OctopusSql.run(c, sqlRunner);
+            TupleSetSql tsSql = (TupleSetSql) OctopusSql.run(c, sqlRunner);
+            if (tsSql != null)
+                tsSql.setTupleDesc(describe());
+            return tsSql;
         } catch (PostgresException e) {
             throw e;
         } catch (Exception e) {

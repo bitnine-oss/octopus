@@ -16,7 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 public abstract class OctopusSqlCommand
 {
-    enum Type
+    public enum Type
     {
         ADD_DATASOURCE,
         CREATE_USER,
@@ -26,7 +26,10 @@ public abstract class OctopusSqlCommand
         DROP_ROLE,
         GRANT_SYS_PRIVS,
         REVOKE_SYS_PRIVS,
+        SHOW_DATASOURCES,
+        SHOW_SCHEMAS,
         SHOW_TABLES,
+        SHOW_COLUMNS,
         SHOW_USERS,
         COMMENT_ON,
         SET_DATACATEGORY_ON,
