@@ -209,14 +209,57 @@ public class SessionServerTest
 
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
+
         try {
             stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
-        } finally {
-            stmt.close();
-            conn.close();
         }
+
+        try {
+            stmt.execute("CREATE USER kskim IDENTIFIED BY 'vp'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("ALTER USER jsyang IDENTIFIED BY 'jsyang' REPLACE '0009'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("DROP USER jsyang");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("GRANT CREATE USER TO jsyang");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("REVOKE CREATE USER FROM octopus");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'test'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("SET DATACATEGORY ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'category'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        stmt.close();
+        conn.close();
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();

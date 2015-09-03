@@ -159,7 +159,7 @@ public class JDOMetaContext implements MetaContext
                 if (schemaName == null)
                     schemaName = "__DEFAULT";
 
-                LOG.debug("add Schema. schemaName=" + schemaName);
+                LOG.debug("add schema. schemaName=" + schemaName);
                 MSchema schema = new MSchema(schemaName, dataSource);
                 pm.makePersistent(schema);
 
@@ -183,7 +183,7 @@ public class JDOMetaContext implements MetaContext
 
             tx.commit();
 
-            LOG.debug("complete addJdbcDataSource.");
+            LOG.debug("complete addJdbcDataSource");
             return dataSource;
         } catch (Exception e) {
             throw new MetaException("failed to add data source" , e);
@@ -396,7 +396,7 @@ public class JDOMetaContext implements MetaContext
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to add privileges to users", e);
+            throw new MetaException("failed to add system privileges to users", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
@@ -420,7 +420,7 @@ public class JDOMetaContext implements MetaContext
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to remove privileges from users", e);
+            throw new MetaException("failed to remove system privileges from users", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
