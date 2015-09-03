@@ -30,7 +30,7 @@ public class MSchema implements MetaSchema
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    private long id;
+    private long ID;
 
     private String name;
     private MDataSource dataSource;

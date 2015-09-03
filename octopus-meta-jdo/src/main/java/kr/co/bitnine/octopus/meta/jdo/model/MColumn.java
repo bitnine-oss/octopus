@@ -27,7 +27,7 @@ public class MColumn implements MetaColumn
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    private long id;
+    private long ID;
 
     private String name;
     private int type;

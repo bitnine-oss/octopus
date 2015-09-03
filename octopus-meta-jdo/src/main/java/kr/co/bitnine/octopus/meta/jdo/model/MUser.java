@@ -26,7 +26,7 @@ public class MUser implements MetaUser
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    private long id;
+    private long ID;
 
     @Persistent
     @Unique(name="NAME_IDX")

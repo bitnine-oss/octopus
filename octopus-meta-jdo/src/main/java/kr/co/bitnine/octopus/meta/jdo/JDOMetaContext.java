@@ -18,6 +18,7 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,10 +51,11 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MUser.class);
-            query.setFilter("name == '" + name + "'");
+            query.setFilter("name == userName");
+            query.declareParameters("String userName");
             query.setUnique(true);
 
-            MUser mUser = (MUser) query.execute();
+            MUser mUser = (MUser) query.execute(name);
             if (mUser == null && !nothrow)
                 throw new MetaException("user '" + name + "' does not exist");
             return mUser;
@@ -144,7 +146,6 @@ public class JDOMetaContext implements MetaContext
             throw new MetaException(e);
         }
 
-
         Transaction tx = pm.currentTransaction();
         try (Connection conn = DriverManager.getConnection(connectionString)) {
             DataContext dc = DataContextFactory.createJdbcDataContext(conn);
@@ -198,10 +199,11 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MDataSource.class);
-            query.setFilter("name == '" + name + "'");
+            query.setFilter("name == dataSourceName");
+            query.declareParameters("String dataSourceName");
             query.setUnique(true);
 
-            MDataSource mDataSource = (MDataSource) query.execute();
+            MDataSource mDataSource = (MDataSource) query.execute(name);
             if (mDataSource == null)
                 throw new MetaException("data source '" + name + "' does not exist");
             return mDataSource;
@@ -230,7 +232,7 @@ public class JDOMetaContext implements MetaContext
             List<MetaDataSource> dataSources = (List<MetaDataSource>) query.execute();
             return dataSources;
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get data sources", e);
         }
     }
 
@@ -239,15 +241,15 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MSchema.class);
-            query.setFilter("name == '" + schemaName + "'");
+            query.setFilter("name == schemaName && " +
+                    "dataSource.name == dataSourceName");
+            query.declareParameters("String dataSourceName, String schemaName");
+            query.setUnique(true);
 
-            List<MSchema> mSchemas = (List<MSchema>) query.execute();
-            for (MSchema mSchema : mSchemas) {
-                if (mSchema.getDataSource().getName().equals(dataSourceName))
-                    return mSchema;
-            }
-
-            throw new MetaException("schema '" + dataSourceName + "." + schemaName + "' does not exist");
+            MSchema mSchema = (MSchema) query.execute(dataSourceName, schemaName);
+            if (mSchema == null)
+                throw new MetaException("schema '" + dataSourceName + "." + schemaName + "' does not exist");
+            return mSchema;
         } catch (RuntimeException e) {
             throw new MetaException("failed to get schema '" + dataSourceName + "." + schemaName + "'", e);
         }
@@ -270,19 +272,16 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MTable.class);
-            query.setFilter("name == '" + tableName + "'");
+            query.setFilter("name == tableName && " +
+                    "schema.name == schemaName && " +
+                    "schema.dataSource.name == dataSourceName");
+            query.declareParameters("String dataSourceName, String schemaName, String tableName");
+            query.setUnique(true);
 
-            List<MTable> mTables = (List<MTable>) query.execute();
-            for (MTable mTable : mTables) {
-                MetaSchema schema = mTable.getSchema();
-                MetaDataSource dataSource = schema.getDataSource();
-
-                if (schema.getName().equals(schemaName) &&
-                        dataSource.getName().equals(dataSourceName))
-                    return mTable;
-            }
-
-            throw new MetaException("table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+            MTable mTable = (MTable) query.execute(dataSourceName, schemaName, tableName);
+            if (mTable == null)
+                throw new MetaException("table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+            return mTable;
         } catch (RuntimeException e) {
             throw new MetaException("failed to get table '" + dataSourceName + "." + schemaName + "." + tableName + "'", e);
         }
@@ -305,21 +304,17 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MColumn.class);
-            query.setFilter("name == '" + columnName + "'");
+            query.setFilter("name == columnName && " +
+                    "table.name == tableName && " +
+                    "table.schema.name == schemaName && " +
+                    "table.schema.dataSource.name == dataSourceName");
+            query.declareParameters("String dataSourceName, String schemaName, String tableName, String columnName");
+            query.setUnique(true);
 
-            List<MColumn> mColumns = (List<MColumn>) query.execute();
-            for (MColumn mColumn : mColumns) {
-                MetaTable table = mColumn.getTable();
-                MetaSchema schema = table.getSchema();
-                MetaDataSource dataSource = schema.getDataSource();
-
-                if (table.getName().equals(tableName) &&
-                        schema.getName().equals(schemaName) &&
-                        dataSource.getName().equals(dataSourceName))
-                    return mColumn;
-            }
-
-            throw new MetaException("column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+            MColumn mColumn = (MColumn) query.executeWithArray(dataSourceName, schemaName, tableName, columnName);
+            if (mColumn == null)
+                throw new MetaException("column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+            return mColumn;
         } catch (RuntimeException e) {
             throw new MetaException("failed to get column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "'", e);
         }
@@ -375,7 +370,7 @@ public class JDOMetaContext implements MetaContext
 
             pm.deletePersistent(mRole);
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to drop role '" + name + "'", e);
         }
     }
 
@@ -421,6 +416,89 @@ public class JDOMetaContext implements MetaContext
             tx.commit();
         } catch (Exception e) {
             throw new MetaException("failed to remove system privileges from users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
+        }
+    }
+
+    @Override
+    public MetaSchemaPrivilege getSchemaPrivileges(String[] schemaName, String userName) throws MetaException
+    {
+        assert schemaName.length == 2;
+
+        try {
+            Query query = pm.newQuery(MSchemaPrivilege.class);
+            query.setFilter("schema.name == schemaName && " +
+                    "schema.dataSource.name == dataSourceName && " +
+                    "user.name == userName");
+            query.declareParameters("String dataSourceName, String schemaName, String userName");
+            query.setUnique(true);
+
+            return (MSchemaPrivilege) query.execute(schemaName[0], schemaName[1], userName);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to get schema privilege of schemaName=" + schemaName[0] + "." + schemaName[1] + ", userName=" + userName + " does not exist", e);
+        }
+    }
+
+    @Override
+    public void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException
+    {
+        assert schemaName.length == 2;
+
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+
+            for (String userName : userNames) {
+                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivileges(schemaName, userName);
+                if (mSchemaPriv == null) {
+                    MSchema mSchema = (MSchema) getSchemaByQualifiedName(schemaName[0], schemaName[1]);
+                    MUser mUser = (MUser) getUser(userName);
+                    mSchemaPriv = new MSchemaPrivilege(mSchema, mUser);
+                }
+
+                for (ObjectPrivilege objPriv : objPrivs)
+                    mSchemaPriv.addObjectPrivilege(objPriv);
+
+                pm.makePersistent(mSchemaPriv);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to add object privileges on " + schemaName[0] + "." + schemaName[1] + "to users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
+        }
+    }
+
+    @Override
+    public void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException
+    {
+        assert schemaName.length == 2;
+
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+
+            for (String userName : userNames) {
+                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivileges(schemaName, userName);
+                if (mSchemaPriv == null)
+                    continue;
+
+                for (ObjectPrivilege objPriv : objPrivs)
+                    mSchemaPriv.removeObjectPrivilege(objPriv);
+
+                if (mSchemaPriv.isEmpty())
+                    pm.deletePersistent(mSchemaPriv);
+                else
+                    pm.makePersistent(mSchemaPriv);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to remove object privileges on " + schemaName[0] + "." + schemaName[1] + "to users", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();

@@ -3,8 +3,10 @@ package kr.co.bitnine.octopus.meta.jdo;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
+import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.junit.After;
@@ -14,10 +16,16 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.Set;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class JDOMetaStoreTest
 {
+    private static final String DATASOURCE_NAME = "DATA";
+    private static final String SCHEMA_NAME = "__DEFAULT";
+    private static final String TABLE_NAME = "BITNINE";
+
     private MemoryDatabase metaMemDb;
     private MemoryDatabase dataMemDb;
     private MetaStore metaStore;
@@ -28,7 +36,7 @@ public class JDOMetaStoreTest
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();
 
-        dataMemDb = new MemoryDatabase("DATA");
+        dataMemDb = new MemoryDatabase(DATASOURCE_NAME);
         dataMemDb.start();
         dataMemDb.init();
 
@@ -58,7 +66,11 @@ public class JDOMetaStoreTest
 
         mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
 
-        MetaTable metaTable = mc.getTableByQualifiedName("DATA", "__DEFAULT", "BITNINE");
+        mc.getDataSource(DATASOURCE_NAME);
+        mc.getSchemaByQualifiedName(DATASOURCE_NAME, SCHEMA_NAME);
+        mc.getColumnByQualifiedName(DATASOURCE_NAME, SCHEMA_NAME, TABLE_NAME, "NAME");
+
+        MetaTable metaTable = mc.getTableByQualifiedName(DATASOURCE_NAME, SCHEMA_NAME, TABLE_NAME);
         Collection<MetaColumn> columns = metaTable.getColumns();
         System.out.println("number of columns: " + columns.size());
         for (MetaColumn metaColumn : columns)
@@ -75,35 +87,81 @@ public class JDOMetaStoreTest
     public void testSystemPrivilege() throws Exception
     {
         MetaContext mc = metaStore.getMetaContext();
-
         MetaUser user = mc.createUser("octopus", "bitnine");
-
         mc.addSystemPrivileges(
                 Arrays.asList(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, SystemPrivilege.GRANT_ANY_PRIVILEGE),
                 Arrays.asList(user.getName()));
-
         mc.close();
 
         mc = metaStore.getMetaContext();
-
         user = mc.getUser("octopus");
-        Set<SystemPrivilege> sysPrivs = user.getSystemPrivileges();
-        for (SystemPrivilege sysPriv : sysPrivs)
+        for (SystemPrivilege sysPriv : user.getSystemPrivileges())
             System.out.println(sysPriv.name());
-
         mc.removeSystemPrivileges(
                 Arrays.asList(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE),
                 Arrays.asList(user.getName()));
-
         mc.close();
 
         mc = metaStore.getMetaContext();
-
         user = mc.getUser("octopus");
-        sysPrivs = user.getSystemPrivileges();
-        for (SystemPrivilege sysPriv : sysPrivs)
+        for (SystemPrivilege sysPriv : user.getSystemPrivileges())
             System.out.println(sysPriv.name());
+        mc.close();
+    }
 
+    @Test
+    public void testObjectPrivilege() throws Exception
+    {
+        final String[] schemaName = new String[] {DATASOURCE_NAME, SCHEMA_NAME};
+
+        MetaContext mc = metaStore.getMetaContext();
+        mc.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        MetaSchemaPrivilege schemaPriv = mc.getSchemaPrivileges(schemaName, "octopus");
+        assertNull(schemaPriv);
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        MetaUser user = mc.createUser("octopus", "bitnine");
+        mc.addObjectPrivileges(
+                Arrays.asList(ObjectPrivilege.values()),
+                schemaName,
+                Arrays.asList(user.getName()));
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        schemaPriv = mc.getSchemaPrivileges(schemaName, "octopus");
+        assertNotNull(schemaPriv);
+        for (ObjectPrivilege objPriv : schemaPriv.getObjectPrivileges())
+            System.out.println(objPriv.name());
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        mc.removeObjectPrivileges(
+                Arrays.asList(ObjectPrivilege.COMMENT),
+                schemaName,
+                Arrays.asList(user.getName()));
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        schemaPriv = mc.getSchemaPrivileges(schemaName, "octopus");
+        assertNotNull(schemaPriv);
+        for (ObjectPrivilege objPriv : schemaPriv.getObjectPrivileges())
+            System.out.println(objPriv.name());
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        mc.removeObjectPrivileges(
+                Arrays.asList(ObjectPrivilege.SELECT),
+                schemaName,
+                Arrays.asList(user.getName()));
+        mc.close();
+
+        mc = metaStore.getMetaContext();
+        schemaPriv = mc.getSchemaPrivileges(schemaName, "octopus");
+        assertNull(schemaPriv);
         mc.close();
     }
 }

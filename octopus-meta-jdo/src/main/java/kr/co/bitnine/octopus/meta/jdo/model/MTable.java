@@ -30,7 +30,7 @@ public class MTable implements MetaTable
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    private long id;
+    private long ID;
 
     private String name;
     private String type;

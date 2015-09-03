@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.meta;
 
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
 import java.util.Collection;
@@ -57,6 +58,9 @@ public interface MetaContext
     // Privilege
     void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
     void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
+    MetaSchemaPrivilege getSchemaPrivileges(String[] schemaName, String userName) throws MetaException;
+    void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;
+    void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;
 
     void close();
 }
