@@ -18,6 +18,8 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Column;
@@ -34,6 +36,7 @@ import java.util.List;
 
 public class JDOMetaContext implements MetaContext
 {
+    private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
     PersistenceManager pm;
 
     public JDOMetaContext(PersistenceManager persistenceManager)
@@ -120,11 +123,13 @@ public class JDOMetaContext implements MetaContext
     {
         // TODO: check if it already exists
 
+        LOG.debug("addJdbcDataSource. driverName=" + driverName + ", connectionString=" + connectionString + ", name=" + name);
         try {
             Class.forName(driverName);
         } catch (ClassNotFoundException e) {
             throw new MetaException(e);
         }
+
 
         Transaction tx = pm.currentTransaction();
         try (Connection conn = DriverManager.getConnection(connectionString)) {
@@ -140,12 +145,14 @@ public class JDOMetaContext implements MetaContext
                 if (schemaName == null)
                     schemaName = "__DEFAULT";
 
+                LOG.debug("add Schema. schemaName=" + schemaName);
                 MSchema schema = new MSchema(schemaName, dataSource);
                 pm.makePersistent(schema);
 
                 for (Table rawTable : rawSchema.getTables()) {
                     String tableName = rawTable.getName();
 
+                    LOG.debug("add table. tableName=" + tableName);
                     MTable table = new MTable(tableName, "TABLE", schema); // FIXME: table type
                     pm.makePersistent(table);
 
@@ -153,6 +160,7 @@ public class JDOMetaContext implements MetaContext
                         String columnName = rawColumn.getName();
                         int jdbcType = rawColumn.getType().getJdbcType();
 
+                        LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType);
                         MColumn column = new MColumn(columnName, jdbcType, table);
                         pm.makePersistent(column);
                     }
@@ -161,6 +169,7 @@ public class JDOMetaContext implements MetaContext
 
             tx.commit();
 
+            LOG.debug("complete addJdbcDataSource.");
             return dataSource;
         } catch (Exception e) {
             throw new MetaException(e);
