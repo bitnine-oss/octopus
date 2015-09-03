@@ -20,6 +20,7 @@ import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Column;
@@ -37,65 +38,85 @@ import java.util.List;
 public class JDOMetaContext implements MetaContext
 {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
-    PersistenceManager pm;
+    private final PersistenceManager pm;
 
     public JDOMetaContext(PersistenceManager persistenceManager)
     {
         pm = persistenceManager;
     }
 
-    private MUser getUserByName(String name, boolean nothrow) throws MetaException
+    private MUser getMUser(String name, boolean nothrow) throws MetaException
     {
         try {
             Query query = pm.newQuery(MUser.class);
             query.setFilter("name == '" + name + "'");
             query.setUnique(true);
 
-            MUser user = (MUser) query.execute();
-            if (user == null && !nothrow)
+            MUser mUser = (MUser) query.execute();
+            if (mUser == null && !nothrow)
                 throw new MetaException("user '" + name + "' does not exist");
-            return user;
+            return mUser;
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get user '" + name + "'", e);
         }
     }
 
     @Override
     public boolean userExists(String name) throws MetaException
     {
-        return getUserByName(name, true) != null;
+        return getMUser(name, true) != null;
+    }
+
+    @Override
+    public MetaUser getUser(String name) throws MetaException
+    {
+        return getMUser(name, false);
     }
 
     @Override
     public MetaUser createUser(String name, String password) throws MetaException
     {
         try {
-            MUser user = new MUser(name, password);
-            pm.makePersistent(user);
-            return user;
+            MUser mUser = new MUser(name, password);
+            pm.makePersistent(mUser);
+            return mUser;
         } catch (RuntimeException e) {
-            throw new MetaException("failed to create user '" + name + "'");
+            throw new MetaException("failed to create user '" + name + "'", e);
         }
-    }
-
-    @Override
-    public String getUserPasswordByName(String name) throws MetaException
-    {
-        return getUserByName(name, false).getPassword();
     }
 
     @Override
     public void alterUser(String name, String newPassword) throws MetaException
     {
-        MUser user = getUserByName(name, false);
-        user.setPassword(newPassword);
-        pm.makePersistent(user);
+        MUser mUser = (MUser) getUser(name);
+        mUser.setPassword(newPassword);
+        try {
+            pm.makePersistent(mUser);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to alter user '" + name + "'", e);
+        }
     }
 
     @Override
     public void dropUser(String name) throws MetaException
     {
-        pm.deletePersistent(getUserByName(name, false));
+        try {
+            pm.deletePersistent(getUser(name));
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to drop user '" + name + "'", e);
+        }
+    }
+
+    @Override
+    public void commentOnUser(String comment, String name) throws MetaException
+    {
+        MUser mUser = (MUser) getUser(name);
+        mUser.setComment(comment);
+        try {
+            pm.makePersistent(mUser);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to comment on user '" + name + "'", e);
+        }
     }
 
     @Override
@@ -103,19 +124,11 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MUser.class);
-            List<MetaUser> users = (List) query.execute();
+            List<MetaUser> users = (List<MetaUser>) query.execute();
             return users;
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get user list", e);
         }
-    }
-
-    @Override
-    public void commentOnUser(String name, String comment) throws MetaException
-    {
-        MUser user = getUserByName(name, false);
-        user.setComment(comment);
-        pm.makePersistent(user);
     }
 
     @Override
@@ -172,10 +185,39 @@ public class JDOMetaContext implements MetaContext
             LOG.debug("complete addJdbcDataSource.");
             return dataSource;
         } catch (Exception e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to add data source" , e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
+        }
+    }
+
+    @Override
+    public MetaDataSource getDataSource(String name) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MDataSource.class);
+            query.setFilter("name == '" + name + "'");
+            query.setUnique(true);
+
+            MDataSource mDataSource = (MDataSource) query.execute();
+            if (mDataSource == null)
+                throw new MetaException("data source '" + name + "' does not exist");
+            return mDataSource;
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to get data source '" + name + "'", e);
+        }
+    }
+
+    @Override
+    public void commentOnDataSource(String comment, String name) throws MetaException
+    {
+        MDataSource mDataSource = (MDataSource) getDataSource(name);
+        mDataSource.setComment(comment);
+        try {
+            pm.makePersistent(mDataSource);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to comment on data source '" + name + "'", e);
         }
     }
 
@@ -184,42 +226,11 @@ public class JDOMetaContext implements MetaContext
     {
         try {
             Query query = pm.newQuery(MDataSource.class);
-            List<MetaDataSource> dataSources = (List) query.execute();
+            List<MetaDataSource> dataSources = (List<MetaDataSource>) query.execute();
             return dataSources;
         } catch (RuntimeException e) {
             throw new MetaException(e);
         }
-    }
-
-    @Override
-    public MetaDataSource getDataSourceByName(String name) throws MetaException
-    {
-        try {
-            Query query = pm.newQuery(MDataSource.class);
-            query.setFilter("name == '" + name + "'");
-            query.setUnique(true);
-
-            MDataSource dataSource = (MDataSource) query.execute();
-            if (dataSource == null)
-                throw new MetaException("data source '" + name + "' does not exist");
-            return dataSource;
-        } catch (RuntimeException e) {
-            throw new MetaException(e);
-        }
-    }
-
-    @Override
-    public void commentOnDataSource(String dataSourceName, String comment) throws MetaException {
-        MetaDataSource datasource = getDataSourceByName(dataSourceName);
-        datasource.setComment(comment);
-        pm.makePersistent(datasource);
-    }
-
-    @Override
-    public void commentOnSchema(String dataSourceName, String schemaName, String comment) throws MetaException {
-        MetaSchema schema = getSchemaByQualifiedName(dataSourceName, schemaName);
-        schema.setComment(comment);
-        pm.makePersistent(schema);
     }
 
     @Override
@@ -229,18 +240,27 @@ public class JDOMetaContext implements MetaContext
             Query query = pm.newQuery(MSchema.class);
             query.setFilter("name == '" + schemaName + "'");
 
-            List<MSchema> schemas = (List) query.execute();
-            if (schemas.size() == 0)
-                throw new MetaException("Schema '" + dataSourceName + "." + schemaName + "' does not exist");
-
-            for (MSchema mSchema : schemas) {
-               if (mSchema.getDataSource().getName().equals(dataSourceName))
-                   return mSchema;
+            List<MSchema> mSchemas = (List<MSchema>) query.execute();
+            for (MSchema mSchema : mSchemas) {
+                if (mSchema.getDataSource().getName().equals(dataSourceName))
+                    return mSchema;
             }
 
-            throw new MetaException("Schema '" + dataSourceName + "." + schemaName + "' does not exist");
+            throw new MetaException("schema '" + dataSourceName + "." + schemaName + "' does not exist");
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get schema '" + dataSourceName + "." + schemaName + "'", e);
+        }
+    }
+
+    @Override
+    public void commentOnSchema(String comment, String dataSourceName, String schemaName) throws MetaException
+    {
+        MSchema mSchema = (MSchema) getSchemaByQualifiedName(dataSourceName, schemaName);
+        mSchema.setComment(comment);
+        try {
+            pm.makePersistent(mSchema);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to comment on schema '" + dataSourceName + "." + schemaName + "'", e);
         }
     }
 
@@ -251,22 +271,31 @@ public class JDOMetaContext implements MetaContext
             Query query = pm.newQuery(MTable.class);
             query.setFilter("name == '" + tableName + "'");
 
-            List<MTable> tables = (List) query.execute();
-            if (tables.size() == 0)
-                throw new MetaException("Table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+            List<MTable> mTables = (List<MTable>) query.execute();
+            for (MTable mTable : mTables) {
+                MetaSchema schema = mTable.getSchema();
+                MetaDataSource dataSource = schema.getDataSource();
 
-            for (MTable mTable : tables) {
-                MSchema mSchema = (MSchema) mTable.getSchema();
-                MDataSource mDataSource = (MDataSource) mSchema.getDataSource();
-
-                if (mSchema.getName().equals(schemaName) &&
-                    mDataSource.getName().equals(dataSourceName))
+                if (schema.getName().equals(schemaName) &&
+                        dataSource.getName().equals(dataSourceName))
                     return mTable;
             }
 
-            throw new MetaException("Table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+            throw new MetaException("table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
         } catch (RuntimeException e) {
-            throw new MetaException(e);
+            throw new MetaException("failed to get table '" + dataSourceName + "." + schemaName + "." + tableName + "'", e);
+        }
+    }
+
+    @Override
+    public void commentOnTable(String comment, String dataSourceName, String schemaName, String tableName) throws MetaException
+    {
+        MTable mTable = (MTable) getTableByQualifiedName(dataSourceName, schemaName, tableName);
+        mTable.setComment(comment);
+        try {
+            pm.makePersistent(mTable);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to comment on table '" + dataSourceName + "." + schemaName + "." + tableName + "'", e);
         }
     }
 
@@ -277,72 +306,55 @@ public class JDOMetaContext implements MetaContext
             Query query = pm.newQuery(MColumn.class);
             query.setFilter("name == '" + columnName + "'");
 
-            List<MColumn> columns = (List) query.execute();
-            if (columns.size() == 0)
-                throw new MetaException("Column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+            List<MColumn> mColumns = (List<MColumn>) query.execute();
+            for (MColumn mColumn : mColumns) {
+                MetaTable table = mColumn.getTable();
+                MetaSchema schema = table.getSchema();
+                MetaDataSource dataSource = schema.getDataSource();
 
-            for (MColumn mColumn : columns) {
-                MTable mTable = (MTable) mColumn.getTable();
-                MSchema mSchema = (MSchema) mTable.getSchema();
-                MDataSource mDataSource = (MDataSource) mSchema.getDataSource();
-
-                if (mTable.getName().equals(tableName) &&
-                    mSchema.getName().equals(schemaName) &&
-                    mDataSource.getName().equals(dataSourceName))
+                if (table.getName().equals(tableName) &&
+                        schema.getName().equals(schemaName) &&
+                        dataSource.getName().equals(dataSourceName))
                     return mColumn;
             }
 
-            throw new MetaException("Column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
+            throw new MetaException("column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "' does not exist");
         } catch (RuntimeException e) {
             throw new MetaException(e);
         }
     }
 
     @Override
-    public MetaTable getTableByName(String name) throws MetaException
+    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException
     {
-        try {
-            Query query = pm.newQuery(MTable.class);
-            query.setFilter("name == '" + name + "'");
-            query.setUnique(true);
-
-            MTable table = (MTable) query.execute();
-            if (table == null)
-                throw new MetaException("table '" + name + "' does not exist");
-            return table;
-        } catch (RuntimeException e) {
-            throw new MetaException(e);
-        }
-    }
-
-    @Override
-    public void commentOnTable(String dataSourceName, String schemaName, String tableName, String comment) throws MetaException {
-        MTable mTable = (MTable) getTableByQualifiedName(dataSourceName, schemaName, tableName);
-        mTable.setComment(comment);
-        pm.makePersistent(mTable);
-    }
-
-    @Override
-    public void commentOnColumn(String dataSourceName, String schemaName, String tableName, String columnName, String comment) throws MetaException {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setComment(comment);
-        pm.makePersistent(mColumn);
+        try {
+            pm.makePersistent(mColumn);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to comment on column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "'", e);
+        }
     }
 
     @Override
-    public void setDataCategoryOn(String dataSourceName, String schemaName, String tableName, String columnName, String category) throws MetaException {
+    public void setDataCategoryOn(String category, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
+    {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setDataCategory(category);
-        pm.makePersistent(mColumn);
+        try {
+            pm.makePersistent(mColumn);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to set data category on column '" + dataSourceName + "." + schemaName + "." + tableName + "." + columnName + "'", e);
+        }
     }
 
     @Override
     public MetaRole createRole(String name) throws MetaException
     {
         try {
-            MRole role = new MRole(name);
-            pm.makePersistent(role);
-            return role;
+            MRole mRole = new MRole(name);
+            pm.makePersistent(mRole);
+            return mRole;
         } catch (RuntimeException e) {
             throw new MetaException("failed to create role '" + name + "'");
         }
@@ -351,19 +363,66 @@ public class JDOMetaContext implements MetaContext
     @Override
     public void dropRoleByName(String name) throws MetaException
     {
-
         try {
             Query query = pm.newQuery(MRole.class);
             query.setFilter("name == '" + name + "'");
             query.setUnique(true);
 
-            MRole role = (MRole) query.execute();
-            if (role == null)
+            MRole mRole = (MRole) query.execute();
+            if (mRole == null)
                 throw new MetaException("role '" + name + "' does not exist");
 
-            pm.deletePersistent(role);
+            pm.deletePersistent(mRole);
         } catch (RuntimeException e) {
             throw new MetaException(e);
+        }
+    }
+
+    @Override
+    public void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
+    {
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+
+            for (String userName : userNames) {
+                MUser mUser = (MUser) getUser(userName);
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    mUser.addSystemPrivilege(sysPriv);
+
+                pm.makePersistent(mUser);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to add privileges to users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
+        }
+    }
+
+    @Override
+    public void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
+    {
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+
+            for (String userName : userNames) {
+                MUser mUser = (MUser) getUser(userName);
+                for (SystemPrivilege sysPriv : sysPrivs)
+                    mUser.removeSystemPrivilege(sysPriv);
+
+                pm.makePersistent(mUser);
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            throw new MetaException("failed to remove privileges from users", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
     }
 

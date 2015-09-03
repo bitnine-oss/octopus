@@ -23,6 +23,4 @@ public interface MetaDataSource
     String getConnectionString();
     String getComment();
     Collection<MetaSchema> getSchemas();
-
-    void setComment(String comment);
 }

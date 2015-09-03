@@ -18,9 +18,7 @@ public interface MetaColumn
 {
     String getName();
     int getType();
+    MetaTable getTable();
     String getComment();
     String getDataCategory();
-    void setDataCategory(String dataCategory);
-    MetaTable getTable();
-    void setComment(String comment);
 }

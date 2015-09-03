@@ -19,11 +19,8 @@ import java.util.Collection;
 public interface MetaTable
 {
     String getName();
-    String getComment();
     String getType();
-
-    Collection<MetaColumn> getColumns();
     MetaSchema getSchema();
-
-    void setComment(String comment);
+    String getComment();
+    Collection<MetaColumn> getColumns();
 }

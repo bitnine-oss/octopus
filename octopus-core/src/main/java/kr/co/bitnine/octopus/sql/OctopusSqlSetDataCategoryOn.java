@@ -14,14 +14,16 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand {
+class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand
+{
     String dataSource;
     String schema;
     String table;
     String column;
     String category;
 
-    public OctopusSqlSetDataCategoryOn(String dataSource, String schema, String table, String column, String category) {
+    OctopusSqlSetDataCategoryOn(String dataSource, String schema, String table, String column, String category)
+    {
         this.dataSource = dataSource;
         this.schema = schema;
         this.table = table;
@@ -35,23 +37,28 @@ public class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand {
         return Type.SET_DATACATEGORY_ON;
     }
 
-    public String getDataSource() {
+    public String getDataSource()
+    {
         return dataSource;
     }
 
-    public String getSchema() {
+    public String getSchema()
+    {
         return schema;
     }
 
-    public String getTable() {
+    public String getTable()
+    {
         return table;
     }
 
-    public String getColumn() {
+    public String getColumn()
+    {
         return column;
     }
 
-    public String getCategory() {
+    public String getCategory()
+    {
         return category;
     }
 }

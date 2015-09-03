@@ -14,8 +14,8 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public class OctopusSqlShowUsers extends OctopusSqlCommand {
-
+class OctopusSqlShowUsers extends OctopusSqlCommand
+{
     @Override
     public OctopusSqlCommand.Type getType()
     {

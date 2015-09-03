@@ -29,23 +29,23 @@ public class MDataSource implements MetaDataSource
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long ID;
+    private long id;
 
-    String name;
-    int type;
-    String jdbc_driver;
-    String jdbc_connectionString;
-    String comment;
+    private String name;
+    private int type;
+    private String jdbcDriverName;
+    private String jdbcConnectionString;
+    private String comment;
 
     @Persistent(mappedBy="dataSource")
-    Collection<MSchema> schemas;
+    private Collection<MSchema> schemas;
 
-    public MDataSource(String name, int type, String jdbc_driver, String jdbc_connectionString)
+    public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString)
     {
         this.name = name;
         this.type = type;
-        this.jdbc_driver = jdbc_driver;
-        this.jdbc_connectionString = jdbc_connectionString;
+        this.jdbcDriverName = jdbcDriverName;
+        this.jdbcConnectionString = jdbcConnectionString;
     }
 
     @Override
@@ -57,28 +57,29 @@ public class MDataSource implements MetaDataSource
     @Override
     public String getDriverName()
     {
-        return jdbc_driver;
+        return jdbcDriverName;
     }
 
     @Override
     public String getConnectionString()
     {
-        return jdbc_connectionString;
+        return jdbcConnectionString;
+    }
+
+    @Override
+    public String getComment()
+    {
+        return comment;
+    }
+
+    public void setComment(String comment)
+    {
+        this.comment = comment;
     }
 
     @Override
     public Collection<MetaSchema> getSchemas()
     {
-        return new ArrayList(schemas);
-    }
-
-    @Override
-    public String getComment() {
-        return comment;
-    }
-
-    @Override
-    public void setComment(String comment) {
-       this.comment = comment;
+        return new ArrayList<MetaSchema>(schemas);
     }
 }

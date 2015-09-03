@@ -229,7 +229,7 @@ class Session implements Runnable
         String username = clientParams.getProperty(CLIENT_PARAM_USER);
         try {
             String password = msg.getCString();
-            String currentPassword = metaContext.getUserPasswordByName(username);
+            String currentPassword = metaContext.getUser(username).getPassword();
             if (!password.equals(currentPassword)) {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.FATAL,
@@ -375,7 +375,7 @@ class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
-    private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws Exception
+    private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws IOException
     {
         PostgresAttribute[] attrs = tupDesc.getAttributes();
 
@@ -396,7 +396,7 @@ class Session implements Runnable
         messageStream.putMessage(msgBld.build());
     }
 
-    private void sendDataRow(TupleSet ts, int numRows) throws Exception
+    private void sendDataRow(TupleSet ts, int numRows) throws IOException, PostgresException
     {
         TupleDesc td = ts.getTupleDesc();
 
@@ -428,25 +428,29 @@ class Session implements Runnable
         ts.close(); // FIXME: remove
     }
 
-    private void handleQuery(Message msg) throws Exception
+    private void handleQuery(Message msg) throws IOException, OctopusException
     {
         String queryString = msg.getCString();
         LOG.debug("queryString: " + queryString);
 
         // TODO: support multiple queries in a single queryString
 
-        Portal p = queryEngine.query(queryString);
-        if (p.getCachedQuery().getCommandTag() == null)
-            sendEmptyQueryResponse();
+        try {
+            Portal p = queryEngine.query(queryString);
+            if (p.getCachedQuery().getCommandTag() == null)
+                sendEmptyQueryResponse();
 
-        TupleSet ts = p.run(0);
-        if (ts != null)
-            sendDataRow(ts, 0);
+                TupleSet ts = p.run(0);
+                if (ts != null)
+                    sendDataRow(ts, 0);
 
-        sendCommandComplete(p.getCompletionTag());
+            sendCommandComplete(p.getCompletionTag());
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
+        }
     }
 
-    private void handleParse(Message msg) throws Exception
+    private void handleParse(Message msg) throws IOException, OctopusException
     {
         String stmtName = msg.getCString();
         String queryString = msg.getCString();
@@ -461,13 +465,17 @@ class Session implements Runnable
                 LOG.debug("paramTypes[" + i + "]=" + paramTypes[i].name());
         }
 
-        queryEngine.parse(queryString, stmtName, paramTypes);
+        try {
+            queryEngine.parse(queryString, stmtName, paramTypes);
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
+        }
 
         // ParseComplete
         messageStream.putMessage(Message.builder('1').build());
     }
 
-    private void handleBind(Message msg) throws Exception
+    private void handleBind(Message msg) throws IOException, OctopusException
     {
         String portalName = msg.getCString();
         String stmtName = msg.getCString();
@@ -500,28 +508,36 @@ class Session implements Runnable
                 LOG.debug("resultFormats[" + i + "]=" + resultFormats[i].name());
         }
 
-        queryEngine.bind(stmtName, portalName, paramFormats, paramValues, resultFormats);
+        try {
+            queryEngine.bind(stmtName, portalName, paramFormats, paramValues, resultFormats);
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
+        }
 
         // BindComplete
         messageStream.putMessage(Message.builder('2').build());
     }
 
-    private void handleExecute(Message msg) throws Exception
+    private void handleExecute(Message msg) throws IOException, OctopusException
     {
         String portalName = msg.getCString();
         int numRows = msg.getInt();
 
         LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
 
-        Portal p = queryEngine.getPortal(portalName);
-        if (p.getCachedQuery().getCommandTag() == null)
-            sendEmptyQueryResponse();
+        try {
+            Portal p = queryEngine.getPortal(portalName);
+            if (p.getCachedQuery().getCommandTag() == null)
+                sendEmptyQueryResponse();
 
-        TupleSet ts = p.run(numRows);
-        if (ts != null)
-            sendDataRow(ts, numRows);
+            TupleSet ts = p.run(numRows);
+            if (ts != null)
+                sendDataRow(ts, numRows);
 
-        sendCommandComplete(p.getCompletionTag());
+            sendCommandComplete(p.getCompletionTag());
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
+        }
     }
 
     private void handleClose(Message msg) throws IOException, OctopusException
@@ -554,7 +570,7 @@ class Session implements Runnable
         messageStream.putMessage(Message.builder('3').build());
     }
 
-    private void sendParameterDescription(PostgresType[] paramTypes) throws Exception
+    private void sendParameterDescription(PostgresType[] paramTypes) throws IOException
     {
         Message.Builder msgBld = Message.builder('t').putShort((short) paramTypes.length);
         for (PostgresType type : paramTypes)
@@ -562,43 +578,47 @@ class Session implements Runnable
         messageStream.putMessage(msgBld.build());
     }
 
-    private void sendNoData() throws Exception
+    private void sendNoData() throws IOException
     {
         messageStream.putMessage(Message.builder('n').build());
     }
 
-    private void handleDescribe(Message msg) throws Exception
+    private void handleDescribe(Message msg) throws IOException, OctopusException
     {
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
         LOG.debug("describe (type='" + type + "', name=" + name + ")");
 
-        TupleDesc tupDesc;
-        switch (type) {
-            case 'S':
-                CachedQuery cq = queryEngine.getCachedQuery(name);
-                sendParameterDescription(cq.getParamTypes());
-                tupDesc = cq.describe();
-                if (tupDesc == null)
-                    sendNoData();
-                else
-                    sendRowDescription(tupDesc, new FormatCode[0]);
-                break;
-            case 'P':
-                Portal p = queryEngine.getPortal(name);
-                tupDesc = p.describe();
-                if (tupDesc == null)
-                    sendNoData();
-                else
-                    sendRowDescription(tupDesc, tupDesc.getResultFormats());
-                break;
-            default:
-                PostgresErrorData edata = new PostgresErrorData(
-                        PostgresSeverity.ERROR,
-                        PostgresSQLState.PROTOCOL_VIOLATION,
-                        "invalid DESCRIBE message subtype '" + type + "'");
-                new OctopusException(edata).emitErrorReport();
+        try {
+            TupleDesc tupDesc;
+            switch (type) {
+                case 'S':
+                    CachedQuery cq = queryEngine.getCachedQuery(name);
+                    sendParameterDescription(cq.getParamTypes());
+                    tupDesc = cq.describe();
+                    if (tupDesc == null)
+                        sendNoData();
+                    else
+                        sendRowDescription(tupDesc, new FormatCode[0]);
+                    break;
+                case 'P':
+                    Portal p = queryEngine.getPortal(name);
+                    tupDesc = p.describe();
+                    if (tupDesc == null)
+                        sendNoData();
+                    else
+                        sendRowDescription(tupDesc, tupDesc.getResultFormats());
+                    break;
+                default:
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.ERROR,
+                            PostgresSQLState.PROTOCOL_VIOLATION,
+                            "invalid DESCRIBE message subtype '" + type + "'");
+                    new OctopusException(edata).emitErrorReport();
+            }
+        } catch (PostgresException e) {
+            new OctopusException(e.getErrorData()).emitErrorReport();
         }
 
         if (type == 'S') {

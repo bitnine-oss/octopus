@@ -17,6 +17,7 @@ package kr.co.bitnine.octopus.engine;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
@@ -47,7 +48,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import javax.ws.rs.POST;
 import java.util.*;
 
 public class QueryEngine extends AbstractQueryProcessor
@@ -141,7 +141,7 @@ public class QueryEngine extends AbstractQueryProcessor
         String jdbcDriver;
         String jdbcConnectionString;
         try {
-            MetaDataSource dataSource = metaContext.getDataSourceByName(dsNames.get(0));
+            MetaDataSource dataSource = metaContext.getDataSource(dsNames.get(0));
             jdbcDriver = dataSource.getDriverName();
             jdbcConnectionString = dataSource.getConnectionString();
         } catch (MetaException e) {
@@ -202,6 +202,18 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
+        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
+        {
+            metaContext.addSystemPrivileges(sysPrivs, grantees);
+        }
+
+        @Override
+        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
+        {
+            metaContext.addSystemPrivileges(sysPrivs, revokees);
+        }
+
+        @Override
         public TupleSet showDataSources() throws Exception
         {
             PostgresAttribute[] attrs  = new PostgresAttribute[] {
@@ -234,7 +246,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showSchemas(String dataSource, String schemaPattern) throws Exception
+        public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception
         {
             PostgresAttribute[] attrs  = new PostgresAttribute[] {
                     new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
@@ -249,7 +261,7 @@ public class QueryEngine extends AbstractQueryProcessor
             final String pattern = convertPattern(schemaPattern);
             for (MetaDataSource mds : metaContext.getDataSources()) {
                 String dsName = mds.getName();
-                if (dataSource != null && !dataSource.equals(dsName))
+                if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
                 for (MetaSchema mSchema : mds.getSchemas()) {
@@ -282,7 +294,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTables(String dataSource, String schemaPattern, String tablePattern) throws Exception
+        public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
         {
             PostgresAttribute[] attrs  = new PostgresAttribute[] {
                     new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
@@ -302,11 +314,11 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql(tupDesc);
 
             List<Tuple> tuples = new ArrayList<>();
-            final String sPattern = convertPattern(tablePattern);
-            final String tPattern = convertPattern(schemaPattern);
+            final String sPattern = convertPattern(schemaPattern);
+            final String tPattern = convertPattern(tablePattern);
             for (MetaDataSource mds : metaContext.getDataSources()) {
                 String dsName = mds.getName();
-                if (dataSource != null && !dataSource.equals(dsName))
+                if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
                 for (MetaSchema mSchema : mds.getSchemas()) {
@@ -356,7 +368,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showColumns(String dataSource, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+        public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
         {
             PostgresAttribute[] attrs  = new PostgresAttribute[] {
                     new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
@@ -396,7 +408,7 @@ public class QueryEngine extends AbstractQueryProcessor
             final String cPattern = convertPattern(columnPattern);
             for (MetaDataSource mds : metaContext.getDataSources()) {
                 String dsName = mds.getName();
-                if (dataSource != null && !dataSource.equals(dsName))
+                if (dataSourceName != null && !dataSourceName.equals(dsName))
                     continue;
 
                 for (MetaSchema mSchema : mds.getSchemas()) {
@@ -470,14 +482,14 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTablePrivileges(String dataSource, String schemapattern, String tablepattern) throws Exception
+        public TupleSet showTablePrivileges(String dataSourceName, String schemapattern, String tablepattern) throws Exception
         {
             //TODO
             return null;
         }
 
         @Override
-        public TupleSet showColumnPrivileges(String dataSource, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        public TupleSet showColumnPrivileges(String dataSourceName, String schemapattern, String tablepattern, String columnpattern) throws Exception
         {
             // TODO
             return null;
@@ -508,26 +520,27 @@ public class QueryEngine extends AbstractQueryProcessor
         {
             switch (targetType) {
                 case DATASOURCE:
-                    metaContext.commentOnDataSource(target.datasource, comment);
+                    metaContext.commentOnDataSource(comment, target.dataSource);
                     break;
                 case SCHEMA:
-                    metaContext.commentOnSchema(target.datasource, target.schema, comment);
+                    metaContext.commentOnSchema(comment, target.dataSource, target.schema);
                     break;
                 case TABLE:
-                    metaContext.commentOnTable(target.datasource, target.schema, target.table, comment);
+                    metaContext.commentOnTable(comment, target.dataSource, target.schema, target.table);
                     break;
                 case COLUMN:
-                    metaContext.commentOnColumn(target.datasource, target.schema, target.table, target.column, comment);
+                    metaContext.commentOnColumn(comment, target.dataSource, target.schema, target.table, target.column);
                     break;
                 case USER:
-                    metaContext.commentOnUser(target.user, comment);
+                    metaContext.commentOnUser(comment, target.user);
                     break;
             }
         }
 
         @Override
-        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception {
-            metaContext.setDataCategoryOn(dataSource, schema, table, column, category);
+        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+        {
+            metaContext.setDataCategoryOn(category, dataSource, schema, table, column);
         }
     };
 

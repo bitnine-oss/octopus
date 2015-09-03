@@ -16,7 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlDropRole extends OctopusSqlCommand
 {
-    private String role;
+    private final String role;
 
     OctopusSqlDropRole(String role)
     {
@@ -29,8 +29,8 @@ class OctopusSqlDropRole extends OctopusSqlCommand
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.DROP_ROLE;
+        return Type.DROP_ROLE;
     }
 }

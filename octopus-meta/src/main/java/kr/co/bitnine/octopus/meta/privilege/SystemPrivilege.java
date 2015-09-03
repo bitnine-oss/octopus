@@ -12,24 +12,16 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.jdo.model;
+package kr.co.bitnine.octopus.meta.privilege;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
-
-@PersistenceCapable
-public class MColumnACL
+public enum SystemPrivilege
 {
-    @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long ID;
-
-    MColumn column;
-    MUser grantorUser;
-    MUser userID; /* grantee */
-    int grantOption;
-    int privilege;
-    MRole roleID;
+    ALTER_SYSTEM,
+    SELECT_ANY_TABLE,
+    CREATE_USER,
+    ALTER_USER,
+    DROP_USER,
+    COMMENT_ANY,
+    GRANT_ANY_OBJECT_PRIVILEGE,
+    GRANT_ANY_PRIVILEGE
 }

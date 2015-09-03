@@ -30,15 +30,15 @@ public class MTable implements MetaTable
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long ID;
+    private long id;
 
-    String name;
-    String type;
-    String comment;
-    MSchema schema;
+    private String name;
+    private String type;
+    private MSchema schema;
+    private String comment;
 
     @Persistent(mappedBy="table")
-    Collection<MColumn> columns;
+    private Collection<MColumn> columns;
 
     public MTable(String name, String type, MSchema schema)
     {
@@ -47,22 +47,10 @@ public class MTable implements MetaTable
         this.schema = schema;
     }
 
-    public int getColumnCnt()
-    {
-        return columns.size();
-    }
-
     @Override
     public String getName()
     {
         return name;
-    }
-
-
-    @Override
-    public String getComment()
-    {
-        return comment;
     }
 
     @Override
@@ -72,20 +60,25 @@ public class MTable implements MetaTable
     }
 
     @Override
-    public Collection<MetaColumn> getColumns()
-    {
-        return new ArrayList(columns);
-    }
-
-    @Override
     public MetaSchema getSchema()
     {
         return schema;
     }
 
     @Override
+    public String getComment()
+    {
+        return comment;
+    }
+
     public void setComment(String comment)
     {
         this.comment = comment;
+    }
+
+    @Override
+    public Collection<MetaColumn> getColumns()
+    {
+        return new ArrayList<MetaColumn>(columns);
     }
 }

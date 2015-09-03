@@ -15,13 +15,14 @@
 package kr.co.bitnine.octopus.meta.jdo.model;
 
 import kr.co.bitnine.octopus.meta.model.MetaUser;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @PersistenceCapable
+@Unique(name="MUSER_NAME_IDX", members={"name"})
 public class MUser implements MetaUser
 {
     @PrimaryKey
@@ -30,12 +31,14 @@ public class MUser implements MetaUser
 
     private String name;
     private String password;
+    private Set<SystemPrivilege> sysPrivs;
     private String comment;
 
     public MUser(String name, String password)
     {
         this.name = name;
         this.password = password;
+        sysPrivs = new HashSet<>();
     }
 
     @Override
@@ -50,18 +53,35 @@ public class MUser implements MetaUser
         return password;
     }
 
+    public void setPassword(String password)
+    {
+        this.password = password;
+    }
+
+    @Override
+    public Set<SystemPrivilege> getSystemPrivileges()
+    {
+        return new HashSet<>(sysPrivs);
+    }
+
+    public boolean addSystemPrivilege(SystemPrivilege sysPriv)
+    {
+        return sysPrivs.add(sysPriv);
+    }
+
+    public boolean removeSystemPrivilege(SystemPrivilege sysPriv)
+    {
+        return sysPrivs.remove(sysPriv);
+    }
+
     @Override
     public String getComment()
     {
         return comment;
     }
 
-    public void setPassword(String password)
+    public void setComment(String comment)
     {
-        this.password = password;
-    }
-
-    public void setComment(String comment) {
         this.comment = comment;
     }
 }

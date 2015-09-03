@@ -24,6 +24,8 @@ public abstract class OctopusSqlCommand
         DROP_USER,
         CREATE_ROLE,
         DROP_ROLE,
+        GRANT_SYS_PRIVS,
+        REVOKE_SYS_PRIVS,
         SHOW_TABLES,
         SHOW_USERS,
         COMMENT_ON,
@@ -31,8 +33,8 @@ public abstract class OctopusSqlCommand
         OTHER
     }
 
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.OTHER;
+        return Type.OTHER;
     }
 }

@@ -16,9 +16,9 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlAlterUser extends OctopusSqlCommand
 {
-    private String name;
-    private String password;
-    private String oldPassword;
+    private final String name;
+    private final String password;
+    private final String oldPassword;
 
     OctopusSqlAlterUser(String name, String password, String oldPassword)
     {
@@ -43,8 +43,8 @@ class OctopusSqlAlterUser extends OctopusSqlCommand
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.ALTER_USER;
+        return Type.ALTER_USER;
     }
 }

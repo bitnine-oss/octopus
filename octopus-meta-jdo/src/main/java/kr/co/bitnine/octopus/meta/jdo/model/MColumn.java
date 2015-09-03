@@ -27,12 +27,13 @@ public class MColumn implements MetaColumn
 {
     @PrimaryKey
     @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-    long ID;
-    String name;
-    int type;
-    String comment;
-    MTable table;
-    String dataCategory;
+    private long id;
+
+    private String name;
+    private int type;
+    private MTable table;
+    private String comment;
+    private String dataCategory;
 
     public MColumn(String name, int type, MTable table)
     {
@@ -54,15 +55,20 @@ public class MColumn implements MetaColumn
     }
 
     @Override
+    public MetaTable getTable()
+    {
+        return table;
+    }
+
+    @Override
     public String getComment()
     {
         return comment;
     }
 
-    @Override
-    public MetaTable getTable()
+    public void setComment(String comment)
     {
-        return table;
+        this.comment = comment;
     }
 
     @Override
@@ -71,15 +77,8 @@ public class MColumn implements MetaColumn
         return dataCategory;
     }
 
-    @Override
     public void setDataCategory(String dataCategory)
     {
         this.dataCategory = dataCategory;
-    }
-
-    @Override
-    public void setComment(String comment)
-    {
-        this.comment = comment;
     }
 }

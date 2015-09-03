@@ -16,8 +16,8 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlAddDataSource extends OctopusSqlCommand
 {
-    private String dataSourceName;
-    private String jdbcConnectionString;
+    private final String dataSourceName;
+    private final String jdbcConnectionString;
 
     OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString)
     {
@@ -36,8 +36,8 @@ class OctopusSqlAddDataSource extends OctopusSqlCommand
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
+    public Type getType()
     {
-        return OctopusSqlCommand.Type.ADD_DATASOURCE;
+        return Type.ADD_DATASOURCE;
     }
 }
