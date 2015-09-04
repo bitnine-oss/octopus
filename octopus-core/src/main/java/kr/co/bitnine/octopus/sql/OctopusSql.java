@@ -211,9 +211,10 @@ public final class OctopusSql
 
             List<ObjectPrivilege> objPrivs = new ArrayList<>(this.objPrivs);
 
-            String[] objName = new String[2];
-            objName[0] = ctx.object().dataSourceName().getText();
-            objName[1] = ctx.object().schemaName().getText();
+            String[] objName = {
+                    ctx.object().dataSourceName().getText(),
+                    ctx.object().schemaName().getText()
+            };
 
             Set<String> grantees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext grantee : ctx.grantees().grantee())
@@ -231,9 +232,10 @@ public final class OctopusSql
 
             List<ObjectPrivilege> objPrivs = new ArrayList<>(this.objPrivs);
 
-            String[] objName = new String[2];
-            objName[0] = ctx.object().dataSourceName().getText();
-            objName[1] = ctx.object().schemaName().getText();
+            String[] objName = {
+                    ctx.object().dataSourceName().getText(),
+                    ctx.object().schemaName().getText()
+            };
 
             Set<String> revokees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext revokee : ctx.grantees().grantee())

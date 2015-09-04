@@ -222,6 +222,9 @@ public class QueryEngine extends AbstractQueryProcessor
             throw new PostgresException(edata);
         }
 
+        if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
+            checkSelectPrivilegeThrow(validatedQuery);
+
         LOG.debug("by-pass query: " + validatedQuery.toString());
 
         String jdbcDriver;
@@ -240,9 +243,60 @@ public class QueryEngine extends AbstractQueryProcessor
         return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
     }
 
-    private boolean checkSystemPrivilege(SystemPrivilege sysPriv, boolean nothrow) throws PostgresException
+    private List<String> getDatasourceNames(SqlNode query)
+    {
+        final Set<String> dsSet = new HashSet<>();
+        query.accept(new SqlShuttle() {
+            @Override
+            public SqlNode visit(SqlIdentifier identifier)
+            {
+                // check whether this is fully qualified table name
+                if (identifier.names.size() == 3) {
+                    dsSet.add(identifier.names.get(0));
+                }
+                return identifier;
+            }
+        });
+
+        return new ArrayList<>(dsSet);
+    }
+
+    private void checkSelectPrivilegeThrow(SqlNode query) throws PostgresException
+    {
+        final PostgresException[] e = {null};
+
+        query.accept(new SqlShuttle() {
+            @Override
+            public SqlNode visit(SqlIdentifier identifier)
+            {
+                if (identifier.names.size() == 3 && e[0] == null) {
+                    String[] schemaName = {identifier.names.get(0), identifier.names.get(1)};
+                    e[0] = checkObjectPrivilegeInternal(ObjectPrivilege.SELECT, schemaName);
+                }
+                return identifier;
+            }
+        });
+
+        if (e[0] != null)
+            throw e[0];
+    }
+
+    private boolean checkSystemPrivilege(SystemPrivilege sysPriv)
+    {
+        return checkSystemPrivilegeInternal(sysPriv) == null;
+    }
+
+    private void checkSystemPrivilegeThrow(SystemPrivilege sysPriv) throws PostgresException
+    {
+        PostgresException e = checkSystemPrivilegeInternal(sysPriv);
+        if (e != null)
+            throw e;
+    }
+
+    private PostgresException checkSystemPrivilegeInternal(SystemPrivilege sysPriv)
     {
         Set<SystemPrivilege> userSysPrivs;
+
         try {
             String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
             userSysPrivs = metaContext.getUser(userName).getSystemPrivileges();
@@ -250,25 +304,32 @@ public class QueryEngine extends AbstractQueryProcessor
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to get user's system privilege");
-            throw new PostgresException(edata, e);
+            return new PostgresException(edata, e);
         }
 
-        boolean privileged = userSysPrivs.contains(sysPriv);
-        if (!nothrow && !privileged) {
+        if (!userSysPrivs.contains(sysPriv)) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     PostgresSQLState.INSUFFICIENT_PRIVILEGE,
                     "must have " + sysPriv.name() + " privilege");
-            throw new PostgresException(edata);
+            return new PostgresException(edata);
         }
 
-        return privileged;
+        return null;
     }
 
-    private void checkObjectPrivilege(ObjectPrivilege objPriv, String[] schemaName) throws PostgresException
+    private void checkObjectPrivilegeThrow(ObjectPrivilege objPriv, String[] schemaName) throws PostgresException
+    {
+        PostgresException e = checkObjectPrivilegeInternal(objPriv, schemaName);
+        if (e != null)
+            throw e;
+    }
+
+    private PostgresException checkObjectPrivilegeInternal(ObjectPrivilege objPriv, String[] schemaName)
     {
         Set<ObjectPrivilege> schemaObjPrivs;
         String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
+
         try {
             MetaSchemaPrivilege schemaPrivs = metaContext.getSchemaPrivileges(schemaName, userName);
             schemaObjPrivs = schemaPrivs == null ? null : schemaPrivs.getObjectPrivileges();
@@ -276,7 +337,7 @@ public class QueryEngine extends AbstractQueryProcessor
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to get object privileges on " + schemaName[0] + "." + schemaName[1] + " of user '" + userName + "'");
-            throw new PostgresException(edata, e);
+            return new PostgresException(edata, e);
         }
 
         if (schemaObjPrivs == null || !schemaObjPrivs.contains(objPriv)) {
@@ -284,15 +345,17 @@ public class QueryEngine extends AbstractQueryProcessor
                     PostgresSeverity.ERROR,
                     PostgresSQLState.INSUFFICIENT_PRIVILEGE,
                     "must have " + objPriv.name() + " privilege");
-            throw new PostgresException(edata);
+            return new PostgresException(edata);
         }
+
+        return null;
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
         @Override
         public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.ALTER_SYSTEM, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
             String driverName;
             if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
@@ -315,21 +378,21 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void createUser(String name, String password) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.CREATE_USER, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.CREATE_USER);
             metaContext.createUser(name, password);
         }
 
         @Override
         public void alterUser(String name, String password, String oldPassword) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.ALTER_USER, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.ALTER_USER);
             metaContext.alterUser(name, password);
         }
 
         @Override
         public void dropUser(String name) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.DROP_USER, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.DROP_USER);
             metaContext.dropUser(name);
         }
 
@@ -347,28 +410,28 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.addSystemPrivileges(sysPrivs, grantees);
         }
 
         @Override
         public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.addSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override
         public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.addObjectPrivileges(objPrivs, objName, grantees);
         }
 
         @Override
         public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, false);
+            checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.removeObjectPrivileges(objPrivs, objName, revokees);
         }
 
@@ -620,13 +683,13 @@ public class QueryEngine extends AbstractQueryProcessor
             switch (target.type) {
                 case DATASOURCE:
                 case USER:
-                    checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, false);
+                    checkSystemPrivilegeThrow(SystemPrivilege.COMMENT_ANY);
                     break;
                 case SCHEMA:
                 case TABLE:
                 case COLUMN:
-                    if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, true))
-                        checkObjectPrivilege(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
+                    if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
+                        checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
                     break;
             }
 
@@ -652,30 +715,12 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
         {
-            if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, true))
-                checkObjectPrivilege(ObjectPrivilege.COMMENT, new String[] {dataSource, schema});
+            if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
+                checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {dataSource, schema});
 
             metaContext.setDataCategoryOn(category, dataSource, schema, table, column);
         }
     };
-
-    public List<String> getDatasourceNames(SqlNode query)
-    {
-        final Set<String> dsSet = new HashSet<>();
-        query.accept(new SqlShuttle() {
-            @Override
-            public SqlNode visit(SqlIdentifier identifier)
-            {
-                // check whether this is fully qualified table name
-                if (identifier.names.size() == 3) {
-                    dsSet.add(identifier.names.get(0));
-                }
-                return identifier;
-            }
-        });
-
-        return new ArrayList<>(dsSet);
-    }
 
     /**
      * Convert a pattern containing JDBC catalog search wildcards into

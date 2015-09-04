@@ -269,6 +269,49 @@ public class SessionServerTest
     }
 
     @Test
+    public void testSelectPrivilege() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009'");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+        try {
+            stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("GRANT SELECT ON DATA.__DEFAULT TO jsyang");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            System.out.println("id=" + id + ", name=" + name);
+        }
+        rs.close();
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("REVOKE ALL ON DATA.__DEFAULT FROM jsyang");
+        stmt.execute("DROP USER jsyang");
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
     public void testShow() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");
@@ -372,6 +415,13 @@ public class SessionServerTest
         stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
         stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'table'");
         stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("REVOKE ALL ON DATA.__DEFAULT FROM jsyang");
+        stmt.execute("DROP USER jsyang");
         stmt.close();
         conn.close();
     }
