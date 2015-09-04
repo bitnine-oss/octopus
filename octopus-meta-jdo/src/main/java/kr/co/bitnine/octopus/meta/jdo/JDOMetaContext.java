@@ -103,10 +103,19 @@ public class JDOMetaContext implements MetaContext
     @Override
     public void dropUser(String name) throws MetaException
     {
+        Transaction tx = pm.currentTransaction();
         try {
+            tx.begin();
+
+            deleteSchemaPrivilegesByUser(name);
             pm.deletePersistent(getUser(name));
+
+            tx.commit();
         } catch (RuntimeException e) {
             throw new MetaException("failed to drop user '" + name + "'", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
     }
 
@@ -502,6 +511,18 @@ public class JDOMetaContext implements MetaContext
         } finally {
             if (tx.isActive())
                 tx.rollback();
+        }
+    }
+
+    private void deleteSchemaPrivilegesByUser(String userName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MSchemaPrivilege.class);
+            query.setFilter("user.name == userName");
+            query.declareParameters("String userName");
+            query.deletePersistentAll(userName);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to delete schema privileges of userName=" + userName, e);
         }
     }
 

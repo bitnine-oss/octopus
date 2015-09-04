@@ -305,7 +305,6 @@ public class SessionServerTest
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("REVOKE ALL ON DATA.__DEFAULT FROM jsyang");
         stmt.execute("DROP USER jsyang");
         stmt.close();
         conn.close();
@@ -420,7 +419,6 @@ public class SessionServerTest
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("REVOKE ALL ON DATA.__DEFAULT FROM jsyang");
         stmt.execute("DROP USER jsyang");
         stmt.close();
         conn.close();
