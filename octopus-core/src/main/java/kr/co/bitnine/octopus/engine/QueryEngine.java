@@ -155,7 +155,7 @@ public class QueryEngine extends AbstractQueryProcessor
                     Arrays.fill(resultFormats, FormatCode.TEXT);
                     tupDesc = new TupleDesc(attrs, resultFormats);
                     break;
-                case SHOW_USERS:
+                case SHOW_ALL_USERS:
                     attrs  = new PostgresAttribute[] {
                             new PostgresAttribute("USER_NAME", PostgresType.VARCHAR),
                             new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
@@ -418,7 +418,7 @@ public class QueryEngine extends AbstractQueryProcessor
         public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
-            metaContext.addSystemPrivileges(sysPrivs, revokees);
+            metaContext.removeSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override
@@ -661,7 +661,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showUsers() throws Exception
+        public TupleSet showAllUsers() throws Exception
         {
             TupleSetSql ts = new TupleSetSql();
 

@@ -157,9 +157,9 @@ public class OctopusSqlTest
             }
 
             @Override
-            public TupleSet showUsers() throws Exception
+            public TupleSet showAllUsers() throws Exception
             {
-                System.out.println("SHOW USERS");
+                System.out.println("SHOW ALL USERS");
                 return null;
             }
 
@@ -232,7 +232,7 @@ public class OctopusSqlTest
                 "SHOW COLUMNS COLUMN '%\\_COL';\n" +
                 "SHOW TABLE PRIVILEGES DATASOURCE DS1;\n" +
                 "SHOW COLUMN PRIVILEGES COLUMN '_COL\\%';\n" +
-                "SHOW USERS;\n";
+                "SHOW ALL USERS;\n";
         parseAndRun(query);
     }
 

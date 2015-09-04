@@ -105,9 +105,9 @@ class OctopusSqlShow extends OctopusSqlCommand
         }
     }
 
-    static class Users extends OctopusSqlShow
+    static class AllUsers extends OctopusSqlShow
     {
-        Users()
+        AllUsers()
         {
             super(null, null, null, null);
         }
@@ -115,7 +115,7 @@ class OctopusSqlShow extends OctopusSqlCommand
         @Override
         public Type getType()
         {
-            return Type.SHOW_USERS;
+            return Type.SHOW_ALL_USERS;
         }
     }
 }

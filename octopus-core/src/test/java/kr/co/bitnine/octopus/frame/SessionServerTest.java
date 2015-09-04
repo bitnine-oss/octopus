@@ -352,7 +352,7 @@ public class SessionServerTest
 
         System.out.println("* Users");
         Statement stmt = conn.createStatement();
-        rs = stmt.executeQuery("SHOW USERS");
+        rs = stmt.executeQuery("SHOW ALL USERS");
         while (rs.next())
             System.out.println("  " + rs.getString("USER_NAME") + ", " +
                     rs.getString("REMARKS"));

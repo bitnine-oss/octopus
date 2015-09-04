@@ -169,7 +169,8 @@ showTargets
     | K_COLUMNS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?              # ShowColumns
     | K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                               # ShowTablePrivileges
     | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowColumnPrivileges
-    | K_USERS                                                                                                                                   # ShowUsers
+    | K_ALL K_USERS                                                                                                                             # ShowAllUsers
+    | K_OBJECT K_PRIVILEGES K_FOR user                                                                                                          # ShowUserObjPrivs
     ;
 
 schemaPattern
@@ -241,6 +242,7 @@ K_DATACATEGORY : D A T A C A T E G O R Y ;
 K_DATASOURCE : D A T A S O U R C E ;
 K_DATASOURCES : D A T A S O U R C E S ;
 K_DROP : D R O P ;
+K_FOR : F O R ;
 K_FROM : F R O M ;
 K_GRANT : G R A N T ;
 K_IDENTIFIED : I D E N T I F I E D ;
