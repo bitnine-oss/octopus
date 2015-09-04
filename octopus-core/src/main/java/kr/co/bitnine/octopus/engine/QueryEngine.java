@@ -240,7 +240,7 @@ public class QueryEngine extends AbstractQueryProcessor
         return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
     }
 
-    private void checkSystemPrivilege(SystemPrivilege sysPriv) throws PostgresException
+    private boolean checkSystemPrivilege(SystemPrivilege sysPriv, boolean nothrow) throws PostgresException
     {
         Set<SystemPrivilege> userSysPrivs;
         try {
@@ -253,11 +253,37 @@ public class QueryEngine extends AbstractQueryProcessor
             throw new PostgresException(edata, e);
         }
 
-        if (!userSysPrivs.contains(sysPriv)) {
+        boolean privileged = userSysPrivs.contains(sysPriv);
+        if (!nothrow && !privileged) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     PostgresSQLState.INSUFFICIENT_PRIVILEGE,
                     "must have " + sysPriv.name() + " privilege");
+            throw new PostgresException(edata);
+        }
+
+        return privileged;
+    }
+
+    private void checkObjectPrivilege(ObjectPrivilege objPriv, String[] schemaName) throws PostgresException
+    {
+        Set<ObjectPrivilege> schemaObjPrivs;
+        String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
+        try {
+            MetaSchemaPrivilege schemaPrivs = metaContext.getSchemaPrivileges(schemaName, userName);
+            schemaObjPrivs = schemaPrivs == null ? null : schemaPrivs.getObjectPrivileges();
+        } catch (MetaException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "failed to get object privileges on " + schemaName[0] + "." + schemaName[1] + " of user '" + userName + "'");
+            throw new PostgresException(edata, e);
+        }
+
+        if (schemaObjPrivs == null || !schemaObjPrivs.contains(objPriv)) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.INSUFFICIENT_PRIVILEGE,
+                    "must have " + objPriv.name() + " privilege");
             throw new PostgresException(edata);
         }
     }
@@ -266,7 +292,7 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.ALTER_SYSTEM);
+            checkSystemPrivilege(SystemPrivilege.ALTER_SYSTEM, false);
 
             String driverName;
             if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
@@ -289,21 +315,21 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void createUser(String name, String password) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.CREATE_USER);
+            checkSystemPrivilege(SystemPrivilege.CREATE_USER, false);
             metaContext.createUser(name, password);
         }
 
         @Override
         public void alterUser(String name, String password, String oldPassword) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.ALTER_USER);
+            checkSystemPrivilege(SystemPrivilege.ALTER_USER, false);
             metaContext.alterUser(name, password);
         }
 
         @Override
         public void dropUser(String name) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.DROP_USER);
+            checkSystemPrivilege(SystemPrivilege.DROP_USER, false);
             metaContext.dropUser(name);
         }
 
@@ -321,27 +347,29 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE);
+            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, false);
             metaContext.addSystemPrivileges(sysPrivs, grantees);
         }
 
         @Override
         public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
         {
-            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE);
+            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_PRIVILEGE, false);
             metaContext.addSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override
         public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
         {
-            throw new UnsupportedOperationException();
+            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, false);
+            metaContext.addObjectPrivileges(objPrivs, objName, grantees);
         }
 
         @Override
         public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
         {
-            throw new UnsupportedOperationException();
+            checkSystemPrivilege(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE, false);
+            metaContext.removeObjectPrivileges(objPrivs, objName, revokees);
         }
 
         @Override
@@ -589,8 +617,18 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception
         {
-            if (true /* TODO: if user does not have object privilege */)
-                checkSystemPrivilege(SystemPrivilege.COMMENT_ANY);
+            switch (target.type) {
+                case DATASOURCE:
+                case USER:
+                    checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, false);
+                    break;
+                case SCHEMA:
+                case TABLE:
+                case COLUMN:
+                    if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, true))
+                        checkObjectPrivilege(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
+                    break;
+            }
 
             switch (target.type) {
                 case DATASOURCE:
@@ -614,8 +652,8 @@ public class QueryEngine extends AbstractQueryProcessor
         @Override
         public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
         {
-            if (true /* TODO: if user does not have object privilege */)
-                checkSystemPrivilege(SystemPrivilege.COMMENT_ANY);
+            if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY, true))
+                checkObjectPrivilege(ObjectPrivilege.COMMENT, new String[] {dataSource, schema});
 
             metaContext.setDataCategoryOn(category, dataSource, schema, table, column);
         }

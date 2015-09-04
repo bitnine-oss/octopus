@@ -332,6 +332,46 @@ public class SessionServerTest
         stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
         stmt.execute("COMMENT ON USER octopus IS 'superuser'");
 
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009';");
+
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+
+        try {
+            stmt.execute("COMMENT ON DATASOURCE DATA IS 'dataSource'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("COMMENT ON USER octopus IS 'superuser'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("GRANT COMMENT ON DATA.__DEFAULT TO jsyang");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+        stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'table'");
+        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
         stmt.close();
         conn.close();
     }
