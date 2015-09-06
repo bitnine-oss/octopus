@@ -170,7 +170,7 @@ showTargets
     | K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                               # ShowTablePrivileges
     | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowColumnPrivileges
     | K_ALL K_USERS                                                                                                                             # ShowAllUsers
-    | K_OBJECT K_PRIVILEGES K_FOR user                                                                                                          # ShowUserObjPrivs
+    | K_OBJECT K_PRIVILEGES K_FOR user                                                                                                          # ShowObjPrivsFor
     ;
 
 schemaPattern

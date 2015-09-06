@@ -314,9 +314,10 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitShowUserObjPrivs(OctopusSqlParser.ShowUserObjPrivsContext ctx)
+        public void exitShowObjPrivsFor(OctopusSqlParser.ShowObjPrivsForContext ctx)
         {
-            super.exitShowUserObjPrivs(ctx);
+            String userName = ctx.user().getText();
+            commands.add(new OctopusSqlShow.ObjPrivsFor(userName));
         }
 
         @Override
@@ -487,6 +488,9 @@ public final class OctopusSql
                 return runner.showColumns(showColumns.getDataSourceName(), showColumns.getSchemaPattern(), showColumns.getTablePattern(), showColumns.getcolumnPattern());
             case SHOW_ALL_USERS:
                 return runner.showAllUsers();
+            case SHOW_OBJ_PRIVS_FOR:
+                OctopusSqlShow.ObjPrivsFor showObjPrivsFor = (OctopusSqlShow.ObjPrivsFor) command;
+                return runner.showObjPrivsFor(showObjPrivsFor.getUserName());
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
                 runner.commentOn(commentOn.getTarget(), commentOn.getComment());

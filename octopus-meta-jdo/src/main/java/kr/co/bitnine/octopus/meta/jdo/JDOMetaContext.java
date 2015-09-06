@@ -446,7 +446,21 @@ public class JDOMetaContext implements MetaContext
 
             return (MSchemaPrivilege) query.execute(schemaName[0], schemaName[1], userName);
         } catch (RuntimeException e) {
-            throw new MetaException("failed to get schema privilege of schemaName=" + schemaName[0] + "." + schemaName[1] + ", userName=" + userName + " does not exist", e);
+            throw new MetaException("failed to get schema privilege of schemaName=" + schemaName[0] + "." + schemaName[1] + ", userName=" + userName, e);
+        }
+    }
+
+    @Override
+    public Collection<MetaSchemaPrivilege> getSchemaPrivilegesByUser(String userName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MSchemaPrivilege.class);
+            query.setFilter("user.name == userName");
+            query.declareParameters("String userName");
+
+            return (List<MetaSchemaPrivilege>) query.execute(userName);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to get schema privileges on user '" + userName + "'", e);
         }
     }
 

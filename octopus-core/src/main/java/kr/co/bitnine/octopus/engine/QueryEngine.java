@@ -164,6 +164,16 @@ public class QueryEngine extends AbstractQueryProcessor
                     Arrays.fill(resultFormats, FormatCode.TEXT);
                     tupDesc = new TupleDesc(attrs, resultFormats);
                     break;
+                case SHOW_OBJ_PRIVS_FOR:
+                    attrs  = new PostgresAttribute[] {
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
+                            new PostgresAttribute("PRIVILEGE", PostgresType.VARCHAR)
+                    };
+                    resultFormats = new FormatCode[attrs.length];
+                    Arrays.fill(resultFormats, FormatCode.TEXT);
+                    tupDesc = new TupleDesc(attrs, resultFormats);
+                    break;
                 default:
                     tupDesc = null;
             }
@@ -670,6 +680,35 @@ public class QueryEngine extends AbstractQueryProcessor
                 Tuple t = new Tuple(2);
                 t.setDatum(0, new DatumVarchar(mUser.getName()));
                 t.setDatum(1, new DatumVarchar(mUser.getComment()));
+                tuples.add(t);
+            }
+
+            ts.addTuples(tuples);
+            return ts;
+        }
+
+        @Override
+        public TupleSet showObjPrivsFor(String userName) throws Exception
+        {
+            TupleSetSql ts = new TupleSetSql();
+
+            List<Tuple> tuples = new ArrayList<>();
+            for (MetaSchemaPrivilege mSchemaPriv: metaContext.getSchemaPrivilegesByUser(userName)) {
+                Tuple t = new Tuple(3);
+
+                MetaSchema mSchema = mSchemaPriv.getSchema();
+                t.setDatum(0, new DatumVarchar(mSchema.getDataSource().getName()));
+                t.setDatum(1, new DatumVarchar(mSchema.getName()));
+
+                Set<ObjectPrivilege> objPrivs = mSchemaPriv.getObjectPrivileges();
+                assert objPrivs.size() > 0;
+                Iterator<ObjectPrivilege> iter = objPrivs.iterator();
+                StringBuilder builder = new StringBuilder();
+                builder.append(iter.next().name());
+                while (iter.hasNext())
+                    builder.append("," + iter.next().name());
+                t.setDatum(2, new DatumVarchar(builder.toString()));
+
                 tuples.add(t);
             }
 

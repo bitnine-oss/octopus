@@ -164,6 +164,13 @@ public class OctopusSqlTest
             }
 
             @Override
+            public TupleSet showObjPrivsFor(String userName) throws Exception
+            {
+                System.out.println("SHOW OBJECT PRIVILEGES FOR " + userName);
+                return null;
+            }
+
+            @Override
             public void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception
             {
                 System.out.println("COMMENT ON targetType=" + target.type.name() + " dataSourceName=" + target.dataSource + " schemaName=" + target.schema + " tableName=" + target.table + " columnName=" + target.column + " user=" + target.user);
@@ -232,7 +239,8 @@ public class OctopusSqlTest
                 "SHOW COLUMNS COLUMN '%\\_COL';\n" +
                 "SHOW TABLE PRIVILEGES DATASOURCE DS1;\n" +
                 "SHOW COLUMN PRIVILEGES COLUMN '_COL\\%';\n" +
-                "SHOW ALL USERS;\n";
+                "SHOW ALL USERS;\n" +
+                "SHOW OBJECT PRIVILEGES FOR jsyang;\n";
         parseAndRun(query);
     }
 

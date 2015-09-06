@@ -20,13 +20,15 @@ class OctopusSqlShow extends OctopusSqlCommand
     protected String schemaPattern;
     protected String tablePattern;
     protected String columnPattern;
+    protected String userName;
 
-    protected OctopusSqlShow(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern)
+    protected OctopusSqlShow(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern, String userName)
     {
         this.dataSourceName = dataSourceName;
         this.schemaPattern = schemaPattern;
         this.tablePattern = tablePattern;
         this.columnPattern = columnPattern;
+        this.userName = userName;
     }
 
     String getDataSourceName()
@@ -49,11 +51,16 @@ class OctopusSqlShow extends OctopusSqlCommand
         return columnPattern;
     }
 
+    String getUserName()
+    {
+        return userName;
+    }
+
     static class DataSources extends OctopusSqlShow
     {
         DataSources()
         {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
@@ -67,7 +74,7 @@ class OctopusSqlShow extends OctopusSqlCommand
     {
         Schemas(String dataSourceName, String schemaPattern)
         {
-            super(dataSourceName, schemaPattern, null, null);
+            super(dataSourceName, schemaPattern, null, null, null);
         }
 
         @Override
@@ -81,7 +88,7 @@ class OctopusSqlShow extends OctopusSqlCommand
     {
         Tables(String dataSourceName, String schemaPattern, String tablePattern)
         {
-            super(dataSourceName, schemaPattern, tablePattern, null);
+            super(dataSourceName, schemaPattern, tablePattern, null, null);
         }
 
         @Override
@@ -95,7 +102,7 @@ class OctopusSqlShow extends OctopusSqlCommand
     {
         Columns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern)
         {
-            super(dataSourceName, schemaPattern, tablePattern, columnPattern);
+            super(dataSourceName, schemaPattern, tablePattern, columnPattern, null);
         }
 
         @Override
@@ -109,13 +116,27 @@ class OctopusSqlShow extends OctopusSqlCommand
     {
         AllUsers()
         {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
         public Type getType()
         {
             return Type.SHOW_ALL_USERS;
+        }
+    }
+
+    static class ObjPrivsFor extends OctopusSqlShow
+    {
+        ObjPrivsFor(String userName)
+        {
+            super(null, null, null, null, userName);
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.SHOW_OBJ_PRIVS_FOR;
         }
     }
 }

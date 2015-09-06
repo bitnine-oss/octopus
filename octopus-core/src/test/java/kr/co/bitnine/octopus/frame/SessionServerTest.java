@@ -174,31 +174,6 @@ public class SessionServerTest
     }
 
     @Test
-    public void testGrantRevokeSysPrivs() throws Exception
-    {
-        Connection conn = getConnection("octopus", "bitnine");
-        Statement stmt = conn.createStatement();
-
-        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009';");
-
-        stmt.execute("GRANT ALL PRIVILEGES TO jsyang;");
-
-        String query = "REVOKE ALTER SYSTEM, " +
-                "CREATE USER, ALTER USER, DROP USER, " +
-                "COMMENT ANY, " +
-                "GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE " +
-                "FROM jsyang;";
-        stmt.execute(query);
-
-        stmt.execute("REVOKE ALL PRIVILEGES FROM jsyang;");
-
-        stmt.execute("DROP USER jsyang;");
-
-        stmt.close();
-        conn.close();
-    }
-
-    @Test
     public void testSystemPrivileges() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");
@@ -263,6 +238,52 @@ public class SessionServerTest
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
+
+        stmt.execute("GRANT ALL PRIVILEGES TO jsyang;");
+        String query = "REVOKE ALTER SYSTEM, " +
+                "SELECT ANY TABLE, " +
+                "ALTER USER, DROP USER, " +
+                "COMMENT ANY, " +
+                "GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE " +
+                "FROM jsyang;";
+        stmt.execute(query);
+
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+
+        stmt.execute("CREATE USER kskim IDENTIFIED BY 'vp'");
+
+        try {
+            stmt.execute("DROP USER kskim");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("REVOKE CREATE USER FROM jsyang;");
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("jsyang", "0009");
+        stmt = conn.createStatement();
+        try {
+            stmt.execute("CREATE USER bitnine IDENTIFIED BY 'password'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+        stmt.close();
+        conn.close();
+
+        conn = getConnection("octopus", "bitnine");
+        stmt = conn.createStatement();
+        stmt.execute("DROP USER kskim;");
         stmt.execute("DROP USER jsyang;");
         stmt.close();
         conn.close();
@@ -352,11 +373,23 @@ public class SessionServerTest
 
         System.out.println("* Users");
         Statement stmt = conn.createStatement();
+
         rs = stmt.executeQuery("SHOW ALL USERS");
         while (rs.next())
             System.out.println("  " + rs.getString("USER_NAME") + ", " +
                     rs.getString("REMARKS"));
         rs.close();
+
+        stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009'");
+        stmt.execute("GRANT ALL ON DATA.__DEFAULT TO jsyang");
+        rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR jsyang");
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("PRIVILEGE"));
+        rs.close();
+        stmt.execute("DROP USER jsyang");
+
         stmt.close();
 
         conn.close();

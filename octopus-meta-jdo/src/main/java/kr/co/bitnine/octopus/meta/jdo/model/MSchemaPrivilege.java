@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.meta.jdo.model;
 
+import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 
@@ -42,6 +43,12 @@ public class MSchemaPrivilege implements MetaSchemaPrivilege
         objPrivs = new HashSet<>();
         this.schema = schema;
         this.user = user;
+    }
+
+    @Override
+    public MetaSchema getSchema()
+    {
+        return schema;
     }
 
     @Override

@@ -33,6 +33,7 @@ public abstract class OctopusSqlCommand
         SHOW_TABLES,
         SHOW_COLUMNS,
         SHOW_ALL_USERS,
+        SHOW_OBJ_PRIVS_FOR,
         COMMENT_ON,
         SET_DATACATEGORY_ON,
         OTHER

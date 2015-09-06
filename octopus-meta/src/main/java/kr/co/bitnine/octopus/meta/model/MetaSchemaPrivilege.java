@@ -20,5 +20,6 @@ import java.util.Set;
 
 public interface MetaSchemaPrivilege
 {
+    MetaSchema getSchema();
     Set<ObjectPrivilege> getObjectPrivileges();
 }

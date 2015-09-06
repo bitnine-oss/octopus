@@ -59,6 +59,7 @@ public interface MetaContext
     void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
     void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
     MetaSchemaPrivilege getSchemaPrivileges(String[] schemaName, String userName) throws MetaException;
+    Collection<MetaSchemaPrivilege> getSchemaPrivilegesByUser(String userName) throws MetaException;
     void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;
     void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;
 
