@@ -15,25 +15,31 @@
 package kr.co.bitnine.octopus.postgres.utils.adt;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
-public class DatumInt implements Datum
+public class IoInt implements IoFunction
 {
-    private final int i;
-
-    public DatumInt(int i)
+    @Override
+    public Object in(byte[] bytes)
     {
-        this.i = i;
+        return Integer.valueOf(new String(bytes, StandardCharsets.US_ASCII));
     }
 
     @Override
-    public String out()
+    public byte[] out(Object value)
     {
-        return String.valueOf(i);
+        return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @Override
-    public byte[] send()
+    public Object recv(byte[] bytes)
     {
-        return ByteBuffer.allocate(4).putInt(i).array();
+        return ByteBuffer.wrap(bytes).getInt();
+    }
+
+    @Override
+    public byte[] send(Object value)
+    {
+        return ByteBuffer.allocate(4).putInt((Integer) value).array();
     }
 }

@@ -22,9 +22,6 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
-import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
-import kr.co.bitnine.octopus.postgres.utils.adt.DatumInt;
-import kr.co.bitnine.octopus.postgres.utils.adt.DatumVarchar;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -58,13 +55,13 @@ public class TupleSetByPass implements TupleSet
             PostgresAttribute[] attrs = tupDesc.getAttributes();
             Tuple t = new Tuple(attrs.length);
             for (int i = 0; i < attrs.length; i++) {
-                Datum datum;
+                Object datum;
                 switch (attrs[i].type) {
                     case INT4:
-                        datum = new DatumInt(resultSet.getInt(i + 1));
+                        datum = resultSet.getInt(i + 1);
                         break;
                     case VARCHAR:
-                        datum = new DatumVarchar(resultSet.getString(i + 1));
+                        datum = resultSet.getString(i + 1);
                         break;
                     default:
                         PostgresErrorData edata = new PostgresErrorData(

@@ -14,28 +14,26 @@
 
 package kr.co.bitnine.octopus.postgres.executor;
 
-import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
-
 public class Tuple
 {
-    private final Datum[] datums;
+    private final Object[] datums;
 
     public Tuple(int numAttrs)
     {
-        datums = new Datum[numAttrs];
+        datums = new Object[numAttrs];
     }
 
-    public void setDatum(int index, Datum datum)
+    public void setDatum(int index, Object datum)
     {
         datums[index] = datum;
     }
 
-    public Datum[] getDatums()
+    public Object[] getDatums()
     {
         return datums;
     }
 
-    public Datum getDatum(int index)
+    public Object getDatum(int index)
     {
         return datums[index];
     }

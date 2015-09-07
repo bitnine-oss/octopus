@@ -30,8 +30,9 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
-import kr.co.bitnine.octopus.postgres.utils.adt.Datum;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoFunctions;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
@@ -42,8 +43,6 @@ import org.apache.commons.logging.LogFactory;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
-import java.sql.Types;
 import java.util.Properties;
 import java.util.Random;
 
@@ -428,7 +427,7 @@ public class Session implements Runnable
     {
         TupleDesc td = ts.getTupleDesc();
 
-        int numAttrs = td.getNumAttributes();
+        PostgresAttribute[] attrs = td.getAttributes();
         FormatCode[] resultFormats = td.getResultFormats();
 
         // DataRow
@@ -437,15 +436,16 @@ public class Session implements Runnable
             if (t == null)
                 break;
 
-            Message.Builder msgBld = Message.builder('D').putShort((short) numAttrs);
-            Datum[] datums = t.getDatums();
+            Message.Builder msgBld = Message.builder('D').putShort((short) attrs.length);
+            Object[] datums = t.getDatums();
             for (int i = 0; i < datums.length; i++) {
                 byte[] bytes;
 
+                IoFunction io = IoFunctions.ofType(attrs[i].type);
                 if (resultFormats[i] == FormatCode.TEXT)
-                    bytes = datums[i].out().getBytes(StandardCharsets.US_ASCII);
+                    bytes = io.out(datums[i]);
                 else
-                    bytes = datums[i].send();
+                    bytes = io.send(datums[i]);
 
                 msgBld.putInt(bytes.length)
                         .putBytes(bytes);

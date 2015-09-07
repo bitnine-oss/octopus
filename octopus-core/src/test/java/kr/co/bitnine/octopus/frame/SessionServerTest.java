@@ -96,6 +96,8 @@ public class SessionServerTest
         info.setProperty("user", user);
         info.setProperty("password", password);
 
+//        info.setProperty("binaryTransfer", "true");
+
         return DriverManager.getConnection(url, info);
     }
 
@@ -114,9 +116,8 @@ public class SessionServerTest
         rs.close();
         stmt.close();
 
-/*
         PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE NAME = ?");
-        pstmt.setString(1, "octopus");
+        pstmt.setString(1, "jsyang");
         rs = pstmt.executeQuery();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -125,7 +126,6 @@ public class SessionServerTest
         }
         rs.close();
         pstmt.close();
- */
 
         conn.close();
     }

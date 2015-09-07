@@ -14,8 +14,13 @@
 
 package kr.co.bitnine.octopus.postgres.utils.adt;
 
-public interface Datum
+public interface IoFunction
 {
-    String out();
-    byte[] send();
+    // FormatCode.TEXT
+    Object in(byte[] bytes);
+    byte[] out(Object value);
+
+    // FormatCode.BINARY
+    Object recv(byte[] bytes);
+    byte[] send(Object value);
 }

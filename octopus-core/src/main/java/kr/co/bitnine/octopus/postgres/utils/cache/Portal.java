@@ -42,6 +42,8 @@ public abstract class Portal
         this.cachedQuery = cachedQuery;
         this.paramFormats = paramFormats;
         this.paramValues = paramValues;
+
+        // TODO: resultFormats.length == PostgresAttribute.length
         this.resultFormats = resultFormats;
 
         state = State.READY;
@@ -52,9 +54,19 @@ public abstract class Portal
         return cachedQuery;
     }
 
+    public FormatCode[] getParamFormats()
+    {
+        return paramFormats;
+    }
+
+    public byte[][] getParamValues()
+    {
+        return paramValues;
+    }
+
     public FormatCode[] getResultFormats()
     {
-        return Arrays.copyOf(resultFormats, resultFormats.length);
+        return resultFormats;
     }
 
     public String getCompletionTag()

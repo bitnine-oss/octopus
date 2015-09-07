@@ -30,7 +30,7 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
-import kr.co.bitnine.octopus.postgres.utils.adt.DatumVarchar;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoVarchar;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
@@ -453,8 +453,8 @@ public class QueryEngine extends AbstractQueryProcessor
             List<Tuple> tuples = new ArrayList<>();
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 Tuple t = new Tuple(2);
-                t.setDatum(0, new DatumVarchar(mDs.getName()));
-                t.setDatum(1, new DatumVarchar(mDs.getComment()));
+                t.setDatum(0, mDs.getName());
+                t.setDatum(1, mDs.getComment());
 
                 tuples.add(t);
             }
@@ -463,7 +463,7 @@ public class QueryEngine extends AbstractQueryProcessor
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
-                    return tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                    return ((String )tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                 }
             });
 
@@ -489,9 +489,9 @@ public class QueryEngine extends AbstractQueryProcessor
                         continue;
 
                     Tuple t = new Tuple(3);
-                    t.setDatum(0, new DatumVarchar(schemaName));
-                    t.setDatum(1, new DatumVarchar(dsName));
-                    t.setDatum(2, new DatumVarchar(mSchema.getComment()));
+                    t.setDatum(0, schemaName);
+                    t.setDatum(1, dsName);
+                    t.setDatum(2, mSchema.getComment());
 
                     tuples.add(t);
                 }
@@ -502,9 +502,9 @@ public class QueryEngine extends AbstractQueryProcessor
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
-                    int r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                    int r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
                     if (r == 0)
-                        return tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                        return ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
                     else
                         return r;
                 }
@@ -538,16 +538,16 @@ public class QueryEngine extends AbstractQueryProcessor
                             continue;
 
                         Tuple t = new Tuple(10);
-                        t.setDatum(0, new DatumVarchar(dsName));
-                        t.setDatum(1, new DatumVarchar(schemaName));
-                        t.setDatum(2, new DatumVarchar(tableName));
-                        t.setDatum(3, new DatumVarchar(mTable.getType()));
-                        t.setDatum(4, new DatumVarchar(mTable.getComment()));
-                        t.setDatum(5, new DatumVarchar("NULL"));
-                        t.setDatum(6, new DatumVarchar("NULL"));
-                        t.setDatum(7, new DatumVarchar("NULL"));
-                        t.setDatum(8, new DatumVarchar("NULL"));
-                        t.setDatum(9, new DatumVarchar("NULL"));
+                        t.setDatum(0, dsName);
+                        t.setDatum(1, schemaName);
+                        t.setDatum(2, tableName);
+                        t.setDatum(3, mTable.getType());
+                        t.setDatum(4, mTable.getComment());
+                        t.setDatum(5, "NULL");
+                        t.setDatum(6, "NULL");
+                        t.setDatum(7, "NULL");
+                        t.setDatum(8, "NULL");
+                        t.setDatum(9, "NULL");
 
                         tuples.add(t);
                     }
@@ -558,13 +558,13 @@ public class QueryEngine extends AbstractQueryProcessor
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
-                    int r = tl.getDatum(3).out().compareTo(tr.getDatum(3).out());
+                    int r = ((String) tl.getDatum(3)).compareTo(((String) tr.getDatum(3)));
                     if (r == 0)
-                        r = tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                        r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
                     if (r == 0)
-                        r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                        r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
                     if (r == 0)
-                        r = tl.getDatum(2).out().compareTo(tr.getDatum(2).out());
+                        r = ((String) tl.getDatum(2)).compareTo(((String) tr.getDatum(2)));
                     return r;
                 }
             });
@@ -604,31 +604,31 @@ public class QueryEngine extends AbstractQueryProcessor
                                 continue;
 
                             Tuple t = new Tuple(25);
-                            t.setDatum(0, new DatumVarchar(dsName));
-                            t.setDatum(1, new DatumVarchar(schemaName));
-                            t.setDatum(2, new DatumVarchar(tableName));
-                            t.setDatum(3, new DatumVarchar(colName));
-                            t.setDatum(4, new DatumVarchar(String.valueOf(mColumn.getType())));
-                            t.setDatum(5, new DatumVarchar(TypeInfo.postresTypeOfJdbcType(mColumn.getType()).typeName()));
-                            t.setDatum(6, new DatumVarchar("NULL"));
-                            t.setDatum(7, new DatumVarchar("NULL"));
-                            t.setDatum(8, new DatumVarchar("NULL"));
-                            t.setDatum(9, new DatumVarchar("NULL"));
-                            t.setDatum(10, new DatumVarchar("NULL"));
-                            t.setDatum(11, new DatumVarchar(mColumn.getComment()));
-                            t.setDatum(12, new DatumVarchar("NULL"));
-                            t.setDatum(13, new DatumVarchar("NULL"));
-                            t.setDatum(14, new DatumVarchar("NULL"));
-                            t.setDatum(15, new DatumVarchar("NULL"));
-                            t.setDatum(16, new DatumVarchar("NULL"));
-                            t.setDatum(17, new DatumVarchar("NULL"));
-                            t.setDatum(18, new DatumVarchar("NULL"));
-                            t.setDatum(19, new DatumVarchar("NULL"));
-                            t.setDatum(20, new DatumVarchar("NULL"));
-                            t.setDatum(21, new DatumVarchar("NULL"));
-                            t.setDatum(22, new DatumVarchar("NULL"));
-                            t.setDatum(23, new DatumVarchar("NULL"));
-                            t.setDatum(24, new DatumVarchar(mColumn.getDataCategory()));
+                            t.setDatum(0, dsName);
+                            t.setDatum(1, schemaName);
+                            t.setDatum(2, tableName);
+                            t.setDatum(3, colName);
+                            t.setDatum(4, String.valueOf(mColumn.getType()));
+                            t.setDatum(5, TypeInfo.postresTypeOfJdbcType(mColumn.getType()).typeName());
+                            t.setDatum(6, "NULL");
+                            t.setDatum(7, "NULL");
+                            t.setDatum(8, "NULL");
+                            t.setDatum(9, "NULL");
+                            t.setDatum(10, "NULL");
+                            t.setDatum(11, mColumn.getComment());
+                            t.setDatum(12, "NULL");
+                            t.setDatum(13, "NULL");
+                            t.setDatum(14, "NULL");
+                            t.setDatum(15, "NULL");
+                            t.setDatum(16, "NULL");
+                            t.setDatum(17, "NULL");
+                            t.setDatum(18, "NULL");
+                            t.setDatum(19, "NULL");
+                            t.setDatum(20, "NULL");
+                            t.setDatum(21, "NULL");
+                            t.setDatum(22, "NULL");
+                            t.setDatum(23, "NULL");
+                            t.setDatum(24, mColumn.getDataCategory());
 
                             tuples.add(t);
                         }
@@ -641,13 +641,13 @@ public class QueryEngine extends AbstractQueryProcessor
                 @Override
                 public int compare(Tuple tl, Tuple tr)
                 {
-                    int r = tl.getDatum(0).out().compareTo(tr.getDatum(0).out());
+                    int r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
                     if (r == 0)
-                        r = tl.getDatum(1).out().compareTo(tr.getDatum(1).out());
+                        r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
                     if (r == 0)
-                        r = tl.getDatum(2).out().compareTo(tr.getDatum(2).out());
+                        r = ((String) tl.getDatum(2)).compareTo(((String) tr.getDatum(2)));
                     if (r == 0)
-                        r = tl.getDatum(16).out().compareTo(tr.getDatum(16).out());
+                        r = ((String) tl.getDatum(16)).compareTo(((String) tr.getDatum(16)));
                     return r;
                 }
             });
@@ -678,8 +678,8 @@ public class QueryEngine extends AbstractQueryProcessor
             List<Tuple> tuples = new ArrayList<>();
             for (MetaUser mUser: metaContext.getUsers()) {
                 Tuple t = new Tuple(2);
-                t.setDatum(0, new DatumVarchar(mUser.getName()));
-                t.setDatum(1, new DatumVarchar(mUser.getComment()));
+                t.setDatum(0, mUser.getName());
+                t.setDatum(1, mUser.getComment());
                 tuples.add(t);
             }
 
@@ -697,8 +697,8 @@ public class QueryEngine extends AbstractQueryProcessor
                 Tuple t = new Tuple(3);
 
                 MetaSchema mSchema = mSchemaPriv.getSchema();
-                t.setDatum(0, new DatumVarchar(mSchema.getDataSource().getName()));
-                t.setDatum(1, new DatumVarchar(mSchema.getName()));
+                t.setDatum(0, mSchema.getDataSource().getName());
+                t.setDatum(1, mSchema.getName());
 
                 Set<ObjectPrivilege> objPrivs = mSchemaPriv.getObjectPrivileges();
                 assert objPrivs.size() > 0;
@@ -706,8 +706,8 @@ public class QueryEngine extends AbstractQueryProcessor
                 StringBuilder builder = new StringBuilder();
                 builder.append(iter.next().name());
                 while (iter.hasNext())
-                    builder.append("," + iter.next().name());
-                t.setDatum(2, new DatumVarchar(builder.toString()));
+                    builder.append(",").append(iter.next().name());
+                t.setDatum(2, builder.toString());
 
                 tuples.add(t);
             }

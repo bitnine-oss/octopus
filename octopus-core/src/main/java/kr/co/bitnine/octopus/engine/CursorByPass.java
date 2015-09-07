@@ -20,8 +20,11 @@ import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
 import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoFunctions;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,17 +58,53 @@ public class CursorByPass extends Portal
 
         assert tupSet == null;
 
+        CachedStatement cStmt = (CachedStatement) getCachedQuery();
+        PostgresType[] types = cStmt.getParamTypes();
+        FormatCode[] formats = getParamFormats();
+        byte[][] values = getParamValues();
+
+        // FIXME: side effect
+        TableNameTranslator.toDSN(cStmt.getValidatedQuery());
+
         try {
             Class.forName(jdbcDriver);
             Connection conn = DriverManager.getConnection(jdbcConnectionString);
-            Statement stmt = conn.createStatement();
 
-            CachedStatement cStmt = (CachedStatement) getCachedQuery();
+            ResultSet rs;
+            if (types.length > 0) {
+                String queryString = cStmt.getValidatedQuery().toString();
+                PreparedStatement stmt = conn.prepareStatement(queryString);
 
-            // FIXME: side effect
-            TableNameTranslator.toDSN(cStmt.getValidatedQuery());
+                for (int i = 0; i < types.length; i++) {
+                    IoFunction io = IoFunctions.ofType(types[i]);
+                    switch (types[i]) {
+                        case INT4:
+                            if (formats[i] == FormatCode.TEXT)
+                                stmt.setInt(i + 1, (Integer) io.in(values[i]));
+                            else
+                                stmt.setInt(i + 1, (Integer) io.recv(values[i]));
+                            break;
+                        case VARCHAR:
+                            if (formats[i] == FormatCode.TEXT)
+                                stmt.setString(i + 1, (String) io.in(values[i]));
+                            else
+                                stmt.setString(i + 1, (String) io.recv(values[i]));
+                            break;
+                        default:
+                            PostgresErrorData edata = new PostgresErrorData(
+                                    PostgresSeverity.ERROR,
+                                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                                    "parameter type " + types[i].name() + "not supported");
+                            throw new PostgresException(edata);
+                    }
+                }
 
-            ResultSet rs = stmt.executeQuery(cStmt.getValidatedQuery().toString());
+                rs = stmt.executeQuery();
+            } else {
+                Statement stmt = conn.createStatement();
+                rs = stmt.executeQuery(cStmt.getValidatedQuery().toString());
+            }
+
             ResultSetMetaData rsmd = rs.getMetaData();
             int colCnt = rsmd.getColumnCount();
             PostgresAttribute[] attrs = new PostgresAttribute[colCnt];
@@ -75,6 +114,7 @@ public class CursorByPass extends Portal
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
                 attrs[i] = new PostgresAttribute(colName, type);
             }
+
             tupDesc = new TupleDesc(attrs, getResultFormats());
             tupSet = new TupleSetByPass(rs, tupDesc);
 
