@@ -96,6 +96,7 @@ public class SessionServerTest
         info.setProperty("user", user);
         info.setProperty("password", password);
 
+        info.setProperty("prepareThreshold", "1");
 //        info.setProperty("binaryTransfer", "true");
 
         return DriverManager.getConnection(url, info);
@@ -117,7 +118,16 @@ public class SessionServerTest
         stmt.close();
 
         PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE NAME = ?");
+//        pstmt.setFetchSize(100);
         pstmt.setString(1, "jsyang");
+        rs = pstmt.executeQuery();
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            System.out.println("id=" + id + ", name=" + name);
+        }
+        rs.close();
+        pstmt.executeQuery().close();
         rs = pstmt.executeQuery();
         while (rs.next()) {
             int id = rs.getInt("id");

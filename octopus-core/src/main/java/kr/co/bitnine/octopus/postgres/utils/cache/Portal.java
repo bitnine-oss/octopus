@@ -28,7 +28,7 @@ public abstract class Portal
     private final byte[][] paramValues;
     private final FormatCode[] resultFormats;
 
-    protected enum State
+    public enum State
     {
         READY,
         ACTIVE,
@@ -67,6 +67,11 @@ public abstract class Portal
     public FormatCode[] getResultFormats()
     {
         return resultFormats;
+    }
+
+    public void setState(State state)
+    {
+         this.state = state;
     }
 
     public String getCompletionTag()

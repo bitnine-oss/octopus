@@ -26,6 +26,9 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
 import kr.co.bitnine.octopus.postgres.utils.adt.IoFunctions;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -38,6 +41,8 @@ public class CursorByPass extends Portal
     private final String jdbcDriver;
     private final String jdbcConnectionString;
 
+    private final String queryString;
+
     private TupleSet tupSet;
     private TupleDesc tupDesc;
 
@@ -47,6 +52,25 @@ public class CursorByPass extends Portal
 
         this.jdbcDriver = jdbcDriver;
         this.jdbcConnectionString = jdbcConnectionString;
+
+        /*
+         * NOTE: Deep-copy validatedQuery because TableNameTranslator.toDSN()
+         *       changes identifiers of validatedQuery itself.
+         *       When this Portal runs again without copied one,
+         *       the by-pass test in processBind() which uses the validatedQuery
+         *       will produce an error.
+         *       To reduce number of copies, cache queryString.
+         */
+        CachedStatement cStmt = (CachedStatement) getCachedQuery();
+        SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
+            @Override
+            public SqlNode visit(SqlIdentifier id)
+            {
+                return id.clone(id.getParserPosition());
+            }
+        });
+        TableNameTranslator.toDSN(cloned);
+        queryString = cloned.toString();
 
         tupSet = null;
     }
@@ -63,16 +87,12 @@ public class CursorByPass extends Portal
         FormatCode[] formats = getParamFormats();
         byte[][] values = getParamValues();
 
-        // FIXME: side effect
-        TableNameTranslator.toDSN(cStmt.getValidatedQuery());
-
         try {
             Class.forName(jdbcDriver);
             Connection conn = DriverManager.getConnection(jdbcConnectionString);
 
             ResultSet rs;
             if (types.length > 0) {
-                String queryString = cStmt.getValidatedQuery().toString();
                 PreparedStatement stmt = conn.prepareStatement(queryString);
 
                 for (int i = 0; i < types.length; i++) {
@@ -102,7 +122,7 @@ public class CursorByPass extends Portal
                 rs = stmt.executeQuery();
             } else {
                 Statement stmt = conn.createStatement();
-                rs = stmt.executeQuery(cStmt.getValidatedQuery().toString());
+                rs = stmt.executeQuery(queryString);
             }
 
             ResultSetMetaData rsmd = rs.getMetaData();
@@ -142,13 +162,16 @@ public class CursorByPass extends Portal
     {
         prepare();
 
-        // TODO: change state to DONE
+        // TODO: change state to DONE, use numRows
         return tupSet;
     }
 
     @Override
     public String generateCompletionTag(String commandTag)
     {
+        // FIXME: change state to DONE at run()
+        state = State.DONE;
+
         return commandTag;
     }
 

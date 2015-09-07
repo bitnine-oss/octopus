@@ -472,8 +472,15 @@ public class Session implements Runnable
 
             TupleSet ts = p.run(0);
             if (ts != null) {
-                sendRowDescription(ts.getTupleDesc(), ts.getTupleDesc().getResultFormats());
-                sendDataRow(ts, 0);
+                // FIXME: See {PortalState}
+                try {
+                    sendRowDescription(ts.getTupleDesc(), ts.getTupleDesc().getResultFormats());
+                    sendDataRow(ts, 0);
+                } catch (Exception e) {
+                    p.setState(Portal.State.FAILED);
+                    ts.close();
+                    throw e;
+                }
             }
 
             sendCommandComplete(p.getCompletionTag());
@@ -565,9 +572,24 @@ public class Session implements Runnable
             }
 
             TupleSet ts = p.run(numRows);
-            if (ts != null)
-                sendDataRow(ts, numRows);
+            if (ts != null) {
+                /*
+                 * FIXME: {PortalState} refactoring!
+                 * To run portal repeatedly, the state of the portal must be
+                 * either DONE or FAILED.
+                 * If extended query protocol is ended abnormally, the state
+                 * of the portal must be set with FAILED.
+                 */
+                try {
+                    sendDataRow(ts, numRows);
+                } catch (Exception e) {
+                    p.setState(Portal.State.FAILED);
+                    ts.close();
+                    throw e;
+                }
+            }
 
+            // TODO: if state of Portal is still ACTIVE, it is not yet completed!
             sendCommandComplete(p.getCompletionTag());
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
@@ -645,11 +667,17 @@ public class Session implements Runnable
                     break;
                 case 'P':
                     Portal p = queryEngine.getPortal(name);
-                    tupDesc = p.describe();
-                    if (tupDesc == null)
-                        sendNoData();
-                    else
-                        sendRowDescription(tupDesc, tupDesc.getResultFormats());
+                    // FIXME: See {PortalState}
+                    try {
+                        tupDesc = p.describe();
+                        if (tupDesc == null)
+                            sendNoData();
+                        else
+                            sendRowDescription(tupDesc, tupDesc.getResultFormats());
+                    } catch (Exception e) {
+                        p.setState(Portal.State.FAILED);
+                        throw e;
+                    }
                     break;
                 default:
                     PostgresErrorData edata = new PostgresErrorData(
