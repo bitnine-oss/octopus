@@ -103,6 +103,20 @@ public class SessionServerTest
     }
 
     @Test
+    public void testAddDataSourceExists() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        try {
+            stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
     public void testSelect() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");

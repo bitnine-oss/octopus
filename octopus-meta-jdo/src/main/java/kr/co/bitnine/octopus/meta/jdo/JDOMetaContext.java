@@ -33,6 +33,7 @@ import javax.jdo.Query;
 import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
@@ -143,11 +144,30 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
+    private MDataSource getMDataSource(String name, boolean nothrow) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MDataSource.class);
+            query.setFilter("name == dataSourceName");
+            query.declareParameters("String dataSourceName");
+            query.setUnique(true);
+
+            MDataSource mDataSource = (MDataSource) query.execute(name);
+            if (mDataSource == null && !nothrow)
+                throw new MetaException("data source '" + name + "' does not exist");
+            return mDataSource;
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to get data source '" + name + "'", e);
+        }
+    }
+
     @Override
     public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException
     {
-        // TODO: check if it already exists
+        if (getMDataSource(name, true) != null)
+            throw new MetaException("data source '" + name + "' already exists");
 
+        // TODO: use another ClassLoader to load JDBC drivers
         LOG.debug("addJdbcDataSource. driverName=" + driverName + ", connectionString=" + connectionString + ", name=" + name);
         try {
             Class.forName(driverName);
@@ -156,13 +176,15 @@ public class JDOMetaContext implements MetaContext
         }
 
         Transaction tx = pm.currentTransaction();
-        try (Connection conn = DriverManager.getConnection(connectionString)) {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(connectionString);
             DataContext dc = DataContextFactory.createJdbcDataContext(conn);
 
             tx.begin();
 
-            MDataSource dataSource = new MDataSource(name, 0, driverName, connectionString);
-            pm.makePersistent(dataSource);
+            MDataSource mDataSource = new MDataSource(name, 0, driverName, connectionString);
+            pm.makePersistent(mDataSource);
 
             for (Schema rawSchema : dc.getSchemas()) {
                 String schemaName = rawSchema.getName();
@@ -170,7 +192,7 @@ public class JDOMetaContext implements MetaContext
                     schemaName = "__DEFAULT";
 
                 LOG.debug("add schema. schemaName=" + schemaName);
-                MSchema schema = new MSchema(schemaName, dataSource);
+                MSchema schema = new MSchema(schemaName, mDataSource);
                 pm.makePersistent(schema);
 
                 for (Table rawTable : rawSchema.getTables()) {
@@ -194,10 +216,15 @@ public class JDOMetaContext implements MetaContext
             tx.commit();
 
             LOG.debug("complete addJdbcDataSource");
-            return dataSource;
+            return mDataSource;
         } catch (Exception e) {
             throw new MetaException("failed to add data source" , e);
         } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
             if (tx.isActive())
                 tx.rollback();
         }
@@ -206,19 +233,7 @@ public class JDOMetaContext implements MetaContext
     @Override
     public MetaDataSource getDataSource(String name) throws MetaException
     {
-        try {
-            Query query = pm.newQuery(MDataSource.class);
-            query.setFilter("name == dataSourceName");
-            query.declareParameters("String dataSourceName");
-            query.setUnique(true);
-
-            MDataSource mDataSource = (MDataSource) query.execute(name);
-            if (mDataSource == null)
-                throw new MetaException("data source '" + name + "' does not exist");
-            return mDataSource;
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to get data source '" + name + "'", e);
-        }
+        return getMDataSource(name, false);
     }
 
     @Override
