@@ -50,7 +50,7 @@ limitations under the License.
           <finalName>octopus-${project.version}</finalName>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
-            <descriptor>src/assembly/bin.xml</descriptor>
+            <descriptor>src/assembly/bin-dist.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
