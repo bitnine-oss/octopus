@@ -90,7 +90,7 @@ public class SessionServerTest
     private static Connection getConnection(String user, String password) throws Exception
     {
         InetSocketAddress addr = NetUtils.createSocketAddr("127.0.0.1:58000");
-        String url = "jdbc:octopus://" + NetUtils.getHostPortString(addr) + "/db";
+        String url = "jdbc:octopus://" + NetUtils.getHostPortString(addr);
 
         Properties info = new Properties();
         info.setProperty("user", user);

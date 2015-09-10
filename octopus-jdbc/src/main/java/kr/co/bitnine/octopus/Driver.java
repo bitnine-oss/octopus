@@ -238,7 +238,7 @@ public class Driver implements java.sql.Driver
         // get defaults
         Properties defaults;
 
-        if (!url.startsWith("jdbc:octopus:"))
+        if (!url.startsWith(OCTOPUS_PROTOCOL))
             return null;
 
         try {
@@ -256,7 +256,7 @@ public class Driver implements java.sql.Driver
                 String propName = (String) e.nextElement();
                 String propValue = info.getProperty(propName);
                 if (propValue == null) {
-                    throw new PSQLException(GT.tr("Properties for the driver contains a non-string value for the key ")+propName,
+                    throw new PSQLException(GT.tr("Properties for the driver contains a non-string value for the key ") + propName,
                             PSQLState.UNEXPECTED_ERROR);
                 }
                 props.setProperty(propName, propValue);
@@ -410,8 +410,6 @@ public class Driver implements java.sql.Driver
      */
     private static Connection makeConnection(String url, Properties props) throws SQLException
     {
-        // FIXME: replace Jdbc4Connection to OctopusConnection
-        // return new Jdbc4Connection(hostSpecs(props), user(props), database(props), props, url);
         return new OctopusConnection(hostSpecs(props), user(props), database(props), props, url);
     }
 
@@ -509,7 +507,8 @@ public class Driver implements java.sql.Driver
         return false;
     }
 
-    static private String[] protocols = { "jdbc", "octopus" };
+    static private String[] protocols = {"jdbc", "octopus"};
+    static private String OCTOPUS_PROTOCOL = String.format("%s:%s:", (Object[]) protocols);
 
     static private String DEFAULT_OCTOPUS_PORT = "58000";
 
@@ -533,61 +532,74 @@ public class Driver implements java.sql.Driver
             l_urlArgs = url.substring(l_qPos + 1);
         }
 
-        if (!l_urlServer.startsWith("jdbc:octopus:"))
+        if (!l_urlServer.startsWith(OCTOPUS_PROTOCOL))
             return null;
 
-        l_urlServer = l_urlServer.substring("jdbc:octopus:".length());
+        l_urlServer = l_urlServer.substring(OCTOPUS_PROTOCOL.length());
 
         if (l_urlServer.startsWith("//")) { // FIXME: Environment variables
             l_urlServer = l_urlServer.substring(2);
-            int slash = l_urlServer.indexOf('/');
-            if (slash == -1)
-                return null;
+            int slashIdx = l_urlServer.indexOf('/');
+            if (slashIdx > -1)
+                l_urlServer = l_urlServer.substring(0, slashIdx);
 
-            urlProps.setProperty("PGDBNAME", l_urlServer.substring(slash + 1));
-
-            String[] addresses = l_urlServer.substring(0, slash).split(",");
             StringBuilder hosts = new StringBuilder();
             StringBuilder ports = new StringBuilder();
-            for (String address : addresses) {
-                int portIdx = address.lastIndexOf(':');
-                if (portIdx != -1 && address.lastIndexOf(']') < portIdx) {
-                    String portStr = address.substring(portIdx + 1);
-                    try {
-                        Integer.parseInt(portStr);
-                    } catch (NumberFormatException ex) {
-                        return null;
+            String[] addrs = l_urlServer.split(",");
+            for (String addr : addrs) {
+                addr = addr.trim();
+
+                String host;
+                String port;
+
+                int portIdx = addr.lastIndexOf(':');
+                if (portIdx > -1 && addr.lastIndexOf(']') < portIdx) {
+                    host = addr.substring(0, portIdx);
+                    port = addr.substring(portIdx + 1);
+                    if (port.isEmpty()) {
+                        port = DEFAULT_OCTOPUS_PORT;
+                    } else {
+                        try {
+                            Integer.parseInt(port);
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
                     }
-                    ports.append(portStr);
-                    hosts.append(address.subSequence(0, portIdx));
                 } else {
-                    ports.append(DEFAULT_OCTOPUS_PORT);
-                    hosts.append(address);
+                    host = addr;
+                    port = DEFAULT_OCTOPUS_PORT;
                 }
-                ports.append(',');
-                hosts.append(',');
+
+                if (host.isEmpty())
+                    host = "localhost";
+
+                hosts.append(host).append(',');
+                ports.append(port).append(',');
             }
-            ports.setLength(ports.length() - 1);
+
             hosts.setLength(hosts.length() - 1);
-            urlProps.setProperty("PGPORT", ports.toString());
+            ports.setLength(hosts.length() - 1);
+
             urlProps.setProperty("PGHOST", hosts.toString());
+            urlProps.setProperty("PGPORT", ports.toString());
+            urlProps.setProperty("PGDBNAME", "<unknown>");
         } else {
-            urlProps.setProperty("PGPORT", DEFAULT_OCTOPUS_PORT);
             urlProps.setProperty("PGHOST", "localhost");
-            urlProps.setProperty("PGDBNAME", l_urlServer);
+            urlProps.setProperty("PGPORT", DEFAULT_OCTOPUS_PORT);
+            urlProps.setProperty("PGDBNAME", "<unknown>");
         }
 
-        //parse the args part of the url
+        // parse the args part of the url
         String[] args = l_urlArgs.split("&");
         for (String token : args) {
-            if (token.length() ==  0)
+            if (token.isEmpty())
                 continue;
 
             int l_pos = token.indexOf('=');
-            if (l_pos == -1)
-                urlProps.setProperty(token, "");
-            else
+            if (l_pos > -1)
                 urlProps.setProperty(token.substring(0, l_pos), token.substring(l_pos + 1));
+            else
+                urlProps.setProperty(token, "");
         }
 
         return urlProps;
