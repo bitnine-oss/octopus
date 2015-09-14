@@ -600,7 +600,7 @@ public class QueryEngine extends AbstractQueryProcessor
                         for (MetaColumn mColumn : mTable.getColumns()) {
                             String colName = mColumn.getName();
 
-                            if (!tableName.matches(cPattern))
+                            if (!colName.matches(cPattern))
                                 continue;
 
                             Tuple t = new Tuple(25);
