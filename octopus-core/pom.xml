@@ -108,7 +108,6 @@ limitations under the License.
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
     </dependency-->
-
   </dependencies>
 
   <build>

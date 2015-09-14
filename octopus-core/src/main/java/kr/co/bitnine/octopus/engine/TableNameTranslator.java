@@ -31,6 +31,9 @@ public final class TableNameTranslator
 
         for (SqlIdentifier tableID : tableIds) {
             List<String> dsn = new ArrayList<>();
+            String schemaName = tableID.names.get(1);
+            if (!schemaName.equals("__DEFAULT"))
+                dsn.add(schemaName);
             dsn.add(tableID.names.get(2));
             tableID.setNames(dsn, null);
         }
