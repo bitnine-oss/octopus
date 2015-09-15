@@ -203,7 +203,8 @@ public class QueryEngine extends AbstractQueryProcessor
         } catch (SqlParseException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    PostgresSQLState.SYNTAX_ERROR);
+                    PostgresSQLState.SYNTAX_ERROR,
+                    "syntax error " + e.getMessage());
             throw new PostgresException(edata, e);
         } catch (ValidationException e) {
             PostgresErrorData edata = new PostgresErrorData(

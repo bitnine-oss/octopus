@@ -22,21 +22,28 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class TupleSetByPass implements TupleSet
 {
-    private ResultSet resultSet;
-    private TupleDesc tupDesc;
+    private final CursorByPass cursorByPass;
+    private final ResultSet resultSet;
+    private final TupleDesc tupDesc;
 
-    TupleSetByPass(ResultSet resultSet, TupleDesc tupDesc)
+    private int fetchSize;
+    private int fetchCount;
+
+    TupleSetByPass(CursorByPass cursorByPass, ResultSet resultSet, TupleDesc tupDesc)
     {
+        this.cursorByPass = cursorByPass;
         this.resultSet = resultSet;
         this.tupDesc = tupDesc;
+
+        fetchSize = 0;
+        fetchCount = 0;
     }
 
     @Override
@@ -48,9 +55,14 @@ public class TupleSetByPass implements TupleSet
     @Override
     public Tuple next() throws PostgresException
     {
+        if (fetchSize > 0 && fetchCount >= fetchSize)
+            return null;
+
         try {
-            if (!resultSet.next())
+            if (!resultSet.next()) {
+                cursorByPass.setState(Portal.State.DONE);
                 return null;
+            }
 
             PostgresAttribute[] attrs = tupDesc.getAttributes();
             Tuple t = new Tuple(attrs.length);
@@ -73,6 +85,7 @@ public class TupleSetByPass implements TupleSet
 
                 t.setDatum(i, datum);
             }
+            fetchCount++;
             return t;
         } catch (SQLException e) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -86,26 +99,18 @@ public class TupleSetByPass implements TupleSet
     public void close() throws PostgresException
     {
         try {
-            Statement stmt = resultSet.getStatement();
-            /*
-             * If the result set was generated some other way,
-             * such as by a DatabaseMetaData method, this method may return null.
-             */
-            if (stmt == null) {
-                resultSet.close();
-                return;
-            }
-
-            Connection conn = stmt.getConnection();
-
             resultSet.close();
-            stmt.close();
-            conn.close();
         } catch (SQLException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to close TupleSetByPass");
             throw new PostgresException(edata, e);
         }
+    }
+
+    void resetFetchSize(int numRows)
+    {
+        fetchSize = numRows;
+        fetchCount = 0;
     }
 }

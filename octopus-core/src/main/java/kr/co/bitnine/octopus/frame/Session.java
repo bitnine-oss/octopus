@@ -483,6 +483,9 @@ public class Session implements Runnable
                 }
             }
 
+            // NOTE: SimpleQuery has no Suspend/Execute mechanism
+            assert p.getState() == Portal.State.DONE;
+
             sendCommandComplete(p.getCompletionTag());
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
@@ -589,8 +592,10 @@ public class Session implements Runnable
                 }
             }
 
-            // TODO: if state of Portal is still ACTIVE, it is not yet completed!
-            sendCommandComplete(p.getCompletionTag());
+            if (p.getState() == Portal.State.ACTIVE)
+                messageStream.putMessage(Message.builder('s').build()); // PortalSuspend
+            else
+                sendCommandComplete(p.getCompletionTag());
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
         }

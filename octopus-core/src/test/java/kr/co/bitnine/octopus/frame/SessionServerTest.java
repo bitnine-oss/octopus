@@ -96,7 +96,9 @@ public class SessionServerTest
         info.setProperty("user", user);
         info.setProperty("password", password);
 
+//        info.setProperty("prepareThreshold", "-1");
         info.setProperty("prepareThreshold", "1");
+
 //        info.setProperty("binaryTransfer", "true");
 
         return DriverManager.getConnection(url, info);
@@ -131,17 +133,16 @@ public class SessionServerTest
         rs.close();
         stmt.close();
 
-        PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE NAME = ?");
-//        pstmt.setFetchSize(100);
-        pstmt.setString(1, "jsyang");
-        rs = pstmt.executeQuery();
-        while (rs.next()) {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            System.out.println("id=" + id + ", name=" + name);
+//        conn.setAutoCommit(false);
+        PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE ID >= ?");
+        pstmt.setMaxRows(3);
+//        pstmt.setFetchSize(3);
+        pstmt.setInt(1, 7);
+        for (int i = 0; i < 2; i++) {
+            rs = pstmt.executeQuery();
+            rs.next();
+            rs.close();
         }
-        rs.close();
-        pstmt.executeQuery().close();
         rs = pstmt.executeQuery();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -339,13 +340,8 @@ public class SessionServerTest
 
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
-        while (rs.next()) {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            System.out.println("id=" + id + ", name=" + name);
-        }
-        rs.close();
+        stmt.executeQuery("SELECT ID, NAME FROM BITNINE;").close();
+        stmt.close();
         conn.close();
 
         conn = getConnection("octopus", "bitnine");

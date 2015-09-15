@@ -46,7 +46,7 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
 
         if (cachedQueries.containsKey(stmtName)) {
             if (stmtName.isEmpty()) {
-                cachedQueries.remove(stmtName);
+                cachedQueries.remove(stmtName).close();
             } else {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.ERROR,
@@ -83,7 +83,7 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
 
         if (portals.containsKey(portalName)) {
             if (portalName.isEmpty()) {
-                portals.remove(stmtName);
+                portals.remove(portalName).close();
             } else {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.ERROR,

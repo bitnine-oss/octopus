@@ -43,10 +43,11 @@ public class CursorByPass extends Portal
 
     private final String queryString;
 
-    private TupleSet tupSet;
+    private PreparedStatement stmt;
+    private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
 
-    public CursorByPass(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats, String jdbcDriver, String jdbcConnectionString)
+    public CursorByPass(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats, String jdbcDriver, String jdbcConnectionString) throws PostgresException
     {
         super(cachedStatement, paramFormats, paramValues, resultFormats);
 
@@ -72,15 +73,15 @@ public class CursorByPass extends Portal
         TableNameTranslator.toDSN(cloned);
         queryString = cloned.toString();
 
-        tupSet = null;
+        stmt = null;
+        tupSetByPass = null;
+        tupDesc = null;
     }
 
-    private void prepare() throws PostgresException
+    private void prepareStatement() throws PostgresException
     {
-        if (state == State.ACTIVE)
+        if (getState() != State.NEW)
             return;
-
-        assert tupSet == null;
 
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         PostgresType[] types = cStmt.getParamTypes();
@@ -90,10 +91,8 @@ public class CursorByPass extends Portal
         try {
             Class.forName(jdbcDriver);
             Connection conn = DriverManager.getConnection(jdbcConnectionString);
-
-            ResultSet rs;
+            stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
-                PreparedStatement stmt = conn.prepareStatement(queryString);
 
                 for (int i = 0; i < types.length; i++) {
                     IoFunction io = IoFunctions.ofType(types[i]);
@@ -118,12 +117,34 @@ public class CursorByPass extends Portal
                             throw new PostgresException(edata);
                     }
                 }
-
-                rs = stmt.executeQuery();
-            } else {
-                Statement stmt = conn.createStatement();
-                rs = stmt.executeQuery(queryString);
             }
+
+            setState(State.READY);
+        } catch (ClassNotFoundException | SQLException e) {
+            /*
+             * NOTE: setting state to State.FAILED is meaningless here
+             *       because this cursor will not be cached
+             */
+
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "failed to run by-pass query");
+            throw new PostgresException(edata, e);
+        }
+    }
+
+    private void execute(int numRows) throws PostgresException
+    {
+        if (getState() == State.DONE || getState() == State.FAILED)
+            setState(State.READY);
+
+        if (getState() != State.READY)
+            return;
+
+        try {
+            stmt.setFetchSize(numRows);
+
+            ResultSet rs = stmt.executeQuery();
 
             ResultSetMetaData rsmd = rs.getMetaData();
             int colCnt = rsmd.getColumnCount();
@@ -136,11 +157,11 @@ public class CursorByPass extends Portal
             }
 
             tupDesc = new TupleDesc(attrs, getResultFormats());
-            tupSet = new TupleSetByPass(rs, tupDesc);
+            tupSetByPass = new TupleSetByPass(this, rs, tupDesc);
 
-            state = State.ACTIVE;
-        } catch (ClassNotFoundException | SQLException e) {
-            state = State.FAILED;
+            setState(State.ACTIVE);
+        } catch (SQLException e) {
+            setState(State.FAILED);
 
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
@@ -152,29 +173,40 @@ public class CursorByPass extends Portal
     @Override
     public TupleDesc describe() throws PostgresException
     {
-        prepare();
+        prepareStatement();
+        execute(0);
 
+        assert tupDesc != null;
         return tupDesc;
     }
 
     @Override
     public TupleSet run(int numRows) throws PostgresException
     {
-        prepare();
+        prepareStatement();
+        execute(numRows);
 
-        // TODO: change state to DONE, use numRows
-        return tupSet;
+        tupSetByPass.resetFetchSize(numRows);
+
+        return tupSetByPass;
     }
 
     @Override
     public String generateCompletionTag(String commandTag)
     {
-        // FIXME: change state to DONE at run()
-        state = State.DONE;
-
         return commandTag;
     }
 
     @Override
-    public void close() { }
+    public void close()
+    {
+        if (stmt == null)
+            return;
+
+        try {
+            Connection conn = stmt.getConnection();
+            stmt.close();
+            conn.close();
+        } catch (SQLException e) { }
+    }
 }

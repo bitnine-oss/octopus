@@ -30,12 +30,13 @@ public abstract class Portal
 
     public enum State
     {
+        NEW,
         READY,
         ACTIVE,
         DONE,
         FAILED
     }
-    protected State state;
+    private State state;
 
     public Portal(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats)
     {
@@ -46,7 +47,7 @@ public abstract class Portal
         // TODO: resultFormats.length == PostgresAttribute.length
         this.resultFormats = resultFormats;
 
-        state = State.READY;
+        state = State.NEW;
     }
 
     public CachedQuery getCachedQuery()
@@ -69,6 +70,11 @@ public abstract class Portal
         return resultFormats;
     }
 
+    public State getState()
+    {
+        return state;
+    }
+
     public void setState(State state)
     {
          this.state = state;
@@ -76,11 +82,6 @@ public abstract class Portal
 
     public String getCompletionTag()
     {
-/*
-        if (state != State.DONE)
-            return null; // FIXME: throw?
- */
-
         String cmdTag = cachedQuery.getCommandTag();
         return cmdTag == null ? null : generateCompletionTag(cmdTag);
     }
