@@ -30,7 +30,6 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
-import kr.co.bitnine.octopus.postgres.utils.adt.IoVarchar;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;

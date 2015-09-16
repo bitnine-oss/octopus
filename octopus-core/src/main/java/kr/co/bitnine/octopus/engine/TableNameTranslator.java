@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
@@ -40,7 +41,7 @@ public final class TableNameTranslator
     }
 
     // translate DSN to FQN
-    public static void toFQN(SchemaManager schemaManager, SqlNode query)
+    public static void toFQN(SchemaManager schemaManager, SqlNode query) throws PostgresException
     {
         ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));

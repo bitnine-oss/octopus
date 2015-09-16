@@ -18,6 +18,10 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
+import kr.co.bitnine.octopus.postgres.utils.PostgresException;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
+import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
@@ -118,7 +122,7 @@ public class SchemaManager extends AbstractService
         return rootSchema;
     }
 
-    public List<String> toFullyQualifiedTableName(List<String> names)
+    public List<String> toFullyQualifiedTableName(List<String> names) throws PostgresException
     {
         OctopusDataSource dataSource;
         OctopusSchema schema = null;
@@ -127,16 +131,16 @@ public class SchemaManager extends AbstractService
 
         switch (names.size()) {
             case 1: // table
-                table = getUniqueObject(tableMap, names.get(namesIdx));
+                table = getUniqueTable(names.get(namesIdx));
                 schema = table.getSchema();
                 dataSource = schema.getDataSource();
                 break;
             case 2: // schema.table
-                schema = getUniqueObject(schemaMap, names.get(namesIdx));
+                schema = getUniqueSchema(names.get(namesIdx));
                 dataSource = schema.getDataSource();
                 break;
             case 3: // dataSource.schema.table
-                dataSource = getUniqueObject(dataSourceMap, names.get(namesIdx));
+                dataSource = getUniqueDataSource(names.get(namesIdx));
                 break;
             default:
                 throw new RuntimeException("invalid name size: " + names.size());
@@ -162,18 +166,67 @@ public class SchemaManager extends AbstractService
         return fqn;
     }
 
-    private <T> T getUniqueObject(Map<String, List<T>> map, String key)
+    private OctopusTable getUniqueTable(String tableName) throws PostgresException
     {
-        List<T> values = map.get(key);
+        List<OctopusTable> tables = tableMap.get(tableName);
+        if (tables == null || tables.size() < 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.UNDEFINED_TABLE,
+                    "table \"" + tableName + "\" does not exist");
+            throw new PostgresException(edata);
+        }
+        if (tables.size() > 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.DUPLICATE_TABLE,
+                    "table \"" + tableName + "\" is ambiguous");
+            throw new PostgresException(edata);
+        }
 
-        if (values == null)
-            ; // FIXME: not found
-        if (values.size() == 0)
-            ; // FIXME: not found
-        else if (values.size() > 1)
-            ; // FIXME: ambiguous
+        return tables.get(0);
+    }
 
-        return values.get(0);
+    private OctopusSchema getUniqueSchema(String schemaName) throws PostgresException
+    {
+        List<OctopusSchema> schemas = schemaMap.get(schemaName);
+        if (schemas == null || schemas.size() < 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.UNDEFINED_SCHEMA,
+                    "schema \"" + schemaName + "\" does not exist");
+            throw new PostgresException(edata);
+        }
+        if (schemas.size() > 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.DUPLICATE_SCHEMA,
+                    "schema \"" + schemaName + "\" is ambiguous");
+            throw new PostgresException(edata);
+        }
+
+        return schemas.get(0);
+    }
+
+    private OctopusDataSource getUniqueDataSource(String dataSourceName) throws PostgresException
+    {
+        List<OctopusDataSource> dataSources = dataSourceMap.get(dataSourceName);
+        if (dataSources == null || dataSources.size() < 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.UNDEFINED_DATABASE,
+                    "data source \"" + dataSourceName + "\" does not exist");
+            throw new PostgresException(edata);
+        }
+        if (dataSources.size() > 1) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.DUPLICATE_DATABASE,
+                    "data source \"" + dataSourceName + "\" is ambiguous");
+            throw new PostgresException(edata);
+        }
+
+        return dataSources.get(0);
     }
 
     /*

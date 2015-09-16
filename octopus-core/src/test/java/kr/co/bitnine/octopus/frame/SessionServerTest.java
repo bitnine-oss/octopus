@@ -124,6 +124,13 @@ public class SessionServerTest
         Connection conn = getConnection("octopus", "bitnine");
 
         Statement stmt = conn.createStatement();
+        try {
+            stmt.executeQuery("SELECT ID, NAME FROM BIT9;");
+        } catch (SQLException e) {
+            System.out.println("expected exception - " + e.getMessage());
+        }
+
+        stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
         while (rs.next()) {
             int id = rs.getInt("id");
