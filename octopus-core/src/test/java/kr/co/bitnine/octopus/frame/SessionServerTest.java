@@ -28,7 +28,10 @@ import java.net.InetSocketAddress;
 import java.sql.*;
 import java.util.Properties;
 
-import static org.junit.Assert.assertFalse;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.*;
 
 public class SessionServerTest
 {
@@ -37,6 +40,9 @@ public class SessionServerTest
     private static MetaStoreService metaStoreService;
     private static SchemaManager schemaManager;
     private static SessionServer sessionServer;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @BeforeClass
     public static void setUpClass() throws Exception
@@ -109,11 +115,172 @@ public class SessionServerTest
     {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        try {
-            stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
-        } catch (SQLException e) {
-            System.out.println("expected exception - " + e.getMessage());
+
+        exception.expect(SQLException.class);
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+
+        stmt.close();
+        conn.close();
+    }
+
+    private boolean existDataSource(DatabaseMetaData metaData, String name) throws SQLException
+    {
+        ResultSet rs = metaData.getCatalogs();
+        while (rs.next()) {
+            String dsName = rs.getString("TABLE_CAT");
+            System.out.println(" *** " + dsName);
+            if (dsName.equals(name))
+                return true;
         }
+        return false;
+    }
+
+    private boolean existTable(DatabaseMetaData metaData, String dsName, String name) throws SQLException
+    {
+        ResultSet rs = metaData.getTables(dsName, "%DEFAULT", "%", null);
+        while (rs.next()) {
+            String tblName = rs.getString("TABLE_NAME");
+            System.out.println(" *** " + tblName);
+            if (tblName.equals(name))
+                return true;
+        }
+        return false;
+    }
+
+    private int checkNumRows(Statement stmt, String tblName) throws SQLException
+    {
+        int numRows = 0;
+        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM " + tblName);
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            System.out.println("id=" + id + ", name=" + name);
+            ++numRows;
+        }
+        rs.close();
+        return numRows;
+    }
+
+    @Test
+    public void testDropDataSource1() throws Exception
+    {
+        /* add a new dataSource and populate some data */
+        String srcName = "DATA2";        // also used as database Name
+        String tblName = "TMP";
+        MemoryDatabase newMemDb = new MemoryDatabase(srcName);
+        newMemDb.start();
+        newMemDb.runExecuteUpdate("CREATE TABLE " + tblName + " (ID INTEGER, NAME STRING)");
+
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName + " CONNECT BY '" + newMemDb.CONNECTION_STRING + "'");
+
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        assertTrue(existDataSource(metaData, srcName));
+        assertTrue(existTable(metaData, srcName, tblName));
+
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + srcName);
+
+        assertFalse(existDataSource(metaData, srcName));
+        assertFalse(existTable(metaData, srcName, tblName));
+
+        /* cleanup */
+        stmt.close();
+        conn.close();
+        newMemDb.stop();
+    }
+
+    @Test
+    public void testDropDataSource2() throws Exception
+    {
+        String srcName = "DATA2";        // also used as database Name
+        MemoryDatabase newMemDb = new MemoryDatabase(srcName);
+        newMemDb.start();
+        newMemDb.runExecuteUpdate("CREATE TABLE TMP (ID INTEGER, NAME STRING)");
+
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName + " CONNECT BY '" + newMemDb.CONNECTION_STRING + "'");
+
+        stmt.execute("CREATE USER yjchoi IDENTIFIED BY 'piggy'");
+        stmt.execute("GRANT SELECT ON " + srcName + ".__DEFAULT TO yjchoi");
+
+        ResultSet rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR yjchoi");
+        int numRows = 0;
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("PRIVILEGE"));
+            ++numRows;
+        }
+        rs.close();
+        assertEquals(numRows, 1);
+
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + srcName);
+
+        rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR yjchoi");
+        numRows = 0;
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("PRIVILEGE"));
+            ++numRows;
+        }
+        rs.close();
+        assertEquals(numRows, 0);
+
+        stmt.close();
+        conn.close();
+        newMemDb.stop();
+    }
+
+    @Test
+    public void testUpdateDataSource() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        dataMemDb.runExecuteUpdate("CREATE TABLE TMP (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("INSERT INTO TMP VALUES (1, 'yjchoi')");
+
+        boolean exceptionCaught = false;
+        try {
+            checkNumRows(stmt, "TMP");
+        } catch (SQLException e) {
+            exceptionCaught = true;
+        }
+        assertTrue(exceptionCaught);
+        stmt.close();
+
+        /* TODO: session exception handling. For now, we should reconnect to octopus after got exception */
+        conn.close();
+        conn = getConnection("octopus", "bitnine");
+
+        stmt = conn.createStatement();
+
+        int rows = checkNumRows(stmt, "BITNINE");
+        assertEquals(rows, 10);
+
+        DatabaseMetaData metaData = conn.getMetaData();
+        ResultSet rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", "%", null);
+        while (rs.next()) {
+            String tblName = rs.getString("TABLE_NAME");
+            System.out.println(" *** " + tblName);
+        }
+
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE " + dataMemDb.NAME);
+
+        metaData = conn.getMetaData();
+        rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", "%", null);
+        while (rs.next()) {
+            String tblName = rs.getString("TABLE_NAME");
+            System.out.println(" *** " + tblName);
+        }
+
+        rows = checkNumRows(stmt, "TMP");
+        assertEquals(rows, 1);
+
         stmt.close();
         conn.close();
     }

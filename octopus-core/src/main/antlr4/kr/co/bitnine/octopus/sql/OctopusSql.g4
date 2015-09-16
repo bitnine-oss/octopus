@@ -41,11 +41,21 @@ ddlStmt
     ;
 
 alterSystem
-    : K_ALTER K_SYSTEM dataSourceClause
+    : K_ALTER K_SYSTEM addDataSourceClause
+    | K_ALTER K_SYSTEM updateDataSourceClause
+    | K_ALTER K_SYSTEM dropDataSourceClause
     ;
 
-dataSourceClause
+addDataSourceClause
     : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_BY jdbcConnectionString
+    ;
+
+updateDataSourceClause
+    : K_UPDATE K_DATASOURCE dataSourceName
+    ;
+
+dropDataSourceClause
+    : K_DROP K_DATASOURCE dataSourceName
     ;
 
 dataSourceName
@@ -263,6 +273,7 @@ K_SYSTEM : S Y S T E M ;
 K_TABLE : T A B L E ;
 K_TABLES : T A B L E S ;
 K_TO : T O ;
+K_UPDATE : U P D A T E ;
 K_USER : U S E R ;
 K_USERS : U S E R S ;
 

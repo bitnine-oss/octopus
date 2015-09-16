@@ -60,4 +60,11 @@ public class MemoryDatabase
         stmt.executeUpdate("INSERT INTO BITNINE VALUES(9, 'jsyang')");
         stmt.close();
     }
+
+    public void runExecuteUpdate(String sqlStmt) throws SQLException
+    {
+        Statement stmt = initialConnection.createStatement();
+        stmt.executeUpdate(sqlStmt);
+        stmt.close();
+    }
 }

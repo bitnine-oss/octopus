@@ -34,8 +34,7 @@ import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class JDOMetaContext implements MetaContext
 {
@@ -235,6 +234,55 @@ public class JDOMetaContext implements MetaContext
     {
         return getMDataSource(name, false);
     }
+
+    @Override
+    public void dropJdbcDataSource(String name) throws MetaException
+    {
+        Transaction tx = pm.currentTransaction();
+
+        try {
+            tx.begin();
+
+            // remove all object privileges related to this datasource
+            deleteSchemaPrivilegesByDataSource(name);
+            pm.deletePersistent(getDataSource(name));
+
+            tx.commit();
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to drop dataSource '" + name + "'", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
+        }
+    }
+
+    @Override
+    public MetaDataSource updateJdbcDataSource(String name) throws MetaException
+    {
+        MDataSource dataSrc = (MDataSource) getMDataSource(name, false);
+
+        String connectionString = dataSrc.getConnectionString();
+        String driverName = dataSrc.getDriverName();
+
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+
+            pm.deletePersistent(getDataSource(name));
+
+            tx.commit();
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to drop dataSource '" + name + "'", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
+        }
+
+        MetaDataSource src = addJdbcDataSource(driverName, connectionString, name);
+
+        return src;
+    }
+
 
     @Override
     public void commentOnDataSource(String comment, String name) throws MetaException
@@ -552,6 +600,18 @@ public class JDOMetaContext implements MetaContext
             query.deletePersistentAll(userName);
         } catch (RuntimeException e) {
             throw new MetaException("failed to delete schema privileges of userName=" + userName, e);
+        }
+    }
+
+    private void deleteSchemaPrivilegesByDataSource(String dataSourceName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MSchemaPrivilege.class);
+            query.setFilter("schema.dataSource.name == dataSourceName");
+            query.declareParameters("String dataSourceName");
+            query.deletePersistentAll(dataSourceName);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to delete schema privileges of dataSourceName=" + dataSourceName, e);
         }
     }
 

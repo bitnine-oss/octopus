@@ -56,11 +56,25 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitDataSourceClause(OctopusSqlParser.DataSourceClauseContext ctx)
+        public void exitAddDataSourceClause(OctopusSqlParser.AddDataSourceClauseContext ctx)
         {
             String dataSourceName = ctx.dataSourceName().getText();
             String jdbcConnectionString = ctx.jdbcConnectionString().getText();
             commands.add(new OctopusSqlAddDataSource(dataSourceName, jdbcConnectionString));
+        }
+
+        @Override
+        public void exitUpdateDataSourceClause(OctopusSqlParser.UpdateDataSourceClauseContext ctx)
+        {
+            String dataSourceName = ctx.dataSourceName().getText();
+            commands.add(new OctopusSqlUpdateDataSource(dataSourceName));
+        }
+
+        @Override
+        public void exitDropDataSourceClause(OctopusSqlParser.DropDataSourceClauseContext ctx)
+        {
+            String dataSourceName = ctx.dataSourceName().getText();
+            commands.add(new OctopusSqlDropDataSource(dataSourceName));
         }
 
         @Override
@@ -438,6 +452,14 @@ public final class OctopusSql
             case ADD_DATASOURCE:
                 OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
                 runner.addDataSource(addDataSource.getDataSourceName(), addDataSource.getJdbcConnectionString());
+                break;
+            case UPDATE_DATASOURCE:
+                OctopusSqlUpdateDataSource updateDataSource = (OctopusSqlUpdateDataSource) command;
+                runner.updateDataSource(updateDataSource.getDataSourceName());
+                break;
+            case DROP_DATASOURCE:
+                OctopusSqlDropDataSource dropDataSource = (OctopusSqlDropDataSource) command;
+                runner.dropDataSource(dropDataSource.getDataSourceName());
                 break;
             case CREATE_USER:
                 OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;

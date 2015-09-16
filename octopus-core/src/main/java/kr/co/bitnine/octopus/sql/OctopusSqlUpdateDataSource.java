@@ -14,35 +14,23 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public abstract class OctopusSqlCommand
+class OctopusSqlUpdateDataSource extends OctopusSqlCommand
 {
-    public enum Type
+    private final String dataSourceName;
+
+    OctopusSqlUpdateDataSource(String dataSourceName)
     {
-        ADD_DATASOURCE,
-        UPDATE_DATASOURCE,
-        DROP_DATASOURCE,
-        CREATE_USER,
-        ALTER_USER,
-        DROP_USER,
-        CREATE_ROLE,
-        DROP_ROLE,
-        GRANT_SYS_PRIVS,
-        REVOKE_SYS_PRIVS,
-        GRANT_OBJ_PRIVS,
-        REVOKE_OBJ_PRIVS,
-        SHOW_DATASOURCES,
-        SHOW_SCHEMAS,
-        SHOW_TABLES,
-        SHOW_COLUMNS,
-        SHOW_ALL_USERS,
-        SHOW_OBJ_PRIVS_FOR,
-        COMMENT_ON,
-        SET_DATACATEGORY_ON,
-        OTHER
+        this.dataSourceName = dataSourceName;
     }
 
+    String getDataSourceName()
+    {
+        return dataSourceName;
+    }
+
+    @Override
     public Type getType()
     {
-        return Type.OTHER;
+        return Type.UPDATE_DATASOURCE;
     }
 }
