@@ -64,10 +64,27 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitUpdateDataSourceClause(OctopusSqlParser.UpdateDataSourceClauseContext ctx)
+        public void exitUpdateDataSource(OctopusSqlParser.UpdateDataSourceContext ctx)
         {
             String dataSourceName = ctx.dataSourceName().getText();
             commands.add(new OctopusSqlUpdateDataSource(dataSourceName));
+        }
+
+        @Override
+        public void exitUpdateSchemas(OctopusSqlParser.UpdateSchemasContext ctx)
+        {
+            String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
+            String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
+            commands.add(new OctopusSqlUpdateDataSource(dataSourceName, schemaPattern));
+        }
+
+        @Override
+        public void exitUpdateTables(OctopusSqlParser.UpdateTablesContext ctx)
+        {
+            String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
+            String schemaName = ctx.schemaName() == null ? null : ctx.schemaName().getText();
+            String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
+            commands.add(new OctopusSqlUpdateDataSource(dataSourceName, schemaName, tablePattern));
         }
 
         @Override
@@ -455,7 +472,7 @@ public final class OctopusSql
                 break;
             case UPDATE_DATASOURCE:
                 OctopusSqlUpdateDataSource updateDataSource = (OctopusSqlUpdateDataSource) command;
-                runner.updateDataSource(updateDataSource.getDataSourceName());
+                runner.updateDataSource(updateDataSource.getTarget());
                 break;
             case DROP_DATASOURCE:
                 OctopusSqlDropDataSource dropDataSource = (OctopusSqlDropDataSource) command;

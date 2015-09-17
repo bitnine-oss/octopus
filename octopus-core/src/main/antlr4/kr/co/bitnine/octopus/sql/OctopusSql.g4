@@ -51,7 +51,13 @@ addDataSourceClause
     ;
 
 updateDataSourceClause
-    : K_UPDATE K_DATASOURCE dataSourceName
+    : K_UPDATE K_DATASOURCE updateTargets
+    ;
+
+updateTargets
+    : dataSourceName                                    # UpdateDataSource
+    | dataSourceName '.' schemaPattern                  # UpdateSchemas
+    | dataSourceName '.' schemaName '.' tablePattern    # UpdateTables
     ;
 
 dropDataSourceClause
