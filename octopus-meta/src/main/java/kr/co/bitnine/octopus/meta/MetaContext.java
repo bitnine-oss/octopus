@@ -34,6 +34,8 @@ public interface MetaContext
 
     // DataSource
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;
+    void dropJdbcDataSource(String name) throws MetaException;
+    MetaDataSource updateJdbcDataSource(String name) throws MetaException;
     MetaDataSource getDataSource(String name) throws MetaException;
     void commentOnDataSource(String comment, String name) throws MetaException;
     Collection<MetaDataSource> getDataSources() throws MetaException;

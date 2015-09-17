@@ -386,6 +386,23 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
+        public void updateDataSource(String dataSourceName) throws Exception
+        {
+            checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
+            schemaManager.dropDataSource(dataSourceName);
+            MetaDataSource dataSource = metaContext.updateJdbcDataSource(dataSourceName);
+            schemaManager.addDataSource(dataSource);
+        }
+
+        @Override
+        public void dropDataSource(String dataSourceName) throws Exception
+        {
+            checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
+            schemaManager.dropDataSource(dataSourceName);
+            metaContext.dropJdbcDataSource(dataSourceName);
+        }
+
+        @Override
         public void createUser(String name, String password) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.CREATE_USER);

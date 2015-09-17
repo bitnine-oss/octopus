@@ -83,4 +83,9 @@ public class MDataSource implements MetaDataSource
     {
         return new ArrayList<MetaSchema>(schemas);
     }
+
+    public void setSchemas(Collection<MSchema> newSchemas)
+    {
+        schemas = newSchemas;
+    }
 }

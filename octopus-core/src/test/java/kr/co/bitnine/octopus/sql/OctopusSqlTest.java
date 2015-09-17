@@ -26,6 +26,7 @@ public class OctopusSqlTest
 {
     private static OctopusSqlRunner runner;
 
+
     @BeforeClass
     public static void setUpClass()
     {
@@ -34,6 +35,18 @@ public class OctopusSqlTest
             public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
             {
                 System.out.println("ADD DATASOURCE name=" + dataSourceName + ", jdbcConnectionString=" + jdbcConnectionString);
+            }
+
+            @Override
+            public void updateDataSource(String dataSourceName) throws Exception
+            {
+                System.out.println("UPDATE DATASOURCE name=" + dataSourceName);
+            }
+
+            @Override
+            public void dropDataSource(String dataSourceName) throws Exception
+            {
+                System.out.println("DROP DATASOURCE name=" + dataSourceName);
             }
 
             @Override
@@ -194,6 +207,20 @@ public class OctopusSqlTest
     public void testAlterSystem() throws Exception
     {
         String query = "ALTER SYSTEM ADD DATASOURCE `bitnine` CONNECT BY 'jdbc:sqlite:file::memory:?cache=shared';\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testUpdateDatasource() throws Exception
+    {
+        String query = "ALTER SYSTEM UPDATE DATASOURCE `bitnine`;\n";
+        parseAndRun(query);
+    }
+
+    @Test
+    public void testDropDatasource() throws Exception
+    {
+        String query = "ALTER SYSTEM DROP DATASOURCE `bitnine`;\n";
         parseAndRun(query);
     }
 

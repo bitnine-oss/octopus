@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -106,6 +107,50 @@ public class SchemaManager extends AbstractService
 
         writeLock.unlock();
     }
+
+    public void dropDataSource(String dataSourceName)
+    {
+        writeLock.lock();
+
+        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
+        while (ti.hasNext()) {
+            Map.Entry<String, List<OctopusTable>> entry = ti.next();
+            List<OctopusTable> tables = entry.getValue();
+            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
+                if (tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
+                    tj.remove();
+            }
+            if (tables.isEmpty())
+                ti.remove();
+        }
+
+        Iterator<Map.Entry<String, List<OctopusSchema>>> si = schemaMap.entrySet().iterator();
+        while (si.hasNext()) {
+            Map.Entry<String, List<OctopusSchema>> entry = si.next();
+            List<OctopusSchema> schemas = entry.getValue();
+            for (Iterator<OctopusSchema> sj = schemas.iterator(); sj.hasNext(); ) {
+                if (sj.next().getDataSource().getName().equals(dataSourceName))
+                    sj.remove();
+            }
+            if (schemas.isEmpty())
+                si.remove();
+        }
+
+        Iterator<Map.Entry<String, List<OctopusDataSource>>> di = dataSourceMap.entrySet().iterator();
+        while (di.hasNext()) {
+            Map.Entry<String, List<OctopusDataSource>> entry = di.next();
+            List<OctopusDataSource> dataSources = entry.getValue();
+            for (Iterator<OctopusDataSource> dj = dataSources.iterator(); dj.hasNext(); ) {
+                if (dj.next().getName().equals(dataSourceName))
+                    dj.remove();
+            }
+            if (dataSources.isEmpty())
+                di.remove();
+        }
+
+        writeLock.unlock();
+    }
+
 
     private <T> void addToListMap(Map<String, List<T>> map, String key, T value)
     {
