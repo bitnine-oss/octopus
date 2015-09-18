@@ -151,6 +151,59 @@ public class SchemaManager extends AbstractService
         writeLock.unlock();
     }
 
+    public void dropSchema(String dataSourceName, String schemaName)
+    {
+        writeLock.lock();
+
+        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
+        while (ti.hasNext()) {
+            Map.Entry<String, List<OctopusTable>> entry = ti.next();
+            List<OctopusTable> tables = entry.getValue();
+            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
+                if (tj.next().getSchema().getName().equals(schemaName)
+                        && tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
+                    tj.remove();
+            }
+            if (tables.isEmpty())
+                ti.remove();
+        }
+
+        Iterator<Map.Entry<String, List<OctopusSchema>>> si = schemaMap.entrySet().iterator();
+        while (si.hasNext()) {
+            Map.Entry<String, List<OctopusSchema>> entry = si.next();
+            List<OctopusSchema> schemas = entry.getValue();
+            for (Iterator<OctopusSchema> sj = schemas.iterator(); sj.hasNext(); ) {
+                if (sj.next().getName().equals(dataSourceName)
+                        && sj.next().getDataSource().getName().equals(dataSourceName))
+                    sj.remove();
+            }
+            if (schemas.isEmpty())
+                si.remove();
+        }
+
+        writeLock.unlock();
+    }
+
+    public void dropTable(String dataSourceName, String schemaName, String tableName)
+    {
+        writeLock.lock();
+
+        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
+        while (ti.hasNext()) {
+            Map.Entry<String, List<OctopusTable>> entry = ti.next();
+            List<OctopusTable> tables = entry.getValue();
+            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
+                if (tj.next().getName().equals(tableName)
+                        && tj.next().getSchema().getName().equals(schemaName)
+                        && tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
+                tj.remove();
+            }
+            if (tables.isEmpty())
+                ti.remove();
+        }
+
+        writeLock.unlock();
+    }
 
     private <T> void addToListMap(Map<String, List<T>> map, String key, T value)
     {

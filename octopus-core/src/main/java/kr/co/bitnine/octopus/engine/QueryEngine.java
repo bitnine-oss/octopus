@@ -35,6 +35,7 @@ import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.*;
+import kr.co.bitnine.octopus.util.StringUtils;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -389,19 +390,10 @@ public class QueryEngine extends AbstractQueryProcessor
         public void updateDataSource(OctopusSqlCommentTarget target) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
-            switch (target.type) {
-                case DATASOURCE:
-                    schemaManager.dropDataSource(target.dataSource);
-                    MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource);
-                    schemaManager.addDataSource(dataSource);
-                    break;
-                case SCHEMA:
-                    /* TODO */
-                    break;
-                case TABLE:
-                    /* TODO */
-                    break;
-            }
+            /* TODO: reloading schemaManager could be inefficient! */
+            schemaManager.dropDataSource(target.dataSource);
+            MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource, target.schema, target.table);
+            schemaManager.addDataSource(dataSource);
         }
 
         @Override
@@ -504,7 +496,7 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String pattern = convertPattern(schemaPattern);
+            final String pattern = StringUtils.convertPattern(schemaPattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -547,8 +539,8 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String sPattern = convertPattern(schemaPattern);
-            final String tPattern = convertPattern(tablePattern);
+            final String sPattern = StringUtils.convertPattern(schemaPattern);
+            final String tPattern = StringUtils.convertPattern(tablePattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -606,9 +598,9 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String sPattern = convertPattern(schemaPattern);
-            final String tPattern = convertPattern(tablePattern);
-            final String cPattern = convertPattern(columnPattern);
+            final String sPattern = StringUtils.convertPattern(schemaPattern);
+            final String tPattern = StringUtils.convertPattern(tablePattern);
+            final String cPattern = StringUtils.convertPattern(columnPattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -788,45 +780,4 @@ public class QueryEngine extends AbstractQueryProcessor
         }
     };
 
-    /**
-     * Convert a pattern containing JDBC catalog search wildcards into
-     * Java regex patterns.
-     *
-     * @param pattern input which may contain '%' or '_' wildcard characters
-     * @return replace %/_ with regex search characters, also handle escaped
-     * characters.
-     *
-     * Borrowed from Tajo
-     */
-    private String convertPattern(final String pattern)
-    {
-        final char SEARCH_STRING_ESCAPE = '\\';
-
-        if (pattern == null) {
-            return ".*";
-        } else {
-            StringBuilder result = new StringBuilder(pattern.length());
-
-            boolean escaped = false;
-            for (int i = 0; i < pattern.length(); i++) {
-                char c = pattern.charAt(i);
-                if (escaped) {
-                    if (c != SEARCH_STRING_ESCAPE)
-                        escaped = false;
-                    result.append(c);
-                } else {
-                    if (c == SEARCH_STRING_ESCAPE)
-                        escaped = true;
-                    else if (c == '%')
-                        result.append(".*");
-                    else if (c == '_')
-                        result.append('.');
-                    else
-                        result.append(c);
-                }
-            }
-
-            return result.toString();
-        }
-    }
 }
