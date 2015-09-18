@@ -33,10 +33,10 @@ public interface MetaContext
     Collection<MetaUser> getUsers() throws MetaException;
 
     // DataSource
+    MetaDataSource getDataSource(String name) throws MetaException;
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;
     void dropJdbcDataSource(String name) throws MetaException;
     MetaDataSource updateJdbcDataSource(String dataSource, String schema, String table) throws MetaException;
-    MetaDataSource getDataSource(String name) throws MetaException;
     void commentOnDataSource(String comment, String name) throws MetaException;
     Collection<MetaDataSource> getDataSources() throws MetaException;
 

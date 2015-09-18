@@ -54,7 +54,6 @@ public class SessionServerTest
 
         dataMemDb = new MemoryDatabase("DATA");
         dataMemDb.start();
-//        dataMemDb.init();
         dataMemDb.importJSON(SessionServerTest.class.getClass(), "/sample.json");
 
         Configuration conf = new OctopusConfiguration();

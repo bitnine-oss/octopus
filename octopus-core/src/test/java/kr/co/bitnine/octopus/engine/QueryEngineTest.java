@@ -43,7 +43,7 @@ public class QueryEngineTest
 
         dataMemDb = new MemoryDatabase("DATA");
         dataMemDb.start();
-        dataMemDb.init();
+        dataMemDb.importJSON(QueryEngineTest.class.getClass(), "/sample.json");
 
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);

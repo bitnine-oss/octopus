@@ -127,24 +127,6 @@ public class MemoryDatabase
         throw new IllegalArgumentException("type '" + typeName + "' of JSON value is not supported");
     }
 
-    // XXX: temporary
-    public void init() throws SQLException
-    {
-        Statement stmt = initialConnection.createStatement();
-        stmt.executeUpdate("CREATE TABLE BITNINE (ID INTEGER, NAME STRING)");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(0, 'someone0')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(1, 'someone1')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(2, 'someone2')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(3, 'someone3')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(4, 'someone4')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(5, 'someone5')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(6, 'someone6')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(7, 'someone7')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(8, 'someone8')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(9, 'jsyang')");
-        stmt.close();
-    }
-
     public void runExecuteUpdate(String sqlStmt) throws SQLException
     {
         Statement stmt = initialConnection.createStatement();
