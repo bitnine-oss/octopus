@@ -1,0 +1,29 @@
+[
+  {
+    "table-name": "employee",
+    "table-schema": ["id", "name", "permanent"],
+    "table-rows": [
+      [0, "boss", true],
+      [1, "v.p.", true],
+      [2, "jack", false],
+      [3, "jill", false],
+      [4, "neo", false],
+      [5, "trinity", false],
+      [6, "tom", false],
+      [7, "summer", false],
+      [8, "autumn", false],
+      [9, "junseok", true]
+    ]
+  },
+  {
+    "table-name": "team",
+    "table-schema": ["id", "name", "proportion", "description"],
+    "table-rows": [
+      [0, "ds", 0.4, "Database Research"],
+      [1, "sa", 0.3, "Solution Architecture"],
+      [2, "ts", 0.2, "Technical Support"],
+      [3, "bm", 0.1, "Business Management"],
+      [4, "??", 0.0, null]
+    ]
+  }
+]

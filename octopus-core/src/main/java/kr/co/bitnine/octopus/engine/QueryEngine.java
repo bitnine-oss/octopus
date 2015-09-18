@@ -341,8 +341,8 @@ public class QueryEngine extends AbstractQueryProcessor
         String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
 
         try {
-            MetaSchemaPrivilege schemaPrivs = metaContext.getSchemaPrivileges(schemaName, userName);
-            schemaObjPrivs = schemaPrivs == null ? null : schemaPrivs.getObjectPrivileges();
+            MetaSchemaPrivilege schemaPriv = metaContext.getSchemaPrivilege(schemaName, userName);
+            schemaObjPrivs = schemaPriv == null ? null : schemaPriv.getObjectPrivileges();
         } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,

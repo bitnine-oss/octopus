@@ -421,8 +421,7 @@ public class JDOMetaContext implements MetaContext {
         }
     }
 
-    @Override
-    public MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException
+    MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException
     {
         try {
             Query query = pm.newQuery(MSchema.class);
@@ -452,8 +451,7 @@ public class JDOMetaContext implements MetaContext {
         }
     }
 
-    @Override
-    public MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException
+    MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException
     {
         try {
             Query query = pm.newQuery(MTable.class);
@@ -484,8 +482,7 @@ public class JDOMetaContext implements MetaContext {
         }
     }
 
-    @Override
-    public MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
+    MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
     {
         try {
             Query query = pm.newQuery(MColumn.class);
@@ -608,7 +605,7 @@ public class JDOMetaContext implements MetaContext {
     }
 
     @Override
-    public MetaSchemaPrivilege getSchemaPrivileges(String[] schemaName, String userName) throws MetaException
+    public MetaSchemaPrivilege getSchemaPrivilege(String[] schemaName, String userName) throws MetaException
     {
         assert schemaName.length == 2;
 
@@ -650,7 +647,7 @@ public class JDOMetaContext implements MetaContext {
             tx.begin();
 
             for (String userName : userNames) {
-                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivileges(schemaName, userName);
+                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivilege(schemaName, userName);
                 if (mSchemaPriv == null) {
                     MSchema mSchema = (MSchema) getSchemaByQualifiedName(schemaName[0], schemaName[1]);
                     MUser mUser = (MUser) getUser(userName);
@@ -682,7 +679,7 @@ public class JDOMetaContext implements MetaContext {
             tx.begin();
 
             for (String userName : userNames) {
-                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivileges(schemaName, userName);
+                MSchemaPrivilege mSchemaPriv = (MSchemaPrivilege) getSchemaPrivilege(schemaName, userName);
                 if (mSchemaPriv == null)
                     continue;
 
