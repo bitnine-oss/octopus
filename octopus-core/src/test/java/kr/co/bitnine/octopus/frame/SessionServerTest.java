@@ -383,7 +383,7 @@ public class SessionServerTest
         dataMemDb.runExecuteUpdate("CREATE TABLE BB1 (ID INTEGER, NAME STRING)");
         dataMemDb.runExecuteUpdate("INSERT INTO AA1 VALUES (1, 'yjchoi')");
 
-        checkNumRows(stmt, "BITNINE");
+        checkNumRows(stmt, "\"employee\"");
 
         boolean exceptionCaught = false;
         try {
@@ -409,7 +409,7 @@ public class SessionServerTest
         }
         assertTrue(exceptionCaught);
 
-        checkNumRows(stmt, "BITNINE");
+        checkNumRows(stmt, "\"employee\"");
 
         dataMemDb.runExecuteUpdate("DROP TABLE AA1 ");
         dataMemDb.runExecuteUpdate("DROP TABLE AA2 ");
