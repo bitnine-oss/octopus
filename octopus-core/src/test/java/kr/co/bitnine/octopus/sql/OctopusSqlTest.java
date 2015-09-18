@@ -38,9 +38,9 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void updateDataSource(String dataSourceName) throws Exception
+            public void updateDataSource(OctopusSqlCommentTarget target) throws Exception
             {
-                System.out.println("UPDATE DATASOURCE name=" + dataSourceName);
+                System.out.println("UPDATE DATASOURCE name=" + target.dataSource);
             }
 
             @Override

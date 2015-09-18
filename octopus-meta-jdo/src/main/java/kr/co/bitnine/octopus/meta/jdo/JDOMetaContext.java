@@ -36,19 +36,16 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 
-public class JDOMetaContext implements MetaContext
-{
+public class JDOMetaContext implements MetaContext {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
 
     private final PersistenceManager pm;
 
-    public JDOMetaContext(PersistenceManager persistenceManager)
-    {
+    public JDOMetaContext(PersistenceManager persistenceManager) {
         pm = persistenceManager;
     }
 
-    private MUser getMUser(String name, boolean nothrow) throws MetaException
-    {
+    private MUser getMUser(String name, boolean nothrow) throws MetaException {
         try {
             Query query = pm.newQuery(MUser.class);
             query.setFilter("name == userName");
@@ -65,20 +62,17 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public boolean userExists(String name) throws MetaException
-    {
+    public boolean userExists(String name) throws MetaException {
         return getMUser(name, true) != null;
     }
 
     @Override
-    public MetaUser getUser(String name) throws MetaException
-    {
+    public MetaUser getUser(String name) throws MetaException {
         return getMUser(name, false);
     }
 
     @Override
-    public MetaUser createUser(String name, String password) throws MetaException
-    {
+    public MetaUser createUser(String name, String password) throws MetaException {
         try {
             MUser mUser = new MUser(name, password);
             pm.makePersistent(mUser);
@@ -89,8 +83,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void alterUser(String name, String newPassword) throws MetaException
-    {
+    public void alterUser(String name, String newPassword) throws MetaException {
         MUser mUser = (MUser) getUser(name);
         mUser.setPassword(newPassword);
         try {
@@ -101,8 +94,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void dropUser(String name) throws MetaException
-    {
+    public void dropUser(String name) throws MetaException {
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
@@ -120,8 +112,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnUser(String comment, String name) throws MetaException
-    {
+    public void commentOnUser(String comment, String name) throws MetaException {
         MUser mUser = (MUser) getUser(name);
         mUser.setComment(comment);
         try {
@@ -132,8 +123,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public Collection<MetaUser> getUsers() throws MetaException
-    {
+    public Collection<MetaUser> getUsers() throws MetaException {
         try {
             Query query = pm.newQuery(MUser.class);
             List<MetaUser> users = (List<MetaUser>) query.execute();
@@ -143,8 +133,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private MDataSource getMDataSource(String name, boolean nothrow) throws MetaException
-    {
+    private MDataSource getMDataSource(String name, boolean nothrow) throws MetaException {
         try {
             Query query = pm.newQuery(MDataSource.class);
             query.setFilter("name == dataSourceName");
@@ -161,8 +150,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException
-    {
+    public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException {
         if (getMDataSource(name, true) != null)
             throw new MetaException("data source '" + name + "' already exists");
 
@@ -185,44 +173,20 @@ public class JDOMetaContext implements MetaContext
             MDataSource mDataSource = new MDataSource(name, 0, driverName, connectionString);
             pm.makePersistent(mDataSource);
 
-            for (Schema rawSchema : dc.getSchemas()) {
-                String schemaName = rawSchema.getName();
-                if (schemaName == null)
-                    schemaName = "__DEFAULT";
-
-                LOG.debug("add schema. schemaName=" + schemaName);
-                MSchema schema = new MSchema(schemaName, mDataSource);
-                pm.makePersistent(schema);
-
-                for (Table rawTable : rawSchema.getTables()) {
-                    String tableName = rawTable.getName();
-
-                    LOG.debug("add table. tableName=" + tableName);
-                    MTable table = new MTable(tableName, "TABLE", schema); // FIXME: table type
-                    pm.makePersistent(table);
-
-                    for (Column rawColumn : rawTable.getColumns()) {
-                        String columnName = rawColumn.getName();
-                        int jdbcType = rawColumn.getType().getJdbcType();
-
-                        LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType);
-                        MColumn column = new MColumn(columnName, jdbcType, table);
-                        pm.makePersistent(column);
-                    }
-                }
-            }
+            addJdbcDataSourceInternal(mDataSource, dc);
 
             tx.commit();
 
             LOG.debug("complete addJdbcDataSource");
             return mDataSource;
         } catch (Exception e) {
-            throw new MetaException("failed to add data source" , e);
+            throw new MetaException("failed to add data source", e);
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
-                } catch (SQLException e) { }
+                } catch (SQLException e) {
+                }
             }
             if (tx.isActive())
                 tx.rollback();
@@ -230,14 +194,12 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaDataSource getDataSource(String name) throws MetaException
-    {
+    public MetaDataSource getDataSource(String name) throws MetaException {
         return getMDataSource(name, false);
     }
 
     @Override
-    public void dropJdbcDataSource(String name) throws MetaException
-    {
+    public void dropJdbcDataSource(String name) throws MetaException {
         Transaction tx = pm.currentTransaction();
 
         try {
@@ -256,31 +218,182 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
+    private MColumn addColumn(Column rawColumn, MTable table) {
+        String columnName = rawColumn.getName();
+        int jdbcType = rawColumn.getType().getJdbcType();
+
+        LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType);
+        MColumn column = new MColumn(columnName, jdbcType, table);
+        return column;
+    }
+
+    /*
+    private void addColumn(Column rawColumn, MTable table, String comment, String category) {
+        MColumn col = addColumn(rawColumn, table);
+        col.setComment(comment);
+        col.setDataCategory(category);
+    }
+    */
+
+    private void addColumnsOfTable(Table rawTable, MTable table) {
+        for (Column rawColumn : rawTable.getColumns()) {
+            pm.makePersistent(addColumn(rawColumn, table));
+        }
+    }
+
+    private void addTablesOfSchema(Schema rawSchema, MSchema schema) {
+        for (Table rawTable : rawSchema.getTables()) {
+            String tableName = rawTable.getName();
+
+            LOG.debug("add table. tableName=" + tableName);
+            MTable table = new MTable(tableName, "TABLE", schema); // FIXME: table type
+            pm.makePersistent(table);
+
+            addColumnsOfTable(rawTable, table);
+        }
+    }
+
+    private void addJdbcDataSourceInternal(MDataSource mDataSource, DataContext dc) {
+        for (Schema rawSchema : dc.getSchemas()) {
+            String schemaName = rawSchema.getName();
+            if (schemaName == null)
+                schemaName = "__DEFAULT";
+
+            LOG.debug("add schema. schemaName=" + schemaName);
+            MSchema schema = new MSchema(schemaName, mDataSource);
+            pm.makePersistent(schema);
+
+            addTablesOfSchema(rawSchema, schema);
+        }
+    }
+
+    private void updateColumnsOfTable(Table rawTable, MTable table) {
+        Map<String, MColumn> oldColumns = new HashMap<>();
+
+        for (MetaColumn col : table.getColumns()) {
+            oldColumns.put(col.getName(), (MColumn)col);
+        }
+
+        TreeSet<String> oldColumnNames = new TreeSet<>(oldColumns.keySet());
+        TreeSet<String> newColumnNames = new TreeSet<>();
+
+        for (Column rawColumn : rawTable.getColumns()) {
+            String colName = rawColumn.getName();
+
+            newColumnNames.add(colName);
+
+            /* NOTE: column order could be wrong! */
+            if (!oldColumns.containsKey(colName)) {
+                pm.makePersistent(addColumn(rawColumn, table));
+            }
+
+        }
+
+        // remove old columns
+        oldColumnNames.removeAll(newColumnNames);
+        for (String name : oldColumnNames) {
+            pm.deletePersistent(oldColumns.get(name));
+        }
+    }
+
+    private void updateTablesOfSchema(Schema rawSchema, MSchema schema) {
+        Map<String, MTable> oldTables = new HashMap<>();
+
+        for (MetaTable tbl : schema.getTables()) {
+            oldTables.put(tbl.getName(), (MTable)tbl);
+        }
+
+        TreeSet<String> oldTableNames = new TreeSet<>(oldTables.keySet());
+        TreeSet<String> newTableNames = new TreeSet<>();
+
+        for (Table rawTable : rawSchema.getTables()) {
+            String tableName = rawTable.getName();
+
+            LOG.debug("update table. tableName=" + tableName);
+            newTableNames.add(tableName);
+            if (oldTables.containsKey(tableName)) {
+                // update table
+                MTable tbl = oldTables.get(tableName);
+                updateColumnsOfTable(rawTable, tbl);
+            }
+            else {
+                // add new table
+                MTable tbl = new MTable(tableName, "TABLE", schema);
+                pm.makePersistent(tbl);
+                addColumnsOfTable(rawTable, tbl);
+            }
+        }
+
+        // remove old tables
+        oldTableNames.removeAll(newTableNames);
+        for (String name : oldTableNames) {
+            pm.deletePersistent(oldTables.get(name));
+        }
+    }
+
+    private void updateJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) throws MetaException
+    {
+        Map<String, MSchema> oldSchemas = new HashMap<>();
+
+        for (MetaSchema schem : mDataSource.getSchemas()) {
+            oldSchemas.put(schem.getName(), (MSchema)schem);
+        }
+
+        TreeSet<String> oldSchemaNames = new TreeSet<>(oldSchemas.keySet());
+        TreeSet<String> newSchemaNames = new TreeSet<>();
+
+        for (Schema rawSchema : dc.getSchemas()) {
+            String schemaName = rawSchema.getName();
+            if (schemaName == null)
+                schemaName = "__DEFAULT";
+
+            LOG.debug("updateSchema. schemaName=" + schemaName);
+            newSchemaNames.add(schemaName);
+            if (oldSchemas.containsKey(schemaName)) {
+                // update schema
+                MSchema schema = oldSchemas.get(schemaName);
+                updateTablesOfSchema(rawSchema, schema);
+            }
+            else {
+                // add new schema
+                MSchema schema = new MSchema(schemaName, mDataSource);
+                pm.makePersistent(schema);
+                addTablesOfSchema(rawSchema, schema);
+            }
+        }
+
+        // remove old schemas
+        oldSchemaNames.removeAll(newSchemaNames);
+        for (String name : oldSchemaNames) {
+            pm.deletePersistent(oldSchemas.get(name));
+            deleteSchemaPrivilegesBySchema(name);
+        }
+    }
+
     @Override
     public MetaDataSource updateJdbcDataSource(String name) throws MetaException
     {
-        MDataSource dataSrc = (MDataSource) getMDataSource(name, false);
-
+        MetaDataSource dataSrc = getMDataSource(name, false);
         String connectionString = dataSrc.getConnectionString();
-        String driverName = dataSrc.getDriverName();
 
         Transaction tx = pm.currentTransaction();
         try {
+            Connection conn = DriverManager.getConnection(connectionString);
+            DataContext dc = DataContextFactory.createJdbcDataContext(conn);
+
             tx.begin();
 
-            pm.deletePersistent(getDataSource(name));
+            updateJdbcDataSourceInternal(dc, (MDataSource)dataSrc);
 
             tx.commit();
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to drop dataSource '" + name + "'", e);
+        } catch (Exception e) {
+            throw new MetaException("failed to update dataSource '" + name + "'", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
         }
 
-        MetaDataSource src = addJdbcDataSource(driverName, connectionString, name);
-
-        return src;
+        return dataSrc;
     }
 
 
@@ -612,6 +725,18 @@ public class JDOMetaContext implements MetaContext
             query.deletePersistentAll(dataSourceName);
         } catch (RuntimeException e) {
             throw new MetaException("failed to delete schema privileges of dataSourceName=" + dataSourceName, e);
+        }
+    }
+
+    private void deleteSchemaPrivilegesBySchema(String schemaName) throws MetaException
+    {
+        try {
+            Query query = pm.newQuery(MSchemaPrivilege.class);
+            query.setFilter("schema.name == schemaName");
+            query.declareParameters("String schemaName");
+            query.deletePersistentAll(schemaName);
+        } catch (RuntimeException e) {
+            throw new MetaException("failed to delete schema privileges", e);
         }
     }
 

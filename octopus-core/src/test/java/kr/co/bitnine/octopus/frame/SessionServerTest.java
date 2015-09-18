@@ -44,11 +44,11 @@ public class SessionServerTest
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+
     @BeforeClass
     public static void setUpClass() throws Exception
     {
         Class.forName("kr.co.bitnine.octopus.Driver");
-
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();
 
@@ -77,7 +77,7 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + "     CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
         stmt.close();
         conn.close();
     }
@@ -230,13 +230,15 @@ public class SessionServerTest
         rs.close();
         assertEquals(numRows, 0);
 
+        stmt.execute("DROP USER yjchoi");
+
         stmt.close();
         conn.close();
         newMemDb.stop();
     }
 
     @Test
-    public void testUpdateDataSource() throws Exception
+    public void testUpdateDataSource1() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
@@ -252,10 +254,6 @@ public class SessionServerTest
         }
         assertTrue(exceptionCaught);
         stmt.close();
-
-        /* TODO: session exception handling. For now, we should reconnect to octopus after got exception */
-        conn.close();
-        conn = getConnection("octopus", "bitnine");
 
         stmt = conn.createStatement();
 
@@ -280,6 +278,98 @@ public class SessionServerTest
 
         rows = checkNumRows(stmt, "TMP");
         assertEquals(rows, 1);
+
+        dataMemDb.runExecuteUpdate("DROP TABLE TMP ");
+
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
+    public void testUpdateDataSource2() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        stmt.execute("CREATE USER yjchoi IDENTIFIED BY 'piggy'");
+        stmt.execute("GRANT SELECT ON " + dataMemDb.NAME + ".__DEFAULT TO yjchoi");
+
+        Connection conn2 = getConnection("yjchoi", "piggy");
+        Statement stmt2 = conn.createStatement();
+
+        int rows = checkNumRows(stmt2, "BITNINE");
+        assertEquals(rows, 10);
+
+        ResultSet rs;
+        DatabaseMetaData metaData = conn.getMetaData();
+        System.out.println("* Columns");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("COLUMN_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE " + dataMemDb.NAME);
+
+        metaData = conn.getMetaData();
+        System.out.println("* Columns");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        while (rs.next())
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("COLUMN_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        rs.close();
+
+        /* privileges should be preserved after update dataSource */
+        rows = checkNumRows(stmt2, "BITNINE");
+        assertEquals(rows, 10);
+
+        stmt2.close();
+        conn2.close();
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
+    public void testUpdateDataSource3() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        final String comment = "commentOnTable";
+        final String tblName = "BITNINE";
+
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT." + tblName + " IS '" + comment + "'");
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        ResultSet rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        while (rs.next()) {
+            if (rs.getString("TABLE_NAME").equals(tblName))
+                assertTrue(rs.getString("REMARKS").equals(comment));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        }
+        rs.close();
+
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE " + dataMemDb.NAME);
+
+        rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        while (rs.next()) {
+            if (rs.getString("TABLE_NAME").equals(tblName))
+                assertTrue(rs.getString("REMARKS").equals(comment));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        }
+        rs.close();
 
         stmt.close();
         conn.close();

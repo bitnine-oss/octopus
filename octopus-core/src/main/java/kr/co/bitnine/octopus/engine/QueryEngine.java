@@ -386,12 +386,22 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void updateDataSource(String dataSourceName) throws Exception
+        public void updateDataSource(OctopusSqlCommentTarget target) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
-            schemaManager.dropDataSource(dataSourceName);
-            MetaDataSource dataSource = metaContext.updateJdbcDataSource(dataSourceName);
-            schemaManager.addDataSource(dataSource);
+            switch (target.type) {
+                case DATASOURCE:
+                    schemaManager.dropDataSource(target.dataSource);
+                    MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource);
+                    schemaManager.addDataSource(dataSource);
+                    break;
+                case SCHEMA:
+                    /* TODO */
+                    break;
+                case TABLE:
+                    /* TODO */
+                    break;
+            }
         }
 
         @Override
