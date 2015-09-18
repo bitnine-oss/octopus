@@ -20,6 +20,7 @@ import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
+import kr.co.bitnine.octopus.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
@@ -296,7 +297,9 @@ public class JDOMetaContext implements MetaContext {
         }
     }
 
-    private void updateTablesOfSchema(Schema rawSchema, MSchema schema) {
+    private void updateTablesOfSchema(Schema rawSchema, MSchema schema, String tablePattern)
+    {
+        final String tPattern = tablePattern == null? null : StringUtils.convertPattern(tablePattern);
         Map<String, MTable> oldTables = new HashMap<>();
 
         for (MetaTable tbl : schema.getTables()) {
@@ -308,6 +311,9 @@ public class JDOMetaContext implements MetaContext {
 
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
+
+            if (tPattern != null && !tableName.matches(tPattern))
+                continue;
 
             LOG.debug("update table. tableName=" + tableName);
             newTableNames.add(tableName);
@@ -325,14 +331,19 @@ public class JDOMetaContext implements MetaContext {
         }
 
         // remove old tables
-        oldTableNames.removeAll(newTableNames);
-        for (String name : oldTableNames) {
-            pm.deletePersistent(oldTables.get(name));
+        if (tPattern == null) {
+            oldTableNames.removeAll(newTableNames);
+            for (String name : oldTableNames) {
+                pm.deletePersistent(oldTables.get(name));
+            }
         }
     }
 
-    private void updateJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) throws MetaException
+
+    private void updateJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource,
+                                              String schemaPattern, String tablePattern) throws MetaException
     {
+        final String sPattern = schemaPattern == null? null : StringUtils.convertPattern(schemaPattern);
         Map<String, MSchema> oldSchemas = new HashMap<>();
 
         for (MetaSchema schem : mDataSource.getSchemas()) {
@@ -347,12 +358,15 @@ public class JDOMetaContext implements MetaContext {
             if (schemaName == null)
                 schemaName = "__DEFAULT";
 
+            if (sPattern != null && !schemaName.matches(sPattern))
+                continue;
+
             LOG.debug("updateSchema. schemaName=" + schemaName);
             newSchemaNames.add(schemaName);
             if (oldSchemas.containsKey(schemaName)) {
                 // update schema
                 MSchema schema = oldSchemas.get(schemaName);
-                updateTablesOfSchema(rawSchema, schema);
+                updateTablesOfSchema(rawSchema, schema, tablePattern);
             }
             else {
                 // add new schema
@@ -363,17 +377,19 @@ public class JDOMetaContext implements MetaContext {
         }
 
         // remove old schemas
-        oldSchemaNames.removeAll(newSchemaNames);
-        for (String name : oldSchemaNames) {
-            pm.deletePersistent(oldSchemas.get(name));
-            deleteSchemaPrivilegesBySchema(name);
+        if (sPattern == null) {
+            oldSchemaNames.removeAll(newSchemaNames);
+            for (String name : oldSchemaNames) {
+                pm.deletePersistent(oldSchemas.get(name));
+                deleteSchemaPrivilegesBySchema(name);
+            }
         }
     }
 
     @Override
-    public MetaDataSource updateJdbcDataSource(String name) throws MetaException
+    public MetaDataSource updateJdbcDataSource(String dataSource, String schema, String table) throws MetaException
     {
-        MetaDataSource dataSrc = getMDataSource(name, false);
+        MetaDataSource dataSrc = getMDataSource(dataSource, false);
         String connectionString = dataSrc.getConnectionString();
 
         Transaction tx = pm.currentTransaction();
@@ -383,11 +399,11 @@ public class JDOMetaContext implements MetaContext {
 
             tx.begin();
 
-            updateJdbcDataSourceInternal(dc, (MDataSource)dataSrc);
+            updateJdbcDataSourceInternal(dc, (MDataSource)dataSrc, schema, table);
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to update dataSource '" + name + "'", e);
+            throw new MetaException("failed to update dataSource '" + dataSource + "'", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
@@ -395,7 +411,6 @@ public class JDOMetaContext implements MetaContext {
 
         return dataSrc;
     }
-
 
     @Override
     public void commentOnDataSource(String comment, String name) throws MetaException
