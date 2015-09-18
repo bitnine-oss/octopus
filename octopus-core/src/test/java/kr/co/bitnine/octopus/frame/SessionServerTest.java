@@ -376,6 +376,54 @@ public class SessionServerTest
     }
 
     @Test
+    public void testUpdateDataSource4() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        dataMemDb.runExecuteUpdate("CREATE TABLE AA1 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("CREATE TABLE AA2 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("CREATE TABLE BB1 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("INSERT INTO AA1 VALUES (1, 'yjchoi')");
+
+        checkNumRows(stmt, "BITNINE");
+
+        boolean exceptionCaught = false;
+        try {
+            checkNumRows(stmt, "AA1");
+        } catch (SQLException e) {
+            exceptionCaught = true;
+        }
+        assertTrue(exceptionCaught);
+
+        stmt.execute("ALTER SYSTEM UPDATE TABLE " + dataMemDb.NAME + ".__DEFAULT.'AA%'");
+
+        int rows = checkNumRows(stmt, "AA1");
+        assertEquals(rows, 1);
+
+        rows = checkNumRows(stmt, "AA2");
+        assertEquals(rows, 0);
+
+        exceptionCaught = false;
+        try {
+            checkNumRows(stmt, "BB1");
+        } catch (SQLException e) {
+            exceptionCaught = true;
+        }
+        assertTrue(exceptionCaught);
+
+        checkNumRows(stmt, "BITNINE");
+
+        dataMemDb.runExecuteUpdate("DROP TABLE AA1 ");
+        dataMemDb.runExecuteUpdate("DROP TABLE AA2 ");
+        dataMemDb.runExecuteUpdate("DROP TABLE BB1 ");
+
+        stmt.close();
+        conn.close();
+    }
+
+
+    @Test
     public void testSelect() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");
