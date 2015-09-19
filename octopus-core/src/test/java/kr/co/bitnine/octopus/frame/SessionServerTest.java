@@ -54,7 +54,7 @@ public class SessionServerTest
 
         dataMemDb = new MemoryDatabase("DATA");
         dataMemDb.start();
-        dataMemDb.init();
+        dataMemDb.importJSON(SessionServerTest.class.getClass(), "/sample.json");
 
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
@@ -77,7 +77,7 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + "     CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
         stmt.close();
         conn.close();
     }
@@ -149,14 +149,10 @@ public class SessionServerTest
 
     private int checkNumRows(Statement stmt, String tblName) throws SQLException
     {
-        int numRows = 0;
-        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM " + tblName);
-        while (rs.next()) {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            System.out.println("id=" + id + ", name=" + name);
-            ++numRows;
-        }
+        ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + tblName);
+        if (!rs.next())
+            return 0;
+        int numRows = rs.getInt(1);
         rs.close();
         return numRows;
     }
@@ -257,7 +253,7 @@ public class SessionServerTest
 
         stmt = conn.createStatement();
 
-        int rows = checkNumRows(stmt, "BITNINE");
+        int rows = checkNumRows(stmt, "\"employee\"");
         assertEquals(rows, 10);
 
         DatabaseMetaData metaData = conn.getMetaData();
@@ -297,13 +293,13 @@ public class SessionServerTest
         Connection conn2 = getConnection("yjchoi", "piggy");
         Statement stmt2 = conn.createStatement();
 
-        int rows = checkNumRows(stmt2, "BITNINE");
+        int rows = checkNumRows(stmt2, "\"employee\"");
         assertEquals(rows, 10);
 
         ResultSet rs;
         DatabaseMetaData metaData = conn.getMetaData();
         System.out.println("* Columns");
-        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "employee", "%");
         while (rs.next())
             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
                     rs.getString("TABLE_SCHEM") + ", " +
@@ -316,7 +312,7 @@ public class SessionServerTest
 
         metaData = conn.getMetaData();
         System.out.println("* Columns");
-        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "employee", "%");
         while (rs.next())
             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
                     rs.getString("TABLE_SCHEM") + ", " +
@@ -326,7 +322,7 @@ public class SessionServerTest
         rs.close();
 
         /* privileges should be preserved after update dataSource */
-        rows = checkNumRows(stmt2, "BITNINE");
+        rows = checkNumRows(stmt2, "\"employee\"");
         assertEquals(rows, 10);
 
         stmt2.close();
@@ -342,12 +338,12 @@ public class SessionServerTest
         Statement stmt = conn.createStatement();
 
         final String comment = "commentOnTable";
-        final String tblName = "BITNINE";
+        final String tblName = "\"employee\"";
 
         stmt.execute("COMMENT ON TABLE DATA.__DEFAULT." + tblName + " IS '" + comment + "'");
         DatabaseMetaData metaData = conn.getMetaData();
 
-        ResultSet rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        ResultSet rs = metaData.getTables("DATA", "%DEFAULT", "employee", null);
         while (rs.next()) {
             if (rs.getString("TABLE_NAME").equals(tblName))
                 assertTrue(rs.getString("REMARKS").equals(comment));
@@ -360,7 +356,7 @@ public class SessionServerTest
 
         stmt.execute("ALTER SYSTEM UPDATE DATASOURCE " + dataMemDb.NAME);
 
-        rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        rs = metaData.getTables("DATA", "%DEFAULT", "employee", null);
         while (rs.next()) {
             if (rs.getString("TABLE_NAME").equals(tblName))
                 assertTrue(rs.getString("REMARKS").equals(comment));
@@ -376,6 +372,54 @@ public class SessionServerTest
     }
 
     @Test
+    public void testUpdateDataSource4() throws Exception
+    {
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+
+        dataMemDb.runExecuteUpdate("CREATE TABLE AA1 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("CREATE TABLE AA2 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("CREATE TABLE BB1 (ID INTEGER, NAME STRING)");
+        dataMemDb.runExecuteUpdate("INSERT INTO AA1 VALUES (1, 'yjchoi')");
+
+        checkNumRows(stmt, "\"employee\"");
+
+        boolean exceptionCaught = false;
+        try {
+            checkNumRows(stmt, "AA1");
+        } catch (SQLException e) {
+            exceptionCaught = true;
+        }
+        assertTrue(exceptionCaught);
+
+        stmt.execute("ALTER SYSTEM UPDATE TABLE " + dataMemDb.NAME + ".__DEFAULT.'AA%'");
+
+        int rows = checkNumRows(stmt, "AA1");
+        assertEquals(rows, 1);
+
+        rows = checkNumRows(stmt, "AA2");
+        assertEquals(rows, 0);
+
+        exceptionCaught = false;
+        try {
+            checkNumRows(stmt, "BB1");
+        } catch (SQLException e) {
+            exceptionCaught = true;
+        }
+        assertTrue(exceptionCaught);
+
+        checkNumRows(stmt, "\"employee\"");
+
+        dataMemDb.runExecuteUpdate("DROP TABLE AA1 ");
+        dataMemDb.runExecuteUpdate("DROP TABLE AA2 ");
+        dataMemDb.runExecuteUpdate("DROP TABLE BB1 ");
+
+        stmt.close();
+        conn.close();
+    }
+
+
+    @Test
     public void testSelect() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");
@@ -388,7 +432,7 @@ public class SessionServerTest
         }
 
         stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
+        ResultSet rs = stmt.executeQuery("SELECT \"id\", \"name\" FROM \"employee\";");
         while (rs.next()) {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -398,7 +442,7 @@ public class SessionServerTest
         stmt.close();
 
 //        conn.setAutoCommit(false);
-        PreparedStatement pstmt = conn.prepareStatement("SELECT ID, NAME FROM BITNINE WHERE ID >= ?");
+        PreparedStatement pstmt = conn.prepareStatement("SELECT \"id\", \"name\" FROM \"employee\" WHERE \"id\" >= ?");
         pstmt.setMaxRows(3);
 //        pstmt.setFetchSize(3);
         pstmt.setInt(1, 7);
@@ -511,13 +555,13 @@ public class SessionServerTest
         }
 
         try {
-            stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'test'");
+            stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.\"employee\" IS 'test'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
 
         try {
-            stmt.execute("SET DATACATEGORY ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'category'");
+            stmt.execute("SET DATACATEGORY ON COLUMN DATA.__DEFAULT.\"employee\".\"name\" IS 'category'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -590,7 +634,7 @@ public class SessionServerTest
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
         try {
-            stmt.executeQuery("SELECT ID, NAME FROM BITNINE;");
+            stmt.executeQuery("SELECT \"id\", \"name\" FROM \"employee\";");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -604,7 +648,7 @@ public class SessionServerTest
 
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
-        stmt.executeQuery("SELECT ID, NAME FROM BITNINE;").close();
+        stmt.executeQuery("SELECT \"id\", \"name\" FROM \"employee\";").close();
         stmt.close();
         conn.close();
 
@@ -637,7 +681,7 @@ public class SessionServerTest
         rs.close();
 
         System.out.println("* Tables");
-        rs = metaData.getTables("DATA", "%DEFAULT", "BITNINE", null);
+        rs = metaData.getTables("DATA", "%DEFAULT", "employee", null);
         while (rs.next())
             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
                     rs.getString("TABLE_SCHEM") + ", " +
@@ -646,7 +690,7 @@ public class SessionServerTest
         rs.close();
 
         System.out.println("* Columns");
-        rs = metaData.getColumns("DATA", "%DEFAULT", "BITNINE", "%");
+        rs = metaData.getColumns("DATA", "%DEFAULT", "employee", "%");
         while (rs.next())
             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
                     rs.getString("TABLE_SCHEM") + ", " +
@@ -687,8 +731,8 @@ public class SessionServerTest
 
         stmt.execute("COMMENT ON DATASOURCE DATA IS 'dataSource'");
         stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'table'");
-        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.\"employee\".\"name\" IS 'column'");
         stmt.execute("COMMENT ON USER octopus IS 'superuser'");
 
         stmt.execute("CREATE USER jsyang IDENTIFIED BY '0009';");
@@ -729,8 +773,8 @@ public class SessionServerTest
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
         stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.BITNINE IS 'table'");
-        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.BITNINE.NAME IS 'column'");
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.\"employee\".\"name\" IS 'column'");
         stmt.close();
         conn.close();
 

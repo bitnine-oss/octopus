@@ -33,23 +33,20 @@ public interface MetaContext
     Collection<MetaUser> getUsers() throws MetaException;
 
     // DataSource
+    MetaDataSource getDataSource(String name) throws MetaException;
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;
     void dropJdbcDataSource(String name) throws MetaException;
-    MetaDataSource updateJdbcDataSource(String name) throws MetaException;
-    MetaDataSource getDataSource(String name) throws MetaException;
+    MetaDataSource updateJdbcDataSource(String dataSource, String schema, String table) throws MetaException;
     void commentOnDataSource(String comment, String name) throws MetaException;
     Collection<MetaDataSource> getDataSources() throws MetaException;
 
     // Schema
-    MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException;
-    void commentOnSchema(String dataSourceName, String schemaName, String comment) throws MetaException;
+    void commentOnSchema(String comment, String dataSourceName, String schemaName) throws MetaException;
 
     // Table
-    MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException;
     void commentOnTable(String comment, String dataSourceName, String schemaName, String tableName) throws MetaException;
 
     // Column
-    MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException;
     void commentOnColumn(String comment, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException;
     void setDataCategoryOn(String category, String dataSource, String schema, String table, String column) throws MetaException;
 
@@ -60,7 +57,7 @@ public interface MetaContext
     // Privilege
     void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
     void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException;
-    MetaSchemaPrivilege getSchemaPrivileges(String[] schemaName, String userName) throws MetaException;
+    MetaSchemaPrivilege getSchemaPrivilege(String[] schemaName, String userName) throws MetaException;
     Collection<MetaSchemaPrivilege> getSchemaPrivilegesByUser(String userName) throws MetaException;
     void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;
     void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException;

@@ -14,51 +14,117 @@
 
 package kr.co.bitnine.octopus.testutils;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import java.io.InputStreamReader;
+import java.sql.*;
 
 public class MemoryDatabase
 {
     public static final String DRIVER_NAME = "org.sqlite.JDBC";
+
     public final String CONNECTION_STRING;
     public final String NAME;
+
     private Connection initialConnection;
 
     public MemoryDatabase(String name) throws ClassNotFoundException
     {
         Class.forName(DRIVER_NAME);
+
         CONNECTION_STRING = "jdbc:sqlite:file:" + name + "?mode=memory&cache=shared";
         NAME = name;
+
+        initialConnection = null;
     }
 
-    public void start() throws SQLException
+    public synchronized void start() throws SQLException
     {
-        initialConnection = DriverManager.getConnection(CONNECTION_STRING);
+        if (initialConnection == null)
+            initialConnection = DriverManager.getConnection(CONNECTION_STRING);
     }
 
-    public void stop() throws SQLException
+    public synchronized void stop() throws SQLException
     {
-        initialConnection.close();
+        if (initialConnection != null) {
+            initialConnection.close();
+            initialConnection = null;
+        }
     }
 
-    // XXX: temporary
-    public void init() throws SQLException
+    public Connection getConnection() throws Exception
     {
-        Statement stmt = initialConnection.createStatement();
-        stmt.executeUpdate("CREATE TABLE BITNINE (ID INTEGER, NAME STRING)");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(0, 'someone0')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(1, 'someone1')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(2, 'someone2')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(3, 'someone3')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(4, 'someone4')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(5, 'someone5')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(6, 'someone6')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(7, 'someone7')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(8, 'someone8')");
-        stmt.executeUpdate("INSERT INTO BITNINE VALUES(9, 'jsyang')");
+        return DriverManager.getConnection(CONNECTION_STRING);
+    }
+
+    public void importJSON(Class<?> clazz, String resourceName) throws Exception
+    {
+        Connection conn = getConnection();
+        conn.setAutoCommit(false);
+        Statement stmt = conn.createStatement();
+
+        JSONParser jsonParser = new JSONParser();
+        JSONArray tables = (JSONArray) jsonParser.parse(new InputStreamReader(clazz.getResourceAsStream(resourceName)));
+        for (Object tableObj : tables) {
+            StringBuilder queryBuilder = new StringBuilder();
+
+            JSONObject table = (JSONObject) tableObj;
+
+            String tableName = jsonValueToSqlIdent(table.get("table-name"));
+            queryBuilder.append("CREATE TABLE ").append(tableName).append('(');
+            JSONArray schema = (JSONArray) table.get("table-schema");
+            for (Object columnNameObj : schema) {
+                String columnName = jsonValueToSqlValue(columnNameObj);
+                queryBuilder.append(columnName).append(',');
+            }
+            queryBuilder.setCharAt(queryBuilder.length() - 1, ')');
+            stmt.execute(queryBuilder.toString());
+
+            JSONArray rows = (JSONArray) table.get("table-rows");
+            for (Object rowObj : rows) {
+                JSONArray row = (JSONArray) rowObj;
+
+                queryBuilder.setLength(0);
+                queryBuilder.append("INSERT INTO ").append(tableName).append(" VALUES(");
+                for (Object columnObj: row)
+                    queryBuilder.append(jsonValueToSqlValue(columnObj)).append(',');
+                queryBuilder.setCharAt(queryBuilder.length() - 1, ')');
+                stmt.executeUpdate(queryBuilder.toString());
+            }
+        }
+
         stmt.close();
+        conn.commit();
+        conn.close();
+    }
+
+    private String jsonValueToSqlIdent(Object jsonValue)
+    {
+        if (jsonValue instanceof String)
+            return '"' + jsonValue.toString() + '"';
+
+        String typeName = jsonValue.getClass().getSimpleName();
+        throw new IllegalArgumentException("type '" + typeName + "' of JSON value is invalid for identifier");
+    }
+
+    private String jsonValueToSqlValue(Object jsonValue)
+    {
+        if (jsonValue == null)
+            return "NULL";
+
+        if (jsonValue instanceof Boolean)
+            return (Boolean) jsonValue ? "1" : "0";
+
+        if (jsonValue instanceof String)
+            return "'" + jsonValue.toString() + "'";
+
+        if (jsonValue instanceof Long || jsonValue instanceof Double)
+            return jsonValue.toString();
+
+        String typeName = jsonValue.getClass().getSimpleName();
+        throw new IllegalArgumentException("type '" + typeName + "' of JSON value is not supported");
     }
 
     public void runExecuteUpdate(String sqlStmt) throws SQLException

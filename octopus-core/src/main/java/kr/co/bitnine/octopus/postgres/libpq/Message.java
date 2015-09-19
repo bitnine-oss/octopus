@@ -59,28 +59,28 @@ public class Message
 
         public Builder putChar(char c)
         {
-            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.BYTE_BYTES);
+            buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.BYTE_BYTES);
             buf.put((byte) c);
             return this;
         }
 
         public Builder putShort(short h)
         {
-            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.SHORT_BYTES);
+            buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.SHORT_BYTES);
             buf.putShort(h);
             return this;
         }
 
         public Builder putInt(int i)
         {
-            ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.INTEGER_BYTES);
+            buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.INTEGER_BYTES);
             buf.putInt(i);
             return this;
         }
 
         public Builder putBytes(byte[] bytes)
         {
-            ByteBuffers.enlargeByteBuffer(buf, bytes.length);
+            buf = ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
             return this;
         }
@@ -88,7 +88,7 @@ public class Message
         public Builder putCString(String s)
         {
             byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
-            ByteBuffers.enlargeByteBuffer(buf, bytes.length);
+            buf = ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
             putChar('\0');
             return this;

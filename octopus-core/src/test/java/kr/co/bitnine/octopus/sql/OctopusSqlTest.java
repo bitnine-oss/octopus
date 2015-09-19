@@ -40,7 +40,7 @@ public class OctopusSqlTest
             @Override
             public void updateDataSource(OctopusSqlCommentTarget target) throws Exception
             {
-                System.out.println("UPDATE DATASOURCE name=" + target.dataSource);
+                System.out.println("UPDATE DATASOURCE type=" + target.type + " dataSrc=" + target.dataSource + " schema=" + target.schema + " table=" + target.table);
             }
 
             @Override
@@ -211,9 +211,10 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testUpdateDatasource() throws Exception
-    {
+    public void testUpdateDatasource() throws Exception {
         String query = "ALTER SYSTEM UPDATE DATASOURCE `bitnine`;\n";
+        parseAndRun(query);
+        query = "ALTER SYSTEM UPDATE TABLE bitnine.`octo`.'tbl%' ;\n";
         parseAndRun(query);
     }
 
