@@ -23,7 +23,7 @@ import java.util.List;
 public interface OctopusSqlRunner
 {
     void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception;
-    void updateDataSource(OctopusSqlCommentTarget target) throws Exception;
+    void updateDataSource(OctopusSqlObjectTarget target) throws Exception;
     void dropDataSource(String dataSourceName) throws Exception;
     void createUser(String name, String password) throws Exception;
     void alterUser(String name, String password, String oldPassword) throws Exception;
@@ -42,7 +42,7 @@ public interface OctopusSqlRunner
     TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
     TupleSet showAllUsers() throws Exception;
     TupleSet showObjPrivsFor(String userName) throws Exception;
-    void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception;
-    void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception;
+    void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception;
+    void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception;
 }
 

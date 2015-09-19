@@ -28,14 +28,12 @@ public class TupleSetSql implements TupleSet
     private TupleDesc tupDesc;
     private final List<Tuple> tuples;
     private Iterator<Tuple> iter;
-    private Tuple cursor;
 
     public TupleSetSql()
     {
         tupDesc = null;
         tuples = new ArrayList<>();
         iter = null;
-        cursor = null;
     }
 
     @Override

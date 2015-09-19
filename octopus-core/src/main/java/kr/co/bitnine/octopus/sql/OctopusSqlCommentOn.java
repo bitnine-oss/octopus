@@ -16,23 +16,23 @@ package kr.co.bitnine.octopus.sql;
 
 public class OctopusSqlCommentOn extends OctopusSqlCommand
 {
-    private final OctopusSqlCommentTarget target;
+    private final OctopusSqlObjectTarget target;
     private final String comment;
 
-    OctopusSqlCommentOn(OctopusSqlCommentTarget target, String comment)
+    OctopusSqlCommentOn(OctopusSqlObjectTarget target, String comment)
     {
         this.target = target;
         this.comment = comment;
     }
 
-    OctopusSqlCommentTarget getTarget()
+    OctopusSqlObjectTarget getTarget()
     {
-        return this.target;
+        return target;
     }
 
     String getComment()
     {
-        return this.comment;
+        return comment;
     }
 
     @Override

@@ -388,7 +388,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void updateDataSource(OctopusSqlCommentTarget target) throws Exception
+        public void updateDataSource(OctopusSqlObjectTarget target) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             /* TODO: reloading schemaManager could be inefficient! */
@@ -740,7 +740,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void commentOn(OctopusSqlCommentTarget target, String comment) throws Exception
+        public void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception
         {
             switch (target.type) {
                 case DATASOURCE:
@@ -775,12 +775,12 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void setDataCategoryOn(String dataSource, String schema, String table, String column, String category) throws Exception
+        public void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception
         {
             if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
-                checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {dataSource, schema});
+                checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
 
-            metaContext.setDataCategoryOn(category, dataSource, schema, table, column);
+            metaContext.setDataCategoryOn(category, target.dataSource, target.schema, target.table, target.column);
         }
     };
 

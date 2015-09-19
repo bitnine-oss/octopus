@@ -16,33 +16,33 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlUpdateDataSource extends OctopusSqlCommand
 {
-    private final OctopusSqlCommentTarget target;
+    private final OctopusSqlObjectTarget target;
 
     OctopusSqlUpdateDataSource(String dataSourceName)
     {
-        target = new OctopusSqlCommentTarget();
-        target.type = OctopusSqlCommentTarget.Type.DATASOURCE;
+        target = new OctopusSqlObjectTarget();
+        target.type = OctopusSqlObjectTarget.Type.DATASOURCE;
         target.dataSource = dataSourceName;
     }
 
     OctopusSqlUpdateDataSource(String dataSourceName, String schemaPattern)
     {
-        target = new OctopusSqlCommentTarget();
-        target.type = OctopusSqlCommentTarget.Type.SCHEMA;
+        target = new OctopusSqlObjectTarget();
+        target.type = OctopusSqlObjectTarget.Type.SCHEMA;
         target.dataSource = dataSourceName;
         target.schema = schemaPattern;
     }
 
     OctopusSqlUpdateDataSource(String dataSourceName, String schemaName, String tablePattern)
     {
-        target = new OctopusSqlCommentTarget();
-        target.type = OctopusSqlCommentTarget.Type.TABLE;
+        target = new OctopusSqlObjectTarget();
+        target.type = OctopusSqlObjectTarget.Type.TABLE;
         target.dataSource = dataSourceName;
         target.schema = schemaName;
         target.table = tablePattern;
     }
 
-    OctopusSqlCommentTarget getTarget()
+    OctopusSqlObjectTarget getTarget()
     {
         return this.target;
     }

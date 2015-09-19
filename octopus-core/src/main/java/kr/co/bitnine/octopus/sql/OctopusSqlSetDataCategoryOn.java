@@ -16,49 +16,28 @@ package kr.co.bitnine.octopus.sql;
 
 class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand
 {
-    String dataSource;
-    String schema;
-    String table;
-    String column;
-    String category;
+    private final OctopusSqlObjectTarget target;
+    private final String category;
 
-    OctopusSqlSetDataCategoryOn(String dataSource, String schema, String table, String column, String category)
+    OctopusSqlSetDataCategoryOn(OctopusSqlObjectTarget target, String category)
     {
-        this.dataSource = dataSource;
-        this.schema = schema;
-        this.table = table;
-        this.column = column;
+        this.target = target;
         this.category = category;
+    }
+
+    public OctopusSqlObjectTarget getTarget()
+    {
+        return target;
+    }
+
+    public String getCategory()
+    {
+        return category;
     }
 
     @Override
     public OctopusSqlCommand.Type getType()
     {
         return Type.SET_DATACATEGORY_ON;
-    }
-
-    public String getDataSource()
-    {
-        return dataSource;
-    }
-
-    public String getSchema()
-    {
-        return schema;
-    }
-
-    public String getTable()
-    {
-        return table;
-    }
-
-    public String getColumn()
-    {
-        return column;
-    }
-
-    public String getCategory()
-    {
-        return category;
     }
 }

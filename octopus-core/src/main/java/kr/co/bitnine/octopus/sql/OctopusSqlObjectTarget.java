@@ -14,7 +14,7 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public class OctopusSqlCommentTarget
+public final class OctopusSqlObjectTarget
 {
     public enum Type
     {
