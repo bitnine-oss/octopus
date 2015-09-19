@@ -54,10 +54,6 @@ limitations under the License.
             </excludes>
             <fileMode>0755</fileMode>
           </fileSet>
-          <fileSet>
-            <outputDirectory>etc/octopus</outputDirectory>
-            <directory>src/main/config</directory>
-          </fileSet>
         </fileSets>
       </sources>
     </moduleSet>
@@ -92,9 +88,19 @@ limitations under the License.
 
   <files>
     <file>
+      <source>../octopus-common/src/main/config/octopus-env.sh</source>
+      <outputDirectory>etc/octopus</outputDirectory>
+      <destName>octopus-env.sh.template</destName>
+    </file>
+    <file>
       <source>../octopus-common/src/main/resources/octopus-default.xml</source>
       <outputDirectory>etc/octopus</outputDirectory>
       <destName>octopus-default.xml.template</destName>
+    </file>
+    <file>
+      <source>../octopus-common/src/main/resources/octopus-log4j.properties</source>
+      <outputDirectory>etc/octopus</outputDirectory>
+      <destName>octopus-log4j.properties.template</destName>
     </file>
   </files>
 

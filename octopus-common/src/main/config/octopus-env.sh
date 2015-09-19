@@ -33,6 +33,9 @@
 # The name of log file. octopus.log by default.
 #OCTOPUS_LOG_FILE=
 
+# Logging level. INFO by default.
+#OCTOPUS_LOG_LEVEL=
+
 # A grace period for stopping this instance of octopus before doing kill -9,
 # in second. 5 by default.
 #OCTOPUS_STOP_TIMEOUT=

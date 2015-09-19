@@ -21,42 +21,47 @@ does not already exist, create it.
 -->
 
 <configuration>
-
   <property>
     <name>master.server.address</name>
     <value>0.0.0.0:58000</value>
+    <description></description>
   </property>
 
   <property>
     <name>master.session.max</name>
-    <value>5</value>
+    <value>7</value>
+    <description></description>
   </property>
 
   <property>
     <name>metastore.class</name>
     <value>kr.co.bitnine.octopus.meta.jdo.JDOMetaStore</value>
+    <description></description>
   </property>
 
   <!-- JDOMetaStore specific properties -->
 
   <property>
     <name>metastore.jdo.connection.drivername</name>
-    <value>com.mysql.jdbc.Driver</value>
+    <value></value>
+    <description></description>
   </property>
 
   <property>
     <name>metastore.jdo.connection.URL</name>
     <value></value>
+    <description></description>
   </property>
 
   <property>
     <name>metastore.jdo.connection.username</name>
     <value>octopus</value>
+    <description></description>
   </property>
 
   <property>
     <name>metastore.jdo.connection.password</name>
     <value>bitnine</value>
+    <description></description>
   </property>
-
 </configuration>

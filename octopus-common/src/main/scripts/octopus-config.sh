@@ -87,15 +87,21 @@ CLASSPATH=$OCTOPUS_BASE_CLASSPATH:$CLASSPATH
 OCTOPUS_IDENT_STR=${OCTOPUS_IDENT_STR:-$USER}
 OCTOPUS_PID_DIR=${OCTOPUS_PID_DIR:-/tmp}
 
-# default log directory & file
+# default settings for logging
 OCTOPUS_LOG_DIR=${OCTOPUS_LOG_DIR:-$OCTOPUS_PREFIX/logs}
 if [ ! -w "$OCTOPUS_LOG_DIR" ]; then
     mkdir -p "$OCTOPUS_LOG_DIR"
     chown "$OCTOPUS_IDENT_STR" "$OCTOPUS_LOG_DIR"
 fi
 OCTOPUS_LOG_FILE=${OCTOPUS_LOG_FILE:-octopus.log}
+OCTOPUS_ROOT_LOGGER_LEVEL=${OCTOPUS_LOG_LEVEL:-INFO}
 
 OCTOPUS_STOP_TIMEOUT=${OCTOPUS_STOP_TIMEOUT:-5}
 
+log4jprops=octopus-log4j.properties
+if [ -f "$OCTOPUS_CONF_DIR/$log4jprops" ]; then
+    log4jprops=file://$OCTOPUS_CONF_DIR/$log4jprops
+fi
+OCTOPUS_OPTS="$OCTOPUS_OPTS -Dlog4j.configuration=$log4jprops"
 OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.log.dir=$OCTOPUS_LOG_DIR"
 OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.log.file=$OCTOPUS_LOG_FILE"
