@@ -20,7 +20,6 @@ import kr.co.bitnine.octopus.meta.jdo.model.*;
 import kr.co.bitnine.octopus.meta.model.*;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
-import kr.co.bitnine.octopus.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
@@ -193,7 +192,7 @@ public class JDOMetaContext implements MetaContext
             MDataSource mDataSource = new MDataSource(name, 0, driverName, connectionString);
             pm.makePersistent(mDataSource);
 
-            addJdbcDataSourceInternal(mDataSource, dc);
+            addJdbcDataSourceInternal(dc, mDataSource);
 
             tx.commit();
 
@@ -233,22 +232,23 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private MColumn addColumn(Column rawColumn, MTable table)
+    private void addColumn(Column rawColumn, MTable mTable)
     {
         String columnName = rawColumn.getName();
         int jdbcType = rawColumn.getType().getJdbcType();
 
         LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType);
-        return new MColumn(columnName, jdbcType, table);
+        MColumn mColumn = new MColumn(columnName, jdbcType, mTable);
+        pm.makePersistent(mColumn);
     }
 
-    private void addColumnsOfTable(Table rawTable, MTable table)
+    private void addColumnsOfTable(Table rawTable, MTable mTable)
     {
         for (Column rawColumn : rawTable.getColumns())
-            pm.makePersistent(addColumn(rawColumn, table));
+            addColumn(rawColumn, mTable);
     }
 
-    private void addTablesOfSchema(Schema rawSchema, MSchema schema)
+    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema)
     {
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
@@ -256,14 +256,14 @@ public class JDOMetaContext implements MetaContext
 
             LOG.debug("add table. tableName=" + tableName);
             // TODO: handle table type (SYSTEM_TABLE, ALIAS, SYNONYM etc...)
-            MTable table = new MTable(tableName, tableType.name(), schema);
-            pm.makePersistent(table);
+            MTable mTable = new MTable(tableName, tableType.name(), mSchema);
+            pm.makePersistent(mTable);
 
-            addColumnsOfTable(rawTable, table);
+            addColumnsOfTable(rawTable, mTable);
         }
     }
 
-    private void addJdbcDataSourceInternal(MDataSource mDataSource, DataContext dc)
+    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource)
     {
         for (Schema rawSchema : dc.getSchemas()) {
             String schemaName = rawSchema.getName();
@@ -271,18 +271,18 @@ public class JDOMetaContext implements MetaContext
                 schemaName = "__DEFAULT";
 
             LOG.debug("add schema. schemaName=" + schemaName);
-            MSchema schema = new MSchema(schemaName, mDataSource);
-            pm.makePersistent(schema);
+            MSchema mSchema = new MSchema(schemaName, mDataSource);
+            pm.makePersistent(mSchema);
 
-            addTablesOfSchema(rawSchema, schema);
+            addTablesOfSchema(rawSchema, mSchema);
         }
     }
 
-    private void updateColumnsOfTable(Table rawTable, MTable table)
+    private void updateColumnsOfTable(Table rawTable, MTable mTable)
     {
         Map<String, MColumn> oldColumns = new HashMap<>();
 
-        for (MetaColumn col : table.getColumns())
+        for (MetaColumn col : mTable.getColumns())
             oldColumns.put(col.getName(), (MColumn) col);
 
         TreeSet<String> oldColumnNames = new TreeSet<>(oldColumns.keySet());
@@ -295,7 +295,7 @@ public class JDOMetaContext implements MetaContext
 
             /* NOTE: column order could be wrong! */
             if (!oldColumns.containsKey(colName))
-                pm.makePersistent(addColumn(rawColumn, table));
+                addColumn(rawColumn, mTable);
         }
 
         // remove old columns
@@ -304,13 +304,12 @@ public class JDOMetaContext implements MetaContext
             pm.deletePersistent(oldColumns.get(name));
     }
 
-    private void updateTablesOfSchema(Schema rawSchema, MSchema schema, String tablePattern)
+    private void updateTablesOfSchema(Schema rawSchema, MSchema mSchema, final String tableRegex)
     {
-        final String tPattern = tablePattern == null ? null : StringUtils.convertPattern(tablePattern);
         Map<String, MTable> oldTables = new HashMap<>();
 
-        for (MetaTable tbl : schema.getTables())
-            oldTables.put(tbl.getName(), (MTable) tbl);
+        for (MetaTable table : mSchema.getTables())
+            oldTables.put(table.getName(), (MTable) table);
 
         TreeSet<String> oldTableNames = new TreeSet<>(oldTables.keySet());
         TreeSet<String> newTableNames = new TreeSet<>();
@@ -318,25 +317,25 @@ public class JDOMetaContext implements MetaContext
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
 
-            if (tPattern != null && !tableName.matches(tPattern))
+            if (tableRegex != null && !tableName.matches(tableRegex))
                 continue;
 
             LOG.debug("update table. tableName=" + tableName);
             newTableNames.add(tableName);
             if (oldTables.containsKey(tableName)) {
                 // update table
-                MTable tbl = oldTables.get(tableName);
-                updateColumnsOfTable(rawTable, tbl);
+                MTable mTable = oldTables.get(tableName);
+                updateColumnsOfTable(rawTable, mTable);
             } else {
                 // add new table
-                MTable tbl = new MTable(tableName, "TABLE", schema);
-                pm.makePersistent(tbl);
-                addColumnsOfTable(rawTable, tbl);
+                MTable mTable = new MTable(tableName, "TABLE", mSchema);
+                pm.makePersistent(mTable);
+                addColumnsOfTable(rawTable, mTable);
             }
         }
 
         // remove old tables
-        if (tPattern == null) {
+        if (tableRegex == null) {
             oldTableNames.removeAll(newTableNames);
             for (String name : oldTableNames)
                 pm.deletePersistent(oldTables.get(name));
@@ -344,13 +343,12 @@ public class JDOMetaContext implements MetaContext
     }
 
     private void updateJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource,
-                                              String schemaPattern, String tablePattern) throws MetaException
+                                              final String schemaRegex, final String tableRegex) throws MetaException
     {
-        final String sPattern = schemaPattern == null ? null : StringUtils.convertPattern(schemaPattern);
         Map<String, MSchema> oldSchemas = new HashMap<>();
 
-        for (MetaSchema schem : mDataSource.getSchemas())
-            oldSchemas.put(schem.getName(), (MSchema) schem);
+        for (MetaSchema schema : mDataSource.getSchemas())
+            oldSchemas.put(schema.getName(), (MSchema) schema);
 
         TreeSet<String> oldSchemaNames = new TreeSet<>(oldSchemas.keySet());
         TreeSet<String> newSchemaNames = new TreeSet<>();
@@ -360,25 +358,25 @@ public class JDOMetaContext implements MetaContext
             if (schemaName == null)
                 schemaName = "__DEFAULT";
 
-            if (sPattern != null && !schemaName.matches(sPattern))
+            if (schemaRegex != null && !schemaName.matches(schemaRegex))
                 continue;
 
             LOG.debug("updateSchema. schemaName=" + schemaName);
             newSchemaNames.add(schemaName);
             if (oldSchemas.containsKey(schemaName)) {
                 // update schema
-                MSchema schema = oldSchemas.get(schemaName);
-                updateTablesOfSchema(rawSchema, schema, tablePattern);
+                MSchema mSchema = oldSchemas.get(schemaName);
+                updateTablesOfSchema(rawSchema, mSchema, tableRegex);
             } else {
                 // add new schema
-                MSchema schema = new MSchema(schemaName, mDataSource);
-                pm.makePersistent(schema);
-                addTablesOfSchema(rawSchema, schema);
+                MSchema mSchema = new MSchema(schemaName, mDataSource);
+                pm.makePersistent(mSchema);
+                addTablesOfSchema(rawSchema, mSchema);
             }
         }
 
         // remove old schemas
-        if (sPattern == null) {
+        if (schemaRegex == null) {
             oldSchemaNames.removeAll(newSchemaNames);
             for (String name : oldSchemaNames) {
                 deleteSchemaPrivilegeBySchema(mDataSource.getName(), name);
@@ -388,29 +386,29 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaDataSource updateJdbcDataSource(String dataSource, String schema, String table) throws MetaException
+    public MetaDataSource updateJdbcDataSource(String dataSourceName, final String schemaRegex, final String tableRegex) throws MetaException
     {
-        MetaDataSource dataSrc = getMDataSource(dataSource, false);
-        String connectionString = dataSrc.getConnectionString();
+        MDataSource mDataSource = getMDataSource(dataSourceName, false);
 
         Transaction tx = pm.currentTransaction();
         try {
+            String connectionString = mDataSource.getConnectionString();
             Connection conn = DriverManager.getConnection(connectionString);
             DataContext dc = DataContextFactory.createJdbcDataContext(conn);
 
             tx.begin();
 
-            updateJdbcDataSourceInternal(dc, (MDataSource)dataSrc, schema, table);
+            updateJdbcDataSourceInternal(dc, mDataSource, schemaRegex, tableRegex);
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to update dataSource '" + dataSource + "'", e);
+            throw new MetaException("failed to update data source '" + dataSourceName + "'", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
         }
 
-        return dataSrc;
+        return mDataSource;
     }
 
     @Override

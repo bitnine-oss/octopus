@@ -32,48 +32,6 @@ import java.util.Arrays;
 public class StringUtils
 {
     /**
-     * Convert a pattern containing JDBC catalog search wildcards into
-     * Java regex patterns.
-     *
-     * @param pattern input which may contain '%' or '_' wildcard characters
-     * @return replace %/_ with regex search characters, also handle escaped
-     * characters.
-     *
-     * Borrowed from Tajo
-     */
-    public static String convertPattern(final String pattern)
-    {
-        final char SEARCH_STRING_ESCAPE = '\\';
-
-        if (pattern == null) {
-            return ".*";
-        } else {
-            StringBuilder result = new StringBuilder(pattern.length());
-
-            boolean escaped = false;
-            for (int i = 0; i < pattern.length(); i++) {
-                char c = pattern.charAt(i);
-                if (escaped) {
-                    if (c != SEARCH_STRING_ESCAPE)
-                        escaped = false;
-                    result.append(c);
-                } else {
-                    if (c == SEARCH_STRING_ESCAPE)
-                        escaped = true;
-                    else if (c == '%')
-                        result.append(".*");
-                    else if (c == '_')
-                        result.append('.');
-                    else
-                        result.append(c);
-                }
-            }
-
-            return result.toString();
-        }
-    }
-
-    /**
      * Priority of the StringUtils shutdown hook.
      */
     public static final int SHUTDOWN_HOOK_PRIORITY = 0;

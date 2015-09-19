@@ -35,7 +35,6 @@ import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.*;
-import kr.co.bitnine.octopus.util.StringUtils;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -394,7 +393,10 @@ public class QueryEngine extends AbstractQueryProcessor
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             /* TODO: reloading schemaManager could be inefficient! */
             schemaManager.dropDataSource(target.dataSource);
-            MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource, target.schema, target.table);
+
+            final String schemaRegex = target.schema == null ? null : convertPattern(target.schema);
+            final String tableRegex = target.table == null ? null : convertPattern(target.table);
+            MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource, schemaRegex, tableRegex);
             schemaManager.addDataSource(dataSource);
         }
 
@@ -498,7 +500,7 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String pattern = StringUtils.convertPattern(schemaPattern);
+            final String regex = convertPattern(schemaPattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -506,7 +508,7 @@ public class QueryEngine extends AbstractQueryProcessor
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
-                    if (!schemaName.matches(pattern))
+                    if (!schemaName.matches(regex))
                         continue;
 
                     Tuple t = new Tuple(3);
@@ -541,8 +543,8 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String sPattern = StringUtils.convertPattern(schemaPattern);
-            final String tPattern = StringUtils.convertPattern(tablePattern);
+            final String schemaRegex = convertPattern(schemaPattern);
+            final String tableRegex = convertPattern(tablePattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -550,12 +552,12 @@ public class QueryEngine extends AbstractQueryProcessor
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
-                    if (!schemaName.matches(sPattern))
+                    if (!schemaName.matches(schemaRegex))
                         continue;
 
                     for (MetaTable mTable : mSchema.getTables()) {
                         String tableName = mTable.getName();
-                        if (!tableName.matches(tPattern))
+                        if (!tableName.matches(tableRegex))
                             continue;
 
                         Tuple t = new Tuple(10);
@@ -600,9 +602,9 @@ public class QueryEngine extends AbstractQueryProcessor
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String sPattern = StringUtils.convertPattern(schemaPattern);
-            final String tPattern = StringUtils.convertPattern(tablePattern);
-            final String cPattern = StringUtils.convertPattern(columnPattern);
+            final String schemaRegex = convertPattern(schemaPattern);
+            final String tableRegex = convertPattern(tablePattern);
+            final String columnRegex = convertPattern(columnPattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -610,18 +612,18 @@ public class QueryEngine extends AbstractQueryProcessor
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
-                    if (!schemaName.matches(sPattern))
+                    if (!schemaName.matches(schemaRegex))
                         continue;
 
                     for (MetaTable mTable : mSchema.getTables()) {
                         String tableName = mTable.getName();
-                        if (!tableName.matches(tPattern))
+                        if (!tableName.matches(tableRegex))
                             continue;
 
                         for (MetaColumn mColumn : mTable.getColumns()) {
                             String colName = mColumn.getName();
 
-                            if (!colName.matches(cPattern))
+                            if (!colName.matches(columnRegex))
                                 continue;
 
                             Tuple t = new Tuple(25);
@@ -782,4 +784,45 @@ public class QueryEngine extends AbstractQueryProcessor
         }
     };
 
+    /**
+     * Convert a pattern containing JDBC catalog search wildcards into
+     * Java regex patterns.
+     *
+     * @param pattern input which may contain '%' or '_' wildcard characters
+     * @return replace %/_ with regex search characters, also handle escaped
+     * characters.
+     *
+     * Borrowed from Tajo
+     */
+    public static String convertPattern(final String pattern)
+    {
+        final char SEARCH_STRING_ESCAPE = '\\';
+
+        if (pattern == null) {
+            return ".*";
+        } else {
+            StringBuilder result = new StringBuilder(pattern.length());
+
+            boolean escaped = false;
+            for (int i = 0; i < pattern.length(); i++) {
+                char c = pattern.charAt(i);
+                if (escaped) {
+                    if (c != SEARCH_STRING_ESCAPE)
+                        escaped = false;
+                    result.append(c);
+                } else {
+                    if (c == SEARCH_STRING_ESCAPE)
+                        escaped = true;
+                    else if (c == '%')
+                        result.append(".*");
+                    else if (c == '_')
+                        result.append('.');
+                    else
+                        result.append(c);
+                }
+            }
+
+            return result.toString();
+        }
+    }
 }
