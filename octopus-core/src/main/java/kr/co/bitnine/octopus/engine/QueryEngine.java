@@ -84,7 +84,7 @@ public class QueryEngine extends AbstractQueryProcessor
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
 
-        if (commands != null) {
+        if (commands != null && commands.size() > 0) {
             TupleDesc tupDesc;
             switch (commands.get(0).getType()) {
                 case SHOW_DATASOURCES:
@@ -373,6 +373,8 @@ public class QueryEngine extends AbstractQueryProcessor
                 driverName = "org.apache.hive.jdbc.HiveDriver";
             } else if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
                 driverName = "org.sqlite.JDBC";
+            } else if (jdbcConnectionString.startsWith("jdbc:postgresql:")) {
+                driverName = "org.postgresql.Driver";
             } else {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.ERROR,

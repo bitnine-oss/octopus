@@ -28,6 +28,7 @@ import org.apache.metamodel.DataContextFactory;
 import org.apache.metamodel.schema.Column;
 import org.apache.metamodel.schema.Schema;
 import org.apache.metamodel.schema.Table;
+import org.apache.metamodel.schema.TableType;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
@@ -251,9 +252,11 @@ public class JDOMetaContext implements MetaContext
     {
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
+            TableType tableType = rawTable.getType();
 
             LOG.debug("add table. tableName=" + tableName);
-            MTable table = new MTable(tableName, "TABLE", schema); // FIXME: table type
+            // TODO: handle table type (SYSTEM_TABLE, ALIAS, SYNONYM etc...)
+            MTable table = new MTable(tableName, tableType.name(), schema);
             pm.makePersistent(table);
 
             addColumnsOfTable(rawTable, table);
