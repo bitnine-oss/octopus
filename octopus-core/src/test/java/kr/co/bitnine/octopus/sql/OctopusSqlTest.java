@@ -243,6 +243,9 @@ public class OctopusSqlTest
         final String name = "octopus";
         parseAndRun("SHOW OBJECT PRIVILEGES FOR \"" + name + "\"");
 
+        final String commentPattern = "%\\comment";
+        parseAndRun("SHOW COMMENTS '" + commentPattern + "' DATASOURCE '" + dataSourceName + "'");
+
         new Verifications() {{
             anyRunner.showDataSources();
             anyRunner.showSchemas((String) withNull(), schemaPattern);
@@ -250,6 +253,7 @@ public class OctopusSqlTest
             anyRunner.showColumns((String) withNull(), (String) withNull(), (String) withNull(), columnPattern);
             anyRunner.showAllUsers();
             anyRunner.showObjPrivsFor(name);
+            anyRunner.showComments(commentPattern, dataSourceName, (String) withNull(), (String) withNull(), (String) withNull());
         }};
     }
 

@@ -187,6 +187,11 @@ showTargets
     | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowColumnPrivileges
     | K_ALL K_USERS                                                                                                                             # ShowAllUsers
     | K_OBJECT K_PRIVILEGES K_FOR user                                                                                                          # ShowObjPrivsFor
+    | K_COMMENTS ( commentPattern )? ( K_DATASOURCE dataSourcePattern )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowComments
+    ;
+
+dataSourcePattern
+    : STRING_LITERAL
     ;
 
 schemaPattern
@@ -198,6 +203,10 @@ tablePattern
     ;
 
 columnPattern
+    : STRING_LITERAL
+    ;
+
+commentPattern
     : STRING_LITERAL
     ;
 
@@ -252,6 +261,7 @@ K_BY : B Y ;
 K_COLUMN : C O L U M N ;
 K_COLUMNS : C O L U M N S ;
 K_COMMENT : C O M M E N T ;
+K_COMMENTS : C O M M E N T S ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
 K_DATACATEGORY : D A T A C A T E G O R Y ;

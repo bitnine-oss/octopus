@@ -42,6 +42,7 @@ public interface OctopusSqlRunner
     TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
     TupleSet showAllUsers() throws Exception;
     TupleSet showObjPrivsFor(String userName) throws Exception;
+    TupleSet showComments(String commentPatter, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
     void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception;
     void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception;
 }
