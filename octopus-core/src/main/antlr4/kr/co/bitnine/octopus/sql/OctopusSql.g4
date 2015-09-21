@@ -41,13 +41,11 @@ ddlStmt
     ;
 
 alterSystem
-    : K_ALTER K_SYSTEM addDataSourceClause
-    | K_ALTER K_SYSTEM updateDataSourceClause
-    | K_ALTER K_SYSTEM dropDataSourceClause
+    : K_ALTER K_SYSTEM ( addDataSourceClause | updateDataSourceClause | dropDataSourceClause)
     ;
 
 addDataSourceClause
-    : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_BY jdbcConnectionString
+    : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_TO jdbcConnectionString K_USING jdbcDriverName
     ;
 
 updateDataSourceClause
@@ -69,6 +67,10 @@ dataSourceName
     ;
 
 jdbcConnectionString
+    : STRING_LITERAL
+    ;
+
+jdbcDriverName
     : STRING_LITERAL
     ;
 
@@ -179,15 +181,30 @@ show
     ;
 
 showTargets
-    : K_DATASOURCES                                                                                                                             # ShowDataSources
-    | K_SCHEMAS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )?                                                                    # ShowSchemas
-    | K_TABLES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                                           # ShowTables
-    | K_COLUMNS ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?              # ShowColumns
-    | K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )?                               # ShowTablePrivileges
-    | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowColumnPrivileges
-    | K_ALL K_USERS                                                                                                                             # ShowAllUsers
-    | K_OBJECT K_PRIVILEGES K_FOR user                                                                                                          # ShowObjPrivsFor
-    | K_COMMENTS ( commentPattern )? ( K_DATASOURCE dataSourcePattern )? ( K_SCHEMA schemaPattern )? ( K_TABLE tablePattern )? ( K_COLUMN columnPattern )?  # ShowComments
+    : K_DATASOURCES                                             # ShowDataSources
+    | K_SCHEMAS ( K_DATASOURCE dataSourceName )?
+                ( K_SCHEMA schemaPattern )?                     # ShowSchemas
+    | K_TABLES ( K_DATASOURCE dataSourceName )?
+               ( K_SCHEMA schemaPattern )?
+               ( K_TABLE tablePattern )?                        # ShowTables
+    | K_COLUMNS ( K_DATASOURCE dataSourceName )?
+                ( K_SCHEMA schemaPattern )?
+                ( K_TABLE tablePattern )?
+                ( K_COLUMN columnPattern )?                     # ShowColumns
+    | K_TABLE K_PRIVILEGES ( K_DATASOURCE dataSourceName )?
+                           ( K_SCHEMA schemaPattern )?
+                           ( K_TABLE tablePattern )?            # ShowTablePrivileges
+    | K_COLUMN K_PRIVILEGES ( K_DATASOURCE dataSourceName )?
+                            ( K_SCHEMA schemaPattern )?
+                            ( K_TABLE tablePattern )?
+                            ( K_COLUMN columnPattern )?         # ShowColumnPrivileges
+    | K_ALL K_USERS                                             # ShowAllUsers
+    | K_OBJECT K_PRIVILEGES K_FOR user                          # ShowObjPrivsFor
+    | K_COMMENTS ( commentPattern )?
+                 ( K_DATASOURCE dataSourcePattern )?
+                 ( K_SCHEMA schemaPattern )?
+                 ( K_TABLE tablePattern )?
+                 ( K_COLUMN columnPattern )?                    # ShowComments
     ;
 
 dataSourcePattern
@@ -292,6 +309,7 @@ K_TO : T O ;
 K_UPDATE : U P D A T E ;
 K_USER : U S E R ;
 K_USERS : U S E R S ;
+K_USING : U S I N G ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'

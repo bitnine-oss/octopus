@@ -18,11 +18,13 @@ class OctopusSqlAddDataSource extends OctopusSqlCommand
 {
     private final String dataSourceName;
     private final String jdbcConnectionString;
+    private final String jdbcDriverName;
 
-    OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString)
+    OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName)
     {
         this.dataSourceName = dataSourceName;
         this.jdbcConnectionString = jdbcConnectionString;
+        this.jdbcDriverName = jdbcDriverName;
     }
 
     String getDataSourceName()
@@ -33,6 +35,11 @@ class OctopusSqlAddDataSource extends OctopusSqlCommand
     String getJdbcConnectionString()
     {
         return jdbcConnectionString;
+    }
+
+    String getJdbcDriverName()
+    {
+        return jdbcDriverName;
     }
 
     @Override

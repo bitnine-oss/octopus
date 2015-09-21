@@ -24,19 +24,19 @@ does not already exist, create it.
   <property>
     <name>master.server.address</name>
     <value>0.0.0.0:58000</value>
-    <description></description>
+    <description>Octopus clients connect to this address.</description>
   </property>
 
   <property>
     <name>master.session.max</name>
     <value>7</value>
-    <description></description>
+    <description>The maximum number of client sessions.</description>
   </property>
 
   <property>
     <name>metastore.class</name>
     <value>kr.co.bitnine.octopus.meta.jdo.JDOMetaStore</value>
-    <description></description>
+    <description>The class name of Octopus Metastore.</description>
   </property>
 
   <!-- JDOMetaStore specific properties -->
@@ -50,18 +50,18 @@ does not already exist, create it.
   <property>
     <name>metastore.jdo.connection.URL</name>
     <value></value>
-    <description></description>
+    <description>The database URL of Octopus Metastore.</description>
   </property>
 
   <property>
     <name>metastore.jdo.connection.username</name>
     <value>octopus</value>
-    <description></description>
+    <description>The database user on whose behalf the connection is being made.</description>
   </property>
 
   <property>
     <name>metastore.jdo.connection.password</name>
     <value>bitnine</value>
-    <description></description>
+    <description>The user's password.</description>
   </property>
 </configuration>

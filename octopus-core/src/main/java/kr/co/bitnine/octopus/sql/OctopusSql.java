@@ -60,7 +60,8 @@ public final class OctopusSql
         {
             String dataSourceName = ctx.dataSourceName().getText();
             String jdbcConnectionString = ctx.jdbcConnectionString().getText();
-            commands.add(new OctopusSqlAddDataSource(dataSourceName, jdbcConnectionString));
+            String jdbcDriverName = ctx.jdbcDriverName().getText();
+            commands.add(new OctopusSqlAddDataSource(dataSourceName, jdbcConnectionString, jdbcDriverName));
         }
 
         @Override
@@ -482,7 +483,8 @@ public final class OctopusSql
         switch (command.getType()) {
             case ADD_DATASOURCE:
                 OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
-                runner.addDataSource(addDataSource.getDataSourceName(), addDataSource.getJdbcConnectionString());
+                runner.addDataSource(addDataSource.getDataSourceName(),
+                        addDataSource.getJdbcConnectionString(), addDataSource.getJdbcDriverName());
                 break;
             case UPDATE_DATASOURCE:
                 OctopusSqlUpdateDataSource updateDataSource = (OctopusSqlUpdateDataSource) command;
