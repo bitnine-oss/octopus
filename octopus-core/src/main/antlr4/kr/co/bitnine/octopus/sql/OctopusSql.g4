@@ -14,10 +14,6 @@
 
 grammar OctopusSql;
 
-@header {
-    import org.apache.commons.lang3.StringUtils;
-}
-
 ddl
     : ( ddlStmts | error ) EOF
     ;
@@ -314,20 +310,26 @@ K_USING : U S I N G ;
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'
         {
-            setText(StringUtils.strip(getText(), "\"").replace("\"\"", "\""));
+            setText(getText().substring(1, getText().length() - 1).replace("\"\"", "\""));
         }
     | '`' ( ~[`\r\n] | '``' )* '`'
         {
-            setText(StringUtils.strip(getText(), "`").replace("``", "`"));
+            setText(getText().substring(1, getText().length() - 1).replace("``", "`"));
         }
-    | '[' ~[\]\r\n]* ']'
+    | '[' ( ~[\]\r\n]* | ']]' )* ']'
+        {
+            setText(getText().substring(1, getText().length() - 1).replace("]]", "]"));
+        }
     | LETTER ( LETTER | DIGIT )*
+        {
+            setText(getText().toUpperCase());
+        }
     ;
 
 STRING_LITERAL
     : '\'' ( ~['\r\n] | '\'\'' )* '\''
         {
-            setText(StringUtils.strip(getText(), "'").replace("''", "'"));
+            setText(getText().substring(1, getText().length() - 1).replace("''", "'"));
         }
     ;
 
