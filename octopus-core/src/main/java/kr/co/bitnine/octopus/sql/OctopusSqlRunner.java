@@ -22,7 +22,7 @@ import java.util.List;
 
 public interface OctopusSqlRunner
 {
-    void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception;
+    void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception;
     void updateDataSource(OctopusSqlObjectTarget target) throws Exception;
     void dropDataSource(String dataSourceName) throws Exception;
     void createUser(String name, String password) throws Exception;

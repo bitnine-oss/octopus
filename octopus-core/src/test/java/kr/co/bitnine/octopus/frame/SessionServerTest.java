@@ -77,7 +77,9 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME +
+                " CONNECT TO '" + dataMemDb.CONNECTION_STRING +
+                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
         stmt.close();
         conn.close();
     }
@@ -117,7 +119,9 @@ public class SessionServerTest
         Statement stmt = conn.createStatement();
 
         exception.expect(SQLException.class);
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME +
+                " CONNECT TO '" + dataMemDb.CONNECTION_STRING +
+                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         stmt.close();
         conn.close();
@@ -169,7 +173,9 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName + " CONNECT BY '" + newMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName +
+                " CONNECT TO '" + newMemDb.CONNECTION_STRING +
+                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         DatabaseMetaData metaData = conn.getMetaData();
 
@@ -197,7 +203,9 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName + " CONNECT BY '" + newMemDb.CONNECTION_STRING + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + srcName +
+                " CONNECT TO '" + newMemDb.CONNECTION_STRING +
+                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         stmt.execute("CREATE USER yjchoi IDENTIFIED BY 'piggy'");
         stmt.execute("GRANT SELECT ON " + srcName + ".__DEFAULT TO yjchoi");
@@ -519,7 +527,9 @@ public class SessionServerTest
         stmt = conn.createStatement();
 
         try {
-            stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME + " CONNECT BY '" + dataMemDb.CONNECTION_STRING + "'");
+            stmt.execute("ALTER SYSTEM ADD DATASOURCE " + dataMemDb.NAME +
+                    " CONNECT TO '" + dataMemDb.CONNECTION_STRING +
+                    "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }

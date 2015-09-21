@@ -376,27 +376,12 @@ public class QueryEngine extends AbstractQueryProcessor
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
         @Override
-        public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
+        public void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception
         {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
-            String driverName;
-            if (jdbcConnectionString.startsWith("jdbc:hive2:")) {
-                driverName = "org.apache.hive.jdbc.HiveDriver";
-            } else if (jdbcConnectionString.startsWith("jdbc:sqlite:")) {
-                driverName = "org.sqlite.JDBC";
-            } else if (jdbcConnectionString.startsWith("jdbc:postgresql:")) {
-                driverName = "org.postgresql.Driver";
-            } else {
-                PostgresErrorData edata = new PostgresErrorData(
-                        PostgresSeverity.ERROR,
-                        PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                        "JDBC connection string \"" + jdbcConnectionString + "\" not supported");
-                throw new PostgresException(edata);
-            }
-
             // FIXME: all or nothing
-            MetaDataSource dataSource = metaContext.addJdbcDataSource(driverName, jdbcConnectionString, dataSourceName);
+            MetaDataSource dataSource = metaContext.addJdbcDataSource(jdbcDriverName, jdbcConnectionString, dataSourceName);
             schemaManager.addDataSource(dataSource);
         }
 

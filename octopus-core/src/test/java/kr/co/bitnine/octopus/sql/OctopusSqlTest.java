@@ -46,10 +46,11 @@ public class OctopusSqlTest
     {
         final String dataSourceName = "bitnine";
         final String connectionString = "jdbc:sqlite:file::memory:?cache=shared";
+        final String driverName = "org.sqlite.JDBC";
 
-        parseAndRun("ALTER SYSTEM ADD DATASOURCE \"" + dataSourceName + "\" CONNECT BY '" + connectionString + "'");
+        parseAndRun("ALTER SYSTEM ADD DATASOURCE \"" + dataSourceName + "\" CONNECT TO '" + connectionString + "' USING '" + driverName + "'");
         new Verifications() {{
-            anyRunner.addDataSource(dataSourceName, connectionString);
+            anyRunner.addDataSource(dataSourceName, connectionString, driverName);
         }};
     }
 
