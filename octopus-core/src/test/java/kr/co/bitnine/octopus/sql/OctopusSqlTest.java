@@ -94,8 +94,10 @@ public class OctopusSqlTest
             }
         };
     }
+
     @Test
-    public void testUpdateDataSource() throws Exception {
+    public void testUpdateDataSource() throws Exception
+    {
         final String dataSourceName = "bitnine";
         final String schemaName = "octopus";
         final String tablePattern = "table%";
