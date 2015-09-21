@@ -26,6 +26,7 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
 import kr.co.bitnine.octopus.postgres.utils.adt.IoFunctions;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
@@ -71,7 +72,7 @@ public class CursorByPass extends Portal
             }
         });
         TableNameTranslator.toDSN(cloned);
-        queryString = cloned.toString();
+        queryString = cloned.toSqlString(SqlDialect.DatabaseProduct.ORACLE.getDialect()).getSql();
 
         stmt = null;
         tupSetByPass = null;
