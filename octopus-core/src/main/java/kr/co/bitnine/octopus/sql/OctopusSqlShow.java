@@ -150,15 +150,15 @@ class OctopusSqlShow extends OctopusSqlCommand
             this.commentPattern = commentPattern;
         }
 
+        public String getCommentPattern()
+        {
+            return commentPattern;
+        }
+
         @Override
         public Type getType()
         {
             return Type.SHOW_COMMENTS;
-        }
-
-        public String getCommentPattern()
-        {
-            return commentPattern;
         }
     }
 }

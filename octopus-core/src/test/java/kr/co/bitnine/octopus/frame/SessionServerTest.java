@@ -724,7 +724,8 @@ public class SessionServerTest
     }
 
     @Test
-    public void testShowComments() throws Exception {
+    public void testShowComments() throws Exception
+    {
         Connection conn = getConnection("octopus", "bitnine");
 
         System.out.println("* Comments");

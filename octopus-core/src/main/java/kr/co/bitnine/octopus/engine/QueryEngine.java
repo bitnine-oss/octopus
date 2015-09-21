@@ -376,7 +376,8 @@ public class QueryEngine extends AbstractQueryProcessor
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
         @Override
-        public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception {
+        public void addDataSource(String dataSourceName, String jdbcConnectionString) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
             String driverName;
@@ -400,7 +401,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void updateDataSource(OctopusSqlObjectTarget target) throws Exception {
+        public void updateDataSource(OctopusSqlObjectTarget target) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             /* TODO: reloading schemaManager could be inefficient! */
             schemaManager.dropDataSource(target.dataSource);
@@ -412,65 +414,76 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void dropDataSource(String dataSourceName) throws Exception {
+        public void dropDataSource(String dataSourceName) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             schemaManager.dropDataSource(dataSourceName);
             metaContext.dropJdbcDataSource(dataSourceName);
         }
 
         @Override
-        public void createUser(String name, String password) throws Exception {
+        public void createUser(String name, String password) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.CREATE_USER);
             metaContext.createUser(name, password);
         }
 
         @Override
-        public void alterUser(String name, String password, String oldPassword) throws Exception {
+        public void alterUser(String name, String password, String oldPassword) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_USER);
             metaContext.alterUser(name, password);
         }
 
         @Override
-        public void dropUser(String name) throws Exception {
+        public void dropUser(String name) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.DROP_USER);
             metaContext.dropUser(name);
         }
 
-        public void createRole(String role) throws Exception {
+        public void createRole(String role) throws Exception
+        {
             metaContext.createRole(role);
         }
 
         @Override
-        public void dropRole(String role) throws Exception {
+        public void dropRole(String role) throws Exception
+        {
             metaContext.dropRoleByName(role);
         }
 
         @Override
-        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception {
+        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.addSystemPrivileges(sysPrivs, grantees);
         }
 
         @Override
-        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception {
+        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.removeSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override
-        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception {
+        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.addObjectPrivileges(objPrivs, objName, grantees);
         }
 
         @Override
-        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception {
+        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
+        {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.removeObjectPrivileges(objPrivs, objName, revokees);
         }
 
         @Override
-        public TupleSet showDataSources() throws Exception {
+        public TupleSet showDataSources() throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -483,7 +496,8 @@ public class QueryEngine extends AbstractQueryProcessor
             }
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr) {
+                public int compare(Tuple tl, Tuple tr)
+                {
                     return ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                 }
             });
@@ -493,7 +507,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception {
+        public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -519,7 +534,8 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_CATALOG and TABLE_SCHEM
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr) {
+                public int compare(Tuple tl, Tuple tr)
+                {
                     int r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
                     if (r == 0)
                         return ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
@@ -533,7 +549,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception {
+        public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -573,7 +590,8 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr) {
+                public int compare(Tuple tl, Tuple tr)
+                {
                     int r = ((String) tl.getDatum(3)).compareTo(((String) tr.getDatum(3)));
                     if (r == 0)
                         r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
@@ -590,7 +608,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception {
+        public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -653,7 +672,8 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr) {
+                public int compare(Tuple tl, Tuple tr)
+                {
                     int r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
                     if (r == 0)
                         r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
@@ -670,19 +690,22 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTablePrivileges(String dataSourceName, String schemapattern, String tablepattern) throws Exception {
+        public TupleSet showTablePrivileges(String dataSourceName, String schemapattern, String tablepattern) throws Exception
+        {
             //TODO
             return null;
         }
 
         @Override
-        public TupleSet showColumnPrivileges(String dataSourceName, String schemapattern, String tablepattern, String columnpattern) throws Exception {
+        public TupleSet showColumnPrivileges(String dataSourceName, String schemapattern, String tablepattern, String columnpattern) throws Exception
+        {
             // TODO
             return null;
         }
 
         @Override
-        public TupleSet showAllUsers() throws Exception {
+        public TupleSet showAllUsers() throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -698,7 +721,8 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showObjPrivsFor(String userName) throws Exception {
+        public TupleSet showObjPrivsFor(String userName) throws Exception
+        {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -759,37 +783,32 @@ public class QueryEngine extends AbstractQueryProcessor
                 if (!dsName.matches(dataSourceRegex))
                     continue;
 
-                if (mDs.getComment().matches(commentRegex)) {
+                if (mDs.getComment().matches(commentRegex))
                     tuples.add(makeTupleForShowcomments(dsType, dsName, null, null, null, mDs.getComment()));
-                }
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
                     if (!schemaName.matches(schemaRegex))
                         continue;
 
-                    if (mSchema.getComment().matches(commentRegex)) {
+                    if (mSchema.getComment().matches(commentRegex))
                         tuples.add(makeTupleForShowcomments(schemaType, dsName, schemaName, null, null, mSchema.getComment()));
-                    }
 
                     for (MetaTable mTable : mSchema.getTables()) {
                         String tableName = mTable.getName();
                         if (!tableName.matches(tableRegex))
                             continue;
 
-                        if (mTable.getComment().matches(commentRegex)) {
+                        if (mTable.getComment().matches(commentRegex))
                             tuples.add(makeTupleForShowcomments(tableType, dsName, schemaName, tableName, null, mTable.getComment()));
-                        }
 
                         for (MetaColumn mColumn : mTable.getColumns()) {
                             String colName = mColumn.getName();
                             if (!colName.matches(columnRegex))
                                 continue;
 
-                            if (mColumn.getComment().matches(commentRegex)) {
+                            if (mColumn.getComment().matches(commentRegex))
                                 tuples.add(makeTupleForShowcomments(columnType, dsName, schemaName, tableName, colName, mColumn.getComment()));
-                            }
-
                         }
                     }
                 }
@@ -797,7 +816,8 @@ public class QueryEngine extends AbstractQueryProcessor
 
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr) {
+                public int compare(Tuple tl, Tuple tr)
+                {
                     int r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
                     if (r == 0)
                         r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
