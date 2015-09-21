@@ -724,6 +724,36 @@ public class SessionServerTest
     }
 
     @Test
+    public void testShowComments() throws Exception {
+        Connection conn = getConnection("octopus", "bitnine");
+
+        System.out.println("* Comments");
+        Statement stmt = conn.createStatement();
+
+        stmt.execute("COMMENT ON DATASOURCE DATA IS 'DS_COMMENT'");
+        stmt.execute("COMMENT ON SCHEMA DATA.__DEFAULT IS 'SCHEMA_COMMENT'");
+        stmt.execute("COMMENT ON TABLE DATA.__DEFAULT.\"employee\" IS 'TABLE_COMMENT'");
+        stmt.execute("COMMENT ON COLUMN DATA.__DEFAULT.\"employee\".\"name\" IS 'COLUMN_COMMENT_EXTRA'");
+
+        ResultSet rs = stmt.executeQuery("SHOW COMMENTS '%COMMENT' TABLE 'emp%' ");
+        int rowCnt = 0;
+        while (rs.next()) {
+            ++rowCnt;
+            System.out.println("  " + rs.getString("OBJECT_TYPE") + ", " +
+                    rs.getString("TABLE_CAT") + ", " +
+                    rs.getString("TABLE_SCHEM") + ", " +
+                    rs.getString("TABLE_NAME") + ", " +
+                    rs.getString("COLUMN_NAME") + ", " +
+                    rs.getString("REMARKS"));
+        }
+        rs.close();
+        assertEquals(rowCnt, 3);
+
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
     public void testComment() throws Exception
     {
         Connection conn = getConnection("octopus", "bitnine");

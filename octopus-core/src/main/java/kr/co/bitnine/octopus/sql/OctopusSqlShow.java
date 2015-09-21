@@ -139,4 +139,26 @@ class OctopusSqlShow extends OctopusSqlCommand
             return Type.SHOW_OBJ_PRIVS_FOR;
         }
     }
+
+    static class Comments extends OctopusSqlShow
+    {
+        private String commentPattern;
+
+        Comments(String commentPattern, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern)
+        {
+            super(dataSourcePattern, schemaPattern, tablePattern, columnPattern, null);
+            this.commentPattern = commentPattern;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.SHOW_COMMENTS;
+        }
+
+        public String getCommentPattern()
+        {
+            return commentPattern;
+        }
+    }
 }

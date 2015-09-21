@@ -364,6 +364,17 @@ public final class OctopusSql
         }
 
         @Override
+        public void exitShowComments(OctopusSqlParser.ShowCommentsContext ctx)
+        {
+            String commentPattern = ctx.commentPattern() == null ? null : ctx.commentPattern().getText();
+            String dataSourcePattern = ctx.dataSourcePattern() == null ? null : ctx.dataSourcePattern().getText();
+            String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
+            String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
+            String columnPattern = ctx.columnPattern() == null ? null : ctx.columnPattern().getText();
+            commands.add(new OctopusSqlShow.Comments(commentPattern, dataSourcePattern, schemaPattern, tablePattern, columnPattern));
+        }
+
+        @Override
         public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx)
         {
             assert commentTarget != null;
@@ -533,6 +544,11 @@ public final class OctopusSql
             case SHOW_OBJ_PRIVS_FOR:
                 OctopusSqlShow.ObjPrivsFor showObjPrivsFor = (OctopusSqlShow.ObjPrivsFor) command;
                 return runner.showObjPrivsFor(showObjPrivsFor.getUserName());
+            case SHOW_COMMENTS:
+                OctopusSqlShow.Comments showComments = (OctopusSqlShow.Comments) command;
+                return runner.showComments(showComments.getCommentPattern(), showComments.getDataSourceName(),
+                        showComments.getSchemaPattern(), showComments.getTablePattern(),
+                        showComments.getcolumnPattern());
             case COMMENT_ON:
                 OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
                 runner.commentOn(commentOn.getTarget(), commentOn.getComment());
