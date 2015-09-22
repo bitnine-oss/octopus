@@ -44,6 +44,11 @@ limitations under the License.
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>sqlline</groupId>
+      <artifactId>sqlline</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

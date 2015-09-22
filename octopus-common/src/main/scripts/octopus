@@ -12,15 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ $# -lt 1 ]; then
-    cat <<EOF
-Usage: octopus [--config conf-dir] COMMAND
-    master
-    classpath
-EOF
-    exit 1
-fi
-
 bin=$(dirname -- "${BASH_SOURCE-$0}")
 bin=$(cd -- "$bin"; pwd)
 
@@ -28,20 +19,51 @@ DEFAULT_LIBEXEC_DIR=$bin/../libexec
 OCTOPUS_LIBEXEC_DIR=${OCTOPUS_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
 . "$OCTOPUS_LIBEXEC_DIR/octopus-config.sh"
 
-OCTOPUS_ROOT_LOGGER_LEVEL=${OCTOPUS_ROOT_LOGGER_LEVEL:-INFO}
-OCTOPUS_ROOT_LOGGER_APPENDER=${OCTOPUS_ROOT_LOGGER_APPENDER:-console}
+print_usage() {
+    cat <<EOF
+Usage: octopus [--config conf-dir] COMMAND
+where COMMAND is one of:
+  classpath     print the class path needed to get the Octopus jar
+                and the required libraries
+  master        run a Octopus master
+  octaline      run a Octopus interactive terminal
+Most commands print help when invoked without parameters.
+EOF
+}
 
-OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.rootLogger.level=$OCTOPUS_ROOT_LOGGER_LEVEL"
-OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.rootLogger.appender=$OCTOPUS_ROOT_LOGGER_APPENDER"
+if [ $# -lt 1 ]; then
+    print_usage
+    exit 1
+fi
 
 COMMAND=$1
 shift
-if [ "$COMMAND" = "master" ]; then
-    CLASS=kr.co.bitnine.octopus.master.OctopusMaster
-elif [ "$COMMAND" = "classpath" ]; then
-    echo $CLASSPATH
-    exit
-fi
+case $COMMAND in
+    -h|--help|-help)
+        print_usage
+        exit
+        ;;
+    classpath)
+        echo $CLASSPATH
+        ;;
+    *)
+        for cmd in "$bin"/cmd/*.sh; do
+            . "$cmd"
+        done
 
-export CLASSPATH
-exec "$JAVA" $JAVA_HEAP_MAX $OCTOPUS_OPTS $CLASS "$@"
+        found=false
+        for cmd in $COMMAND_LIST; do
+            if [ "$cmd" = "$COMMAND" ]; then
+                found=true
+                break
+            fi
+        done
+
+        if [ "$found" = false ]; then
+            echo "COMMAND $COMMAND not found"
+            exit 1
+        fi
+
+        export CLASSPATH
+        "$COMMAND" "$@"
+esac

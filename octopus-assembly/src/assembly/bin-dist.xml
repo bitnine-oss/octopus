@@ -34,6 +34,14 @@ limitations under the License.
             <outputDirectory>bin</outputDirectory>
             <directory>${project.build.scriptSourceDirectory}</directory>
             <includes>
+              <include>cmd/*</include>
+            </includes>
+          </fileSet>
+          <fileSet>
+            <outputDirectory>bin</outputDirectory>
+            <directory>${project.build.scriptSourceDirectory}</directory>
+            <includes>
+              <include>octaline</include>
               <include>octopus</include>
             </includes>
             <fileMode>0755</fileMode>
@@ -49,6 +57,7 @@ limitations under the License.
             <outputDirectory>sbin</outputDirectory>
             <directory>${project.build.scriptSourceDirectory}</directory>
             <excludes>
+              <exclude>octaline</exclude>
               <exclude>octopus</exclude>
               <exclude>octopus-config.sh</exclude>
             </excludes>
