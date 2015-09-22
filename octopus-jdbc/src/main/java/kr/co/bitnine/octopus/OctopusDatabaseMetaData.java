@@ -38,7 +38,7 @@ class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
 
         String sql = "SHOW TABLES";
         if (catalog != null)
-            sql += " DATASOURCE " + catalog;
+            sql += " DATASOURCE '" + catalog + "'";
         if (schemaPattern != null)
             sql += " SCHEMA '" + schemaPattern + "'";
         if (tableNamePattern != null)
@@ -66,7 +66,7 @@ class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
 
         String sql = "SHOW COLUMNS";
         if (catalog != null)
-            sql += " DATASOURCE " + catalog;
+            sql += " DATASOURCE '" + catalog + "'";
         if (schemaPattern != null)
             sql += " SCHEMA '" + schemaPattern + "'";
         if (tableNamePattern != null)
@@ -90,7 +90,7 @@ class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
 
         String sql = "SHOW SCHEMAS";
         if (catalog != null)
-            sql += " DATASOURCE " + catalog;
+            sql += " DATASOURCE '" + catalog + "'";
         if (schemaPattern != null)
             sql += " SCHEMA '" + schemaPattern + "'";
 
