@@ -18,10 +18,12 @@ public class PostgresAttribute
 {
     public final String name;
     public final PostgresType type;
+    public final int typeInfo;
 
-    public PostgresAttribute(String name, PostgresType type)
+    public PostgresAttribute(String name, PostgresType type, int typeInfo)
     {
         this.name = name;
         this.type = type;
+        this.typeInfo = typeInfo;
     }
 }

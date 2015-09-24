@@ -25,15 +25,22 @@ import java.util.Set;
 public class MUser implements MetaUser
 {
     @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
     @Persistent
-    @Unique(name="NAME_IDX")
+    @Unique(name = "NAME_IDX")
+    @Column(length = 128)
     private String name;
 
+    @Persistent
+    @Column(length = 64)
     private String password;
+
     private Set<SystemPrivilege> sysPrivs;
+
+    @Persistent
+    @Column(length = 1024)
     private String comment;
 
     public MUser(String name, String password)

@@ -60,7 +60,7 @@ case $COMMAND in
         done
 
         if [ "$found" = false ]; then
-            echo "COMMAND $COMMAND not found"
+            echo "COMMAND $COMMAND not found" >&2
             exit 1
         fi
 

@@ -88,8 +88,8 @@ public class QueryEngine extends AbstractQueryProcessor
             switch (commands.get(0).getType()) {
                 case SHOW_DATASOURCES:
                     PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     FormatCode[] resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -97,9 +97,9 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_SCHEMAS:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -107,16 +107,16 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_TABLES:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
-                            new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR)
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR, 16)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -124,31 +124,31 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_COLUMNS:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR),
-                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR),
-                            new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR),
-                            new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR),
-                            new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR),
-                            new PostgresAttribute("NULLABLE", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR),
-                            new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR),
-                            new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR),
-                            new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR),
-                            new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR),
-                            new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR),
-                            new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR),
-                            new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR),
-                            new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR),
-                            new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR),
-                            new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR),
-                            new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR),
-                            new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR),
-                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR)
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("NULLABLE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR, 64)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -156,8 +156,8 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_ALL_USERS:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("USER_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                            new PostgresAttribute("USER_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -165,9 +165,9 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_OBJ_PRIVS_FOR:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("PRIVILEGE", PostgresType.VARCHAR)
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("PRIVILEGE", PostgresType.VARCHAR, 16)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -175,12 +175,12 @@ public class QueryEngine extends AbstractQueryProcessor
                     break;
                 case SHOW_COMMENTS:
                     attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("OBJECT_TYPE", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR)
+                            new PostgresAttribute("OBJECT_TYPE", PostgresType.VARCHAR, 8),
+                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -734,15 +734,15 @@ public class QueryEngine extends AbstractQueryProcessor
             return ts;
         }
 
-        private Tuple makeTupleForShowcomments(String type, String ds, String schem, String tbl, String col, String comment)
+        private Tuple makeTupleForShowcomments(String type, String dataSource, String schema, String table, String column, String comment)
         {
             Tuple t = new Tuple(6);
             t.setDatum(0, type);
-            t.setDatum(1, ds == null? "NULL" : ds);
-            t.setDatum(2, schem == null? "NULL" : schem);
-            t.setDatum(3, tbl == null? "NULL" : tbl);
-            t.setDatum(4, col == null? "NULL" : col);
-            t.setDatum(5, comment == null? "NULL" : comment);
+            t.setDatum(1, dataSource == null ? "NULL" : dataSource);
+            t.setDatum(2, schema == null ? "NULL" : schema);
+            t.setDatum(3, table == null ? "NULL" : table);
+            t.setDatum(4, column == null ? "NULL" : column);
+            t.setDatum(5, comment == null ? "NULL" : comment);
             return t;
         }
 

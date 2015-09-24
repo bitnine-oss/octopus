@@ -410,11 +410,17 @@ public class Session implements Runnable
         Message.Builder msgBld = Message.builder('T').putShort((short) attrs.length);
         for (int i = 0; i < attrs.length; i++) {
             msgBld.putCString(attrs[i].name)
-                    .putInt(0)                                      // table OID
-                    .putShort((short) 0)                            // attribute number
-                    .putInt(attrs[i].type.oid())                    // data type OID
-                    .putShort((short) attrs[i].type.typeLength())   // data type size
-                    .putInt(-1);                                    // type-specific type modifier
+                    .putInt(0)                              // table OID
+                    .putShort((short) 0);                   // attribute number
+
+            PostgresType type = attrs[i].type;
+            msgBld.putInt(type.oid())                       // data type OID
+                    .putShort((short) type.typeLength());   // data type size
+            if (type == PostgresType.VARCHAR)               // type-specific type modifier
+                msgBld.putInt(attrs[i].typeInfo);
+            else
+                msgBld.putInt(-1);
+
             if (resultFormats.length > 0)
                 msgBld.putShort((short) resultFormats[i].code());
             else

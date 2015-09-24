@@ -18,6 +18,7 @@ public interface MetaColumn
 {
     String getName();
     int getType();
+    int getTypeInfo();
     MetaTable getTable();
     String getComment();
     String getDataCategory();

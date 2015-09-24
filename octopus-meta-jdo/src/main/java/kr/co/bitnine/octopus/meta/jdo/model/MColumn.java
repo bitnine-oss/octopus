@@ -17,28 +17,36 @@ package kr.co.bitnine.octopus.meta.jdo.model;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 
 @PersistenceCapable
 public class MColumn implements MetaColumn
 {
     @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
+    @Persistent
+    @Column(length = 128)
     private String name;
+
     private int type;
+    private int typeInfo;
     private MTable table;
+
+    @Persistent
+    @Column(length = 1024)
     private String comment;
+
+    @Persistent
+    @Column(length = 64)
     private String dataCategory;
 
-    public MColumn(String name, int type, MTable table)
+    public MColumn(String name, int type, int typeInfo, MTable table)
     {
         this.name = name;
         this.type = type;
+        this.typeInfo = typeInfo;
         this.table = table;
         comment = "";
         dataCategory = "";
@@ -54,6 +62,12 @@ public class MColumn implements MetaColumn
     public int getType()
     {
         return type;
+    }
+
+    @Override
+    public int getTypeInfo()
+    {
+        return typeInfo;
     }
 
     @Override

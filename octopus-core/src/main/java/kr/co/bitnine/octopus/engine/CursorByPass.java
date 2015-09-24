@@ -154,7 +154,10 @@ public class CursorByPass extends Portal
                 String colName = rsmd.getColumnName(i + 1);
                 int colType = rsmd.getColumnType(i + 1);
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
-                attrs[i] = new PostgresAttribute(colName, type);
+                int typeInfo = -1;
+                if (type == PostgresType.VARCHAR)
+                    typeInfo = rsmd.getColumnDisplaySize(i + 1);
+                attrs[i] = new PostgresAttribute(colName, type, typeInfo);
             }
 
             tupDesc = new TupleDesc(attrs, getResultFormats());
