@@ -35,6 +35,7 @@ import javax.jdo.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 public class JDOMetaContext implements MetaContext
@@ -236,9 +237,12 @@ public class JDOMetaContext implements MetaContext
     {
         String columnName = rawColumn.getName();
         int jdbcType = rawColumn.getType().getJdbcType();
+        int typeInfo = -1;
+        if (jdbcType == Types.VARCHAR)
+            typeInfo = rawColumn.getColumnSize();
 
-        LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType);
-        MColumn mColumn = new MColumn(columnName, jdbcType, mTable);
+        LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType + ", typeInfo=" + typeInfo);
+        MColumn mColumn = new MColumn(columnName, jdbcType, typeInfo, mTable);
         pm.makePersistent(mColumn);
     }
 

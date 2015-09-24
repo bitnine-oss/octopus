@@ -17,10 +17,7 @@ package kr.co.bitnine.octopus.meta.jdo.model;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -28,16 +25,28 @@ import java.util.Collection;
 public class MDataSource implements MetaDataSource
 {
     @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
+    @Persistent
+    @Column(length = 128)
     private String name;
+
     private int type;
+
+    @Persistent
+    @Column(length = 128)
     private String jdbcDriverName;
+
+    @Persistent
+    @Column(length = 256)
     private String jdbcConnectionString;
+
+    @Persistent
+    @Column(length = 1024)
     private String comment;
 
-    @Persistent(mappedBy="dataSource")
+    @Persistent(mappedBy = "dataSource")
     private Collection<MSchema> schemas;
 
     public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString)

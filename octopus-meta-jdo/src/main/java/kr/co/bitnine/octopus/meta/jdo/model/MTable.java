@@ -18,10 +18,7 @@ import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -29,15 +26,21 @@ import java.util.Collection;
 public class MTable implements MetaTable
 {
     @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
+    @Persistent
+    @Column(length = 128)
     private String name;
+
     private String type;
     private MSchema schema;
+
+    @Persistent
+    @Column(length = 1024)
     private String comment;
 
-    @Persistent(mappedBy="table")
+    @Persistent(mappedBy = "table")
     private Collection<MColumn> columns;
 
     public MTable(String name, String type, MSchema schema)

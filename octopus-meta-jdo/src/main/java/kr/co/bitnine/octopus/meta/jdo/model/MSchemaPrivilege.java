@@ -23,19 +23,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 @PersistenceCapable
-@Unique(name="SCHEMA_USER_IDX", members={"schema", "user"})
+@Unique(name = "SCHEMA_USER_IDX", members = {"schema", "user"})
 public class MSchemaPrivilege implements MetaSchemaPrivilege
 {
     @PrimaryKey
-    @Persistent(valueStrategy= IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
     private Set<ObjectPrivilege> objPrivs;
 
-    @Column(name="MSCHEMA_ID")
+    @Column(name = "MSCHEMA_ID")
     private MSchema schema;
 
-    @Column(name="MUSER_ID")
+    @Column(name = "MUSER_ID")
     private MUser user;
 
     public MSchemaPrivilege(MSchema schema, MUser user)

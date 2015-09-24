@@ -18,10 +18,7 @@ import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -29,14 +26,20 @@ import java.util.Collection;
 public class MSchema implements MetaSchema
 {
     @PrimaryKey
-    @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+    @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
     private long ID;
 
+    @Persistent
+    @Column(length = 128)
     private String name;
+
     private MDataSource dataSource;
+
+    @Persistent
+    @Column(length = 1024)
     private String comment;
 
-    @Persistent(mappedBy="schema")
+    @Persistent(mappedBy = "schema")
     private Collection<MTable> tables;
 
     public MSchema(String name, MDataSource dataSource)
