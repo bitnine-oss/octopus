@@ -676,7 +676,9 @@ public class SessionServerTest
         while (rs.next())
             System.out.println("  " + rs.getString("TABLE_SCHEM") + ", " +
                     rs.getString("TABLE_CATALOG") + ", " +
-                    rs.getString("REMARKS"));
+                    rs.getString("REMARKS") + ", " +
+                    rs.getString("TABLE_CAT_REMARKS"));
+
         rs.close();
 
         System.out.println("* Tables");
@@ -685,7 +687,9 @@ public class SessionServerTest
             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
                     rs.getString("TABLE_SCHEM") + ", " +
                     rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("REMARKS"));
+                    rs.getString("REMARKS") + ", " +
+                    rs.getString("TABLE_CAT_REMARKS") + ", " +
+                    rs.getString("TABLE_SCHEM_REMARKS"));
         rs.close();
 
         System.out.println("* Columns");
@@ -695,7 +699,10 @@ public class SessionServerTest
                     rs.getString("TABLE_SCHEM") + ", " +
                     rs.getString("TABLE_NAME") + ", " +
                     rs.getString("COLUMN_NAME") + ", " +
-                    rs.getString("REMARKS"));
+                    rs.getString("REMARKS") + ", " +
+                    rs.getString("TABLE_CAT_REMARKS") + ", " +
+                    rs.getString("TABLE_SCHEM_REMARKS") + ", " +
+                    rs.getString("TABLE_NAME_REMARKS"));
         rs.close();
 
         System.out.println("* Users");

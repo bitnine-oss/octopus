@@ -99,7 +99,8 @@ public class QueryEngine extends AbstractQueryProcessor
                     attrs  = new PostgresAttribute[] {
                             new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
                             new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
+                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -116,7 +117,9 @@ public class QueryEngine extends AbstractQueryProcessor
                             new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR, 16),
                             new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
                             new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR, 16)
+                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR, 16),
+                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -148,7 +151,10 @@ public class QueryEngine extends AbstractQueryProcessor
                             new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR, 16),
                             new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR, 16),
                             new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR, 64)
+                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR, 64),
+                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024),
+                            new PostgresAttribute("TABLE_NAME_REMARKS", PostgresType.VARCHAR, 1024)
                     };
                     resultFormats = new FormatCode[attrs.length];
                     Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -508,10 +514,11 @@ public class QueryEngine extends AbstractQueryProcessor
                     if (!schemaName.matches(regex))
                         continue;
 
-                    Tuple t = new Tuple(3);
+                    Tuple t = new Tuple(4);
                     t.setDatum(0, schemaName);
                     t.setDatum(1, dsName);
                     t.setDatum(2, mSchema.getComment());
+                    t.setDatum(3, mDs.getComment());
 
                     tuples.add(t);
                 }
@@ -556,7 +563,7 @@ public class QueryEngine extends AbstractQueryProcessor
                         if (!tableName.matches(tableRegex))
                             continue;
 
-                        Tuple t = new Tuple(10);
+                        Tuple t = new Tuple(12);
                         t.setDatum(0, dsName);
                         t.setDatum(1, schemaName);
                         t.setDatum(2, tableName);
@@ -567,6 +574,8 @@ public class QueryEngine extends AbstractQueryProcessor
                         t.setDatum(7, "NULL");
                         t.setDatum(8, "NULL");
                         t.setDatum(9, "NULL");
+                        t.setDatum(10, mDs.getComment());
+                        t.setDatum(11, mSchema.getComment());
 
                         tuples.add(t);
                     }
@@ -622,7 +631,7 @@ public class QueryEngine extends AbstractQueryProcessor
                             if (!colName.matches(columnRegex))
                                 continue;
 
-                            Tuple t = new Tuple(25);
+                            Tuple t = new Tuple(28);
                             t.setDatum(0, dsName);
                             t.setDatum(1, schemaName);
                             t.setDatum(2, tableName);
@@ -648,6 +657,9 @@ public class QueryEngine extends AbstractQueryProcessor
                             t.setDatum(22, "NULL");
                             t.setDatum(23, "NULL");
                             t.setDatum(24, mColumn.getDataCategory());
+                            t.setDatum(25, mDs.getComment());
+                            t.setDatum(26, mSchema.getComment());
+                            t.setDatum(27, mTable.getComment());
 
                             tuples.add(t);
                         }
