@@ -458,8 +458,6 @@ public class Session implements Runnable
             }
             messageStream.putMessage(msgBld.build());
         }
-
-        ts.close(); // FIXME: remove
     }
 
     private void handleQuery(Message msg) throws IOException, OctopusException
@@ -482,6 +480,7 @@ public class Session implements Runnable
                 try {
                     sendRowDescription(ts.getTupleDesc(), ts.getTupleDesc().getResultFormats());
                     sendDataRow(ts, 0);
+                    ts.close();
                 } catch (Exception e) {
                     p.setState(Portal.State.FAILED);
                     ts.close();
@@ -598,10 +597,14 @@ public class Session implements Runnable
                 }
             }
 
-            if (p.getState() == Portal.State.ACTIVE)
+            if (p.getState() == Portal.State.ACTIVE) {
                 messageStream.putMessage(Message.builder('s').build()); // PortalSuspend
-            else
+            } else {
                 sendCommandComplete(p.getCompletionTag());
+
+                if (ts != null)
+                    ts.close();
+            }
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
         }

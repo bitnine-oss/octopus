@@ -39,7 +39,7 @@ final class ByteBuffers
 
         String str = new String(buf.array(),
                 buf.position(), end - buf.position(),
-                StandardCharsets.US_ASCII);
+                StandardCharsets.UTF_8);
 
         buf.position(end + 1); // discard '\0'
 

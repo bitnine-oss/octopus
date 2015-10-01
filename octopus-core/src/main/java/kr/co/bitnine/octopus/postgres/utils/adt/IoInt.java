@@ -22,13 +22,13 @@ public class IoInt implements IoFunction
     @Override
     public Object in(byte[] bytes)
     {
-        return Integer.valueOf(new String(bytes, StandardCharsets.US_ASCII));
+        return Integer.valueOf(new String(bytes, StandardCharsets.UTF_8));
     }
 
     @Override
     public byte[] out(Object value)
     {
-        return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
+        return String.valueOf(value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override

@@ -87,7 +87,7 @@ public class Message
 
         public Builder putCString(String s)
         {
-            byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
+            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             buf = ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
             putChar('\0');

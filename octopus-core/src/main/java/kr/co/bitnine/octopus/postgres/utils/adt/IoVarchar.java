@@ -21,24 +21,24 @@ public class IoVarchar implements IoFunction
     @Override
     public Object in(byte[] bytes)
     {
-        return new String(bytes, StandardCharsets.US_ASCII);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override
     public byte[] out(Object value)
     {
-        return ((String) value).getBytes(StandardCharsets.US_ASCII);
+        return ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public Object recv(byte[] bytes)
     {
-        return new String(bytes, StandardCharsets.US_ASCII);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override
     public byte[] send(Object value)
     {
-        return ((String) value).getBytes(StandardCharsets.US_ASCII);
+        return ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 }

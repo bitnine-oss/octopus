@@ -30,13 +30,13 @@ public final class TableNameTranslator
         ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
-        for (SqlIdentifier tableID : tableIds) {
+        for (SqlIdentifier tableId : tableIds) {
             List<String> dsn = new ArrayList<>();
-            String schemaName = tableID.names.get(1);
+            String schemaName = tableId.names.get(1);
             if (!schemaName.equals("__DEFAULT"))
                 dsn.add(schemaName);
-            dsn.add(tableID.names.get(2));
-            tableID.setNames(dsn, null);
+            dsn.add(tableId.names.get(2));
+            tableId.setNames(dsn, null);
         }
     }
 

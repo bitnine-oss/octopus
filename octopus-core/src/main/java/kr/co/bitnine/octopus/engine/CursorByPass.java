@@ -72,7 +72,10 @@ public class CursorByPass extends Portal
             }
         });
         TableNameTranslator.toDSN(cloned);
-        queryString = cloned.toSqlString(SqlDialect.DatabaseProduct.ORACLE.getDialect()).getSql();
+        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.ORACLE;
+        if (jdbcConnectionString.startsWith("jdbc:hive2:"))
+            dp = SqlDialect.DatabaseProduct.HIVE;
+        queryString = cloned.toSqlString(dp.getDialect()).getSql();
 
         stmt = null;
         tupSetByPass = null;
@@ -129,7 +132,7 @@ public class CursorByPass extends Portal
 
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    "failed to run by-pass query");
+                    "failed to prepare by-pass query: " + e.getMessage());
             throw new PostgresException(edata, e);
         }
     }
@@ -169,7 +172,7 @@ public class CursorByPass extends Portal
 
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    "failed to run by-pass query");
+                    "failed to execute by-pass query: " + e.getMessage());
             throw new PostgresException(edata, e);
         }
     }
