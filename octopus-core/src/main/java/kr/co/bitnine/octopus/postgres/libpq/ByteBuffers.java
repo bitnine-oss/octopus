@@ -18,12 +18,13 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-final class ByteBuffers
+final public class ByteBuffers
 {
     /* Byte.BYTES, Integer.BYTES since Java 8 */
-    static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
-    static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
-    static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
+    public static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
+    public static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
+    public static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
+    public static final int LONG_BYTES = Long.SIZE / Byte.SIZE;
 
     private ByteBuffers() { }
 

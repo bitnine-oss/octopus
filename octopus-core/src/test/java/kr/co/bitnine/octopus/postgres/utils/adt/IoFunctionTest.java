@@ -23,15 +23,15 @@ public class IoFunctionTest
     @Test
     public void testInt() throws Exception
     {
-        IoInt ioInt = new IoInt();
+        IoInt4 ioInt4 = new IoInt4();
 
         Integer i = Integer.valueOf(7);
 
-        byte[] bytes = ioInt.out(i);
-        assertEquals(i, ioInt.in(bytes));
+        byte[] bytes = ioInt4.out(i);
+        assertEquals(i, ioInt4.in(bytes));
 
-        bytes = ioInt.send(i);
-        assertEquals(i, ioInt.recv(bytes));
+        bytes = ioInt4.send(i);
+        assertEquals(i, ioInt4.recv(bytes));
     }
 
     @Test

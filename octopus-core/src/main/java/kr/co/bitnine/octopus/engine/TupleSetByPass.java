@@ -23,12 +23,16 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class TupleSetByPass implements TupleSet
 {
+    private final Log LOG = LogFactory.getLog(TupleSetByPass.class);
+
     private final CursorByPass cursorByPass;
     private final ResultSet resultSet;
     private final TupleDesc tupDesc;
@@ -71,6 +75,9 @@ public class TupleSetByPass implements TupleSet
                 switch (attrs[i].type) {
                     case INT4:
                         datum = resultSet.getInt(i + 1);
+                        break;
+                    case INT8:
+                        datum = resultSet.getLong(i + 1);
                         break;
                     case VARCHAR:
                         datum = resultSet.getString(i + 1);

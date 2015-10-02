@@ -169,12 +169,16 @@ public class Session implements Runnable
         imsg.getInt(); // process ID, not used
         int cancelKey = imsg.getInt();
 
+        LOG.debug("handle CancelRequest message");
+
         // cancelKey is the same as sessionId
         eventHandler.onCancel(cancelKey);
     }
 
     private void handleSSLRequest(Message imsg) throws IOException, OctopusException
     {
+        LOG.debug("handle SSLRequest message");
+
         // TODO: SSL
 
         PostgresErrorData edata = new PostgresErrorData(
@@ -186,6 +190,8 @@ public class Session implements Runnable
 
     private void handleStartupMessage(Message imsg) throws IOException, OctopusException
     {
+        LOG.debug("handle StartupMessage message");
+
         int version = imsg.getInt();
         if (version != ProtocolConstants.PROTOCOL_VERSION(3, 0)) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -217,6 +223,7 @@ public class Session implements Runnable
     // NOTE: Now, cleartext only
     private void doAuthentication() throws IOException, OctopusException
     {
+        LOG.debug("send AuthenticationCleartextPassword message");
         // AuthenticationCleartextPassword
         Message msg = Message.builder('R')
                 .putInt(3)
@@ -253,6 +260,7 @@ public class Session implements Runnable
             new OctopusException(edata, e).emitErrorReport();
         }
 
+        LOG.debug("send AuthenticationOk message");
         // AuthenticationOk
         msg = Message.builder('R')
                 .putInt(0)
@@ -261,6 +269,7 @@ public class Session implements Runnable
 
         // TODO: ParameterStatus
 
+        LOG.debug("send BackendKeyData message");
         // BackendKeyData
         msg = Message.builder('K')
                 .putInt(0)          // process ID, not used
@@ -280,6 +289,7 @@ public class Session implements Runnable
                 doingExtendedQueryMessage = false;
 
                 if (sendReadyForQuery) {
+                    LOG.debug("send ReadyForQuery message");
                     Message msg = Message.builder('Z')
                             .putChar(TransactionStatus.IDLE.getIndicator())
                             .build();
@@ -299,6 +309,7 @@ public class Session implements Runnable
                     case 'C':
                     case 'D':
                     case 'H':
+                        LOG.debug("extended query sub-protocol message");
                         doingExtendedQueryMessage = true;
                         break;
                     case 'S':
@@ -317,8 +328,10 @@ public class Session implements Runnable
                         new OctopusException(edata).emitErrorReport();
                 }
 
-                if (ignoreTillSync)
+                if (ignoreTillSync) {
+                    LOG.debug("ignore message(type='" + type + "') till Sync message");
                     continue;
+                }
 
                 switch (type) {
                     case 'Q':
@@ -341,9 +354,11 @@ public class Session implements Runnable
                         handleDescribe(msg);
                         break;
                     case 'H':
+                        LOG.debug("handle Flush message");
                         messageStream.flush();
                         break;
                     case 'S':
+                        LOG.debug("handle Sync message");
                         sendReadyForQuery = true;
                         break;
                     case 'X':
@@ -370,8 +385,10 @@ public class Session implements Runnable
                 }
 
                 // ERROR
-                if (doingExtendedQueryMessage)
+                if (doingExtendedQueryMessage) {
+                    LOG.debug("ignore till Sync message");
                     ignoreTillSync = true;
+                }
                 if (!ignoreTillSync)
                     sendReadyForQuery = true;
             } catch (EOFException eofe) {
@@ -387,11 +404,14 @@ public class Session implements Runnable
 
     private void sendEmptyQueryResponse() throws IOException
     {
+        LOG.debug("send EmptyQueryResponse message");
         messageStream.putMessage(Message.builder('I').build());
     }
 
     private void sendCommandComplete(String tag) throws IOException
     {
+        LOG.debug("send CommandComplete message");
+
         // FIXME: tag format
         if (tag == null)
             tag = "SELECT 0";
@@ -404,6 +424,8 @@ public class Session implements Runnable
 
     private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws IOException
     {
+        LOG.debug("send RowDescription message");
+
         PostgresAttribute[] attrs = tupDesc.getAttributes();
 
         // RowDescription
@@ -431,6 +453,8 @@ public class Session implements Runnable
 
     private void sendDataRow(TupleSet ts, int numRows) throws IOException, PostgresException
     {
+        LOG.debug("send DataRow message");
+
         TupleDesc td = ts.getTupleDesc();
 
         PostgresAttribute[] attrs = td.getAttributes();
@@ -463,7 +487,8 @@ public class Session implements Runnable
     private void handleQuery(Message msg) throws IOException, OctopusException
     {
         String queryString = msg.getCString();
-        LOG.debug("queryString: " + queryString);
+
+        LOG.debug("handle Query message (query={" + queryString + "})");
 
         // TODO: support multiple queries in a single queryString
 
@@ -506,7 +531,7 @@ public class Session implements Runnable
         for (short i = 0; i < numParams; i++)
             paramTypes[i] = PostgresType.ofOid(msg.getInt());
 
-        LOG.debug("stmtName=" + stmtName + ", queryString='" + queryString + "'");
+        LOG.debug("handle Parse message (stmt=" + stmtName + ", query={" + queryString + "})");
         if (LOG.isDebugEnabled()) {
             for (short i = 0; i < paramTypes.length; i++)
                 LOG.debug("paramTypes[" + i + "]=" + paramTypes[i].name());
@@ -527,7 +552,7 @@ public class Session implements Runnable
         String portalName = msg.getCString();
         String stmtName = msg.getCString();
 
-        LOG.debug("bind (portalName=" + portalName + ", stmtName=" + stmtName + ")");
+        LOG.debug("handle Bind message (portal=" + portalName + ", stmt=" + stmtName + ")");
 
         short numParamFormat = msg.getShort();
         FormatCode[] paramFormats = new FormatCode[numParamFormat];
@@ -570,7 +595,7 @@ public class Session implements Runnable
         String portalName = msg.getCString();
         int numRows = msg.getInt();
 
-        LOG.debug("execute (portalName=" + portalName + ", numRows=" + numRows + ")");
+        LOG.debug("handle Execute mesasge (portal=" + portalName + ", rows=" + numRows + ")");
 
         try {
             Portal p = queryEngine.getPortal(portalName);
@@ -615,7 +640,7 @@ public class Session implements Runnable
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
-        LOG.debug("close (type='" + type + "', name=" + name + ")");
+        LOG.debug("handle Close message (type='" + type + "', name=" + name + ")");
 
         try {
             switch (type) {
@@ -642,6 +667,7 @@ public class Session implements Runnable
 
     private void sendParameterDescription(PostgresType[] paramTypes) throws IOException
     {
+        LOG.debug("send ParameterDescription message");
         Message.Builder msgBld = Message.builder('t').putShort((short) paramTypes.length);
         for (PostgresType type : paramTypes)
             msgBld.putInt(type.oid());
@@ -650,6 +676,7 @@ public class Session implements Runnable
 
     private void sendNoData() throws IOException
     {
+        LOG.debug("send NoData message");
         messageStream.putMessage(Message.builder('n').build());
     }
 
@@ -658,7 +685,7 @@ public class Session implements Runnable
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
-        LOG.debug("describe (type='" + type + "', name=" + name + ")");
+        LOG.debug("handle Describe message (type='" + type + "', name=" + name + ")");
 
         try {
             TupleDesc tupDesc;

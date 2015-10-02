@@ -14,10 +14,12 @@
 
 package kr.co.bitnine.octopus.postgres.utils.adt;
 
+import kr.co.bitnine.octopus.postgres.libpq.ByteBuffers;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public class IoInt implements IoFunction
+public class IoInt4 implements IoFunction
 {
     @Override
     public Object in(byte[] bytes)
@@ -40,6 +42,6 @@ public class IoInt implements IoFunction
     @Override
     public byte[] send(Object value)
     {
-        return ByteBuffer.allocate(4).putInt((Integer) value).array();
+        return ByteBuffer.allocate(ByteBuffers.INTEGER_BYTES).putInt((Integer) value).array();
     }
 }

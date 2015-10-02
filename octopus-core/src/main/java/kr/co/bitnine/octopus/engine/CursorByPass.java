@@ -145,8 +145,12 @@ public class CursorByPass extends Portal
         if (getState() != State.READY)
             return;
 
+        LOG.debug("execute CursorByPass (rows=" + numRows + ")");
+
         try {
-            stmt.setFetchSize(numRows);
+            // NOTE: some JDBC drivers do not ignore setFetchSize(0)
+            if (numRows > 0)
+                stmt.setFetchSize(numRows);
 
             ResultSet rs = stmt.executeQuery();
 

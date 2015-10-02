@@ -11,7 +11,8 @@ public final class IoFunctions
 
     static
     {
-        typeToIo.put(PostgresType.INT4, new IoInt());
+        typeToIo.put(PostgresType.INT4, new IoInt4());
+        typeToIo.put(PostgresType.INT8, new IoInt8());
         typeToIo.put(PostgresType.VARCHAR, new IoVarchar());
     }
 
