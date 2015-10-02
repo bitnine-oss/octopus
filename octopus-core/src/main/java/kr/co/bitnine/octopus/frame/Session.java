@@ -133,9 +133,10 @@ public class Session implements Runnable
         close();
     }
 
-    public static final String CLIENT_PARAM_USER = "user";
     public static final String CLIENT_PARAM_DATABASE = "database";
+    public static final String CLIENT_PARAM_DATESTYLE = "DateStyle";
     public static final String CLIENT_PARAM_ENCODING = "client_encoding";
+    public static final String CLIENT_PARAM_USER = "user";
 
     private Properties clientParams;
 
@@ -267,7 +268,28 @@ public class Session implements Runnable
                 .build();
         messageStream.putMessage(msg);
 
-        // TODO: ParameterStatus
+        LOG.debug("send ParameterStatus message");
+        // ParameterStatus
+        msg = Message.builder('S')
+                .putCString("integer_datetimes")
+                .putCString("on")
+                .build();
+        messageStream.putMessage(msg);
+        msg = Message.builder('S')
+                .putCString(CLIENT_PARAM_DATESTYLE)
+                .putCString(clientParams.getProperty(CLIENT_PARAM_DATESTYLE))
+                .build();
+        messageStream.putMessage(msg);
+        msg = Message.builder('S')
+                .putCString(CLIENT_PARAM_ENCODING)
+                .putCString(clientParams.getProperty(CLIENT_PARAM_ENCODING))
+                .build();
+        messageStream.putMessage(msg);
+        msg = Message.builder('S')
+                .putCString("server_encoding")
+                .putCString("UTF8")
+                .build();
+        messageStream.putMessage(msg);
 
         LOG.debug("send BackendKeyData message");
         // BackendKeyData

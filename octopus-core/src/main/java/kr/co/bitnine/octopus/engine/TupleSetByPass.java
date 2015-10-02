@@ -79,8 +79,17 @@ public class TupleSetByPass implements TupleSet
                     case INT8:
                         datum = resultSet.getLong(i + 1);
                         break;
+                    case FLOAT4:
+                        datum = resultSet.getFloat(i + 1);
+                        break;
+                    case FLOAT8:
+                        datum = resultSet.getDouble(i + 1);
+                        break;
                     case VARCHAR:
                         datum = resultSet.getString(i + 1);
+                        break;
+                    case TIMESTAMP:
+                        datum = resultSet.getTimestamp(i + 1);
                         break;
                     default:
                         PostgresErrorData edata = new PostgresErrorData(

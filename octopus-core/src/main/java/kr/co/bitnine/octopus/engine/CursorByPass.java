@@ -107,12 +107,31 @@ public class CursorByPass extends Portal
                             else
                                 stmt.setInt(i + 1, (Integer) io.recv(values[i]));
                             break;
+                        case INT8:
+                            if (formats[i] == FormatCode.TEXT)
+                                stmt.setLong(i + 1, (Long) io.in(values[i]));
+                            else
+                                stmt.setLong(i + 1, (Long) io.recv(values[i]));
+                            break;
+                        case FLOAT4:
+                            if (formats[i] == FormatCode.TEXT)
+                                stmt.setFloat(i + 1, (Float) io.in(values[i]));
+                            else
+                                stmt.setFloat(i + 1, (Float) io.recv(values[i]));
+                            break;
+                        case FLOAT8:
+                            if (formats[i] == FormatCode.TEXT)
+                                stmt.setDouble(i + 1, (Double) io.in(values[i]));
+                            else
+                                stmt.setDouble(i + 1, (Double) io.recv(values[i]));
+                            break;
                         case VARCHAR:
                             if (formats[i] == FormatCode.TEXT)
                                 stmt.setString(i + 1, (String) io.in(values[i]));
                             else
                                 stmt.setString(i + 1, (String) io.recv(values[i]));
                             break;
+                        case TIMESTAMP: // TODO
                         default:
                             PostgresErrorData edata = new PostgresErrorData(
                                     PostgresSeverity.ERROR,
@@ -160,6 +179,7 @@ public class CursorByPass extends Portal
             for (int i = 0; i < colCnt; i++) {
                 String colName = rsmd.getColumnName(i + 1);
                 int colType = rsmd.getColumnType(i + 1);
+                LOG.debug("JDBC type of column '" + colName + "' is " + colType);
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
                 int typeInfo = -1;
                 if (type == PostgresType.VARCHAR)

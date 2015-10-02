@@ -33,6 +33,7 @@ public class TypeInfo
         jdbcToPostgres.put(Types.CHAR, PostgresType.CHAR);
         jdbcToPostgres.put(Types.DATE, PostgresType.DATE);
         jdbcToPostgres.put(Types.DOUBLE, PostgresType.FLOAT8);
+        jdbcToPostgres.put(Types.FLOAT, PostgresType.FLOAT4);
         jdbcToPostgres.put(Types.INTEGER, PostgresType.INT4);
         jdbcToPostgres.put(Types.NUMERIC, PostgresType.NUMERIC);
         jdbcToPostgres.put(Types.REAL, PostgresType.FLOAT4);

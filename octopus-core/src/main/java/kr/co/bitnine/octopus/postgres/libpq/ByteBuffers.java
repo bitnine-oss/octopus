@@ -25,6 +25,8 @@ final public class ByteBuffers
     public static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
     public static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
     public static final int LONG_BYTES = Long.SIZE / Byte.SIZE;
+    public static final int FLOAT_BYTES = Float.SIZE / Byte.SIZE;
+    public static final int DOUBLE_BYTES = Double.SIZE / Byte.SIZE;
 
     private ByteBuffers() { }
 

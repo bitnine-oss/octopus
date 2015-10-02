@@ -13,7 +13,10 @@ public final class IoFunctions
     {
         typeToIo.put(PostgresType.INT4, new IoInt4());
         typeToIo.put(PostgresType.INT8, new IoInt8());
+        typeToIo.put(PostgresType.FLOAT4, new IoFloat4());
+        typeToIo.put(PostgresType.FLOAT8, new IoFloat8());
         typeToIo.put(PostgresType.VARCHAR, new IoVarchar());
+        typeToIo.put(PostgresType.TIMESTAMP, new IoTimestamp());
     }
 
     private IoFunctions() { }
