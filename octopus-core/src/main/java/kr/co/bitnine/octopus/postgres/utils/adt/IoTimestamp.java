@@ -21,24 +21,24 @@ public class IoTimestamp implements IoFunction
     @Override
     public Object in(byte[] bytes)
     {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public byte[] out(Object value)
     {
-        return String.valueOf(value).getBytes(StandardCharsets.UTF_8);
+        return value == null ? null : String.valueOf(value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public Object recv(byte[] bytes)
     {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public byte[] send(Object value)
     {
-        return new byte[0];
+        return value == null ? null : new byte[0]; // TODO
     }
 }

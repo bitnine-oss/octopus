@@ -23,6 +23,7 @@ import java.util.Map;
 public class TypeInfo
 {
     private static final Map<Integer, PostgresType> jdbcToPostgres = new HashMap<>();
+    private static final Map<PostgresType, Integer> postgresToJdbc = new HashMap<>();
 
     static
     {
@@ -41,11 +42,33 @@ public class TypeInfo
         jdbcToPostgres.put(Types.TIME, PostgresType.TIME);
         jdbcToPostgres.put(Types.TIMESTAMP, PostgresType.TIMESTAMP);
         jdbcToPostgres.put(Types.VARCHAR, PostgresType.VARCHAR);
+
+        postgresToJdbc.put(PostgresType.BIT, Types.BIT);
+        postgresToJdbc.put(PostgresType.BOOL, Types.BOOLEAN);
+        postgresToJdbc.put(PostgresType.BYTEA, Types.BINARY);
+        postgresToJdbc.put(PostgresType.CHAR, Types.CHAR);
+        postgresToJdbc.put(PostgresType.DATE, Types.DATE);
+        postgresToJdbc.put(PostgresType.FLOAT4, Types.FLOAT);
+        postgresToJdbc.put(PostgresType.FLOAT4, Types.REAL);
+        postgresToJdbc.put(PostgresType.FLOAT8, Types.DOUBLE);
+        postgresToJdbc.put(PostgresType.INT2, Types.SMALLINT);
+        postgresToJdbc.put(PostgresType.INT4, Types.INTEGER);
+        postgresToJdbc.put(PostgresType.INT8, Types.BIGINT);
+        postgresToJdbc.put(PostgresType.NUMERIC, Types.NUMERIC);
+        postgresToJdbc.put(PostgresType.TIME, Types.TIME);
+        postgresToJdbc.put(PostgresType.TIMESTAMP, Types.TIMESTAMP);
+        postgresToJdbc.put(PostgresType.VARCHAR, Types.VARCHAR);
     }
 
     public static PostgresType postresTypeOfJdbcType(int jdbcType)
     {
         PostgresType type = jdbcToPostgres.get(jdbcType);
         return type == null ? PostgresType.UNSPECIFIED : type;
+    }
+
+    public static int jdbcTypeOfPostgresType(PostgresType postgresType)
+    {
+        Integer type = postgresToJdbc.get(postgresType);
+        return type == null ? Types.NULL : type;
     }
 }

@@ -99,6 +99,26 @@ public class CursorByPass extends Portal
             if (types.length > 0) {
 
                 for (int i = 0; i < types.length; i++) {
+                    if (values[i] == null) {
+                        switch (types[i]) {
+                            case INT4:
+                            case INT8:
+                            case FLOAT4:
+                            case FLOAT8:
+                            case VARCHAR:
+                                stmt.setNull(i + 1, TypeInfo.jdbcTypeOfPostgresType(types[i]));
+                                break;
+                            case TIMESTAMP: // TODO
+                            default:
+                                PostgresErrorData edata = new PostgresErrorData(
+                                        PostgresSeverity.ERROR,
+                                        PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                                        "parameter type " + types[i].name() + "not supported");
+                                throw new PostgresException(edata);
+                        }
+                        continue;
+                    }
+
                     IoFunction io = IoFunctions.ofType(types[i]);
                     switch (types[i]) {
                         case INT4:

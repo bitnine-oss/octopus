@@ -30,7 +30,7 @@ public class IoFloat8 implements IoFunction
     @Override
     public byte[] out(Object value)
     {
-        return String.valueOf(value).getBytes(StandardCharsets.UTF_8);
+        return value == null ? null : String.valueOf(value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -42,6 +42,6 @@ public class IoFloat8 implements IoFunction
     @Override
     public byte[] send(Object value)
     {
-        return ByteBuffer.allocate(ByteBuffers.DOUBLE_BYTES).putDouble((Double) value).array();
+        return value == null ? null : ByteBuffer.allocate(ByteBuffers.DOUBLE_BYTES).putDouble((Double) value).array();
     }
 }

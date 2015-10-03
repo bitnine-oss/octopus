@@ -27,7 +27,7 @@ public class IoVarchar implements IoFunction
     @Override
     public byte[] out(Object value)
     {
-        return ((String) value).getBytes(StandardCharsets.UTF_8);
+        return value == null ? null : ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -39,6 +39,6 @@ public class IoVarchar implements IoFunction
     @Override
     public byte[] send(Object value)
     {
-        return ((String) value).getBytes(StandardCharsets.UTF_8);
+        return value == null ? null : ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 }

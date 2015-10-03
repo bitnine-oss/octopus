@@ -99,6 +99,8 @@ public class TupleSetByPass implements TupleSet
                         throw new PostgresException(edata);
                 }
 
+                if (resultSet.wasNull())
+                    datum = null;
                 t.setDatum(i, datum);
             }
             fetchCount++;

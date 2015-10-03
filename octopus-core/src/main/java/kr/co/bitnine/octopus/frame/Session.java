@@ -499,8 +499,10 @@ public class Session implements Runnable
                 else
                     bytes = io.send(datums[i]);
 
-                msgBld.putInt(bytes.length)
-                        .putBytes(bytes);
+                if (bytes == null)
+                    msgBld.putInt(-1); // -1 indicates a NULL column value
+                else
+                    msgBld.putInt(bytes.length).putBytes(bytes);
             }
             messageStream.putMessage(msgBld.build());
         }
