@@ -14,8 +14,7 @@
 
 package kr.co.bitnine.octopus.meta.privilege;
 
-public enum SystemPrivilege
-{
+public enum SystemPrivilege {
     ALTER_SYSTEM,
     SELECT_ANY_TABLE,
     CREATE_USER,

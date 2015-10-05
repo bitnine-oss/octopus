@@ -16,11 +16,14 @@ package kr.co.bitnine.octopus.meta.model;
 
 import java.util.Collection;
 
-public interface MetaDataSource
-{
+public interface MetaDataSource {
     String getName();
+
     String getDriverName();
+
     String getConnectionString();
+
     String getComment();
+
     Collection<MetaSchema> getSchemas();
 }

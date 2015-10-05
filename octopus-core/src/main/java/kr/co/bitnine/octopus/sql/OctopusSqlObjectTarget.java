@@ -14,21 +14,67 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public final class OctopusSqlObjectTarget
-{
-    public enum Type
-    {
+public final class OctopusSqlObjectTarget {
+    public enum Type {
         DATASOURCE,
         SCHEMA,
         TABLE,
         COLUMN,
         USER
     }
-    public Type type = null;
 
-    public String dataSource = null;
-    public String schema = null;
-    public String table = null;
-    public String column = null;
-    public String user = null;
+    private Type type;
+    private String dataSource;
+    private String schema;
+    private String table;
+    private String column;
+    private String user;
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+
+    public String getTable() {
+        return table;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
+    }
+
+    public String getColumn() {
+        return column;
+    }
+
+    public void setColumn(String column) {
+        this.column = column;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
 }

@@ -18,31 +18,26 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 
 import java.io.IOException;
 
-public class OctopusException extends Exception
-{
+public final class OctopusException extends Exception {
     private final PostgresErrorData errorData;
 
-    public OctopusException(PostgresErrorData errorData)
-    {
-        super(errorData.message);
+    public OctopusException(PostgresErrorData errorData) {
+        super(errorData.getMessage());
 
         this.errorData = errorData;
     }
 
-    public OctopusException(PostgresErrorData errorData, Throwable cause)
-    {
-        super(errorData.message, cause);
+    public OctopusException(PostgresErrorData errorData, Throwable cause) {
+        super(errorData.getMessage(), cause);
 
         this.errorData = errorData;
     }
 
-    public PostgresErrorData getErrorData()
-    {
+    public PostgresErrorData getErrorData() {
         return errorData;
     }
 
-    public void emitErrorReport() throws IOException, OctopusException
-    {
+    public void emitErrorReport() throws IOException, OctopusException {
         Session sess = Session.currentSession();
         if (sess != null)
             sess.emitErrorReport(errorData);

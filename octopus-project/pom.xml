@@ -195,4 +195,30 @@ limitations under the License.
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <configuration>
+              <includeResources>false</includeResources>
+              <includeTestResources>false</includeTestResources>
+              <configLocation>src/main/resources/checkstyle/java.xml</configLocation>
+              <consoleOutput>true</consoleOutput>
+              <encoding>UTF-8</encoding>
+              <failsOnError>true</failsOnError>
+              <headerLocation>src/main/resources/checkstyle/license.header</headerLocation>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

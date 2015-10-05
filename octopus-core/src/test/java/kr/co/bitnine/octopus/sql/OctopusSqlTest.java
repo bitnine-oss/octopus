@@ -30,20 +30,17 @@ import org.junit.runner.RunWith;
 import java.util.*;
 
 @RunWith(JMockit.class)
-public class OctopusSqlTest
-{
+public class OctopusSqlTest {
     @Mocked
     OctopusSqlRunner anyRunner;
 
-    private void parseAndRun(String query) throws Exception
-    {
+    private void parseAndRun(String query) throws Exception {
         for (OctopusSqlCommand c : OctopusSql.parse(query))
             OctopusSql.run(c, anyRunner);
     }
 
     @Test
-    public void testAddDataSource() throws Exception
-    {
+    public void testAddDataSource() throws Exception {
         final String dataSourceName = "bitnine";
         final String connectionString = "jdbc:sqlite:file::memory:?cache=shared";
         final String driverName = "org.sqlite.JDBC";
@@ -54,75 +51,70 @@ public class OctopusSqlTest
         }};
     }
 
-    private static Matcher<OctopusSqlObjectTarget> targetEqualTo(final OctopusSqlObjectTarget expected)
-    {
+    private static Matcher<OctopusSqlObjectTarget> targetEqualTo(final OctopusSqlObjectTarget expected) {
         return new TypeSafeMatcher<OctopusSqlObjectTarget>() {
             @Override
-            protected boolean matchesSafely(OctopusSqlObjectTarget actual)
-            {
+            protected boolean matchesSafely(OctopusSqlObjectTarget actual) {
                 if (expected == actual)
                     return true;
                 if (expected == null)
                     return false;
 
-                if (expected.type != actual.type)
+                if (expected.getType() != actual.getType())
                     return false;
-                if (!Objects.equals(expected.dataSource, actual.dataSource))
+                if (!Objects.equals(expected.getDataSource(), actual.getDataSource()))
                     return false;
-                if (!Objects.equals(expected.schema, actual.schema))
+                if (!Objects.equals(expected.getSchema(), actual.getSchema()))
                     return false;
-                if (!Objects.equals(expected.table, actual.table))
+                if (!Objects.equals(expected.getTable(), actual.getTable()))
                     return false;
-                if (!Objects.equals(expected.column, actual.column))
+                if (!Objects.equals(expected.getColumn(), actual.getColumn()))
                     return false;
-                if (!Objects.equals(expected.user, actual.user))
+                if (!Objects.equals(expected.getUser(), actual.getUser()))
                     return false;
 
                 return true;
             }
 
             @Override
-            public void describeTo(Description description)
-            {
-                description.appendText('<' +
-                        expected.type.name() + ',' +
-                        expected.dataSource + ',' +
-                        expected.schema + ',' +
-                        expected.table + ',' +
-                        expected.column + ',' +
-                        expected.user + '>');
+            public void describeTo(Description description) {
+                description.appendText('<'
+                        + expected.getType().name() + ','
+                        + expected.getDataSource() + ','
+                        + expected.getSchema() + ','
+                        + expected.getTable() + ','
+                        + expected.getColumn() + ','
+                        + expected.getUser() + '>');
             }
         };
     }
 
     @Test
-    public void testUpdateDataSource() throws Exception
-    {
+    public void testUpdateDataSource() throws Exception {
         final String dataSourceName = "bitnine";
         final String schemaName = "octopus";
         final String tablePattern = "table%";
 
         parseAndRun("ALTER SYSTEM UPDATE DATASOURCE \"" + dataSourceName + "\"");
-        parseAndRun("ALTER SYSTEM UPDATE TABLE \"" + dataSourceName + "\".\"" +
-                schemaName + "\".'" + tablePattern + "'");
+        parseAndRun("ALTER SYSTEM UPDATE TABLE \"" + dataSourceName + "\".\""
+                + schemaName + "\".'" + tablePattern + "'");
 
         new VerificationsInOrder() {{
             OctopusSqlObjectTarget target = new OctopusSqlObjectTarget();
 
-            target.type = OctopusSqlObjectTarget.Type.DATASOURCE;
-            target.dataSource = dataSourceName;
+            target.setType(OctopusSqlObjectTarget.Type.DATASOURCE);
+            target.setDataSource(dataSourceName);
             anyRunner.updateDataSource(withArgThat(targetEqualTo(target)));
 
-            target.type = OctopusSqlObjectTarget.Type.TABLE;
-            target.schema = schemaName;
-            target.table = tablePattern;
+            target.setType(OctopusSqlObjectTarget.Type.TABLE);
+            target.setSchema(schemaName);
+            target.setTable(tablePattern);
             anyRunner.updateDataSource(withArgThat(targetEqualTo(target)));
         }};
     }
 
     @Test
-    public void testDropDataSource() throws Exception
-    {
+    public void testDropDataSource() throws Exception {
         final String dataSourceName = "bitnine";
         parseAndRun("ALTER SYSTEM DROP DATASOURCE \"" + dataSourceName + "\"");
         new Verifications() {{
@@ -131,8 +123,7 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testUser() throws Exception
-    {
+    public void testUser() throws Exception {
         final String name = "octopus";
         final String password = "bitnine";
 
@@ -148,8 +139,7 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testRole() throws Exception
-    {
+    public void testRole() throws Exception {
         final String name = "octopus";
 
         parseAndRun("CREATE ROLE \"" + name + "\"");
@@ -161,12 +151,10 @@ public class OctopusSqlTest
         }};
     }
 
-    private static <E> Matcher<List<E>> listEqualTo(final List<E> expected)
-    {
+    private static <E> Matcher<List<E>> listEqualTo(final List<E> expected) {
         return new TypeSafeMatcher<List<E>>() {
             @Override
-            protected boolean matchesSafely(List<E> actual)
-            {
+            protected boolean matchesSafely(List<E> actual) {
                 if (expected == actual)
                     return true;
                 if (expected == null)
@@ -181,16 +169,14 @@ public class OctopusSqlTest
             }
 
             @Override
-            public void describeTo(Description description)
-            {
+            public void describeTo(Description description) {
                 description.appendText(expected.toString());
             }
         };
     }
 
     @Test
-    public void testGrantRevokeSysPrivs() throws Exception
-    {
+    public void testGrantRevokeSysPrivs() throws Exception {
         final List<SystemPrivilege> sysPrivs = Arrays.asList(SystemPrivilege.values());
         final List<String> names = Arrays.asList("octopus", "junseok");
 
@@ -206,17 +192,16 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testGrantRevokeObjPrivs() throws Exception
-    {
+    public void testGrantRevokeObjPrivs() throws Exception {
         final List<ObjectPrivilege> objPrivs = Arrays.asList(ObjectPrivilege.values());
         final String[] schemaName = {"bitnine", "default"};
         final List<String> names = Arrays.asList("octopus", "junseok");
 
         String objPrivsStr = StringUtils.join(objPrivs, ", ").replace('_', ' ') + ", ALL";
         String schemaNameStr = "\"" + StringUtils.join(schemaName, "\".\"") + "\"";
-        parseAndRun("GRANT " + objPrivsStr +
-                " ON " + schemaNameStr +
-                " TO \"" + StringUtils.join(names, "\", \"") + "\"");
+        parseAndRun("GRANT " + objPrivsStr
+                + " ON " + schemaNameStr
+                + " TO \"" + StringUtils.join(names, "\", \"") + "\"");
 
         parseAndRun("REVOKE ALL ON " + schemaNameStr + " FROM \"" + names.get(0) + "\"");
 
@@ -227,8 +212,7 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testShow() throws Exception
-    {
+    public void testShow() throws Exception {
         parseAndRun("SHOW DATASOURCES");
 
         final String schemaPattern = "default_";
@@ -261,8 +245,7 @@ public class OctopusSqlTest
     }
 
     @Test
-    public void testCommentOn() throws Exception
-    {
+    public void testCommentOn() throws Exception {
         final String dataSourceName = "bitnine";
         final String schemaName = "default";
         final String tableName = "employee";
@@ -272,62 +255,61 @@ public class OctopusSqlTest
 
         parseAndRun("COMMENT ON DATASOURCE \"" + dataSourceName + "\" IS '" + comment + "'");
         parseAndRun("COMMENT ON SCHEMA \"" + dataSourceName + "\".\"" + schemaName + "\" IS '" + comment + "'");
-        parseAndRun("COMMENT ON TABLE \"" + dataSourceName + "\".\"" +
-                schemaName + "\".\"" +
-                tableName + "\" IS '" + comment + "'");
-        parseAndRun("COMMENT ON COLUMN \"" + dataSourceName + "\".\"" +
-                schemaName + "\".\"" +
-                tableName + "\".\"" +
-                columnName + "\" IS '" + comment + "'");
+        parseAndRun("COMMENT ON TABLE \"" + dataSourceName + "\".\""
+                + schemaName + "\".\""
+                + tableName + "\" IS '" + comment + "'");
+        parseAndRun("COMMENT ON COLUMN \"" + dataSourceName + "\".\""
+                + schemaName + "\".\""
+                + tableName + "\".\""
+                + columnName + "\" IS '" + comment + "'");
         parseAndRun("COMMENT ON USER \"" + userName + "\" IS '" + comment + "'");
 
         new VerificationsInOrder() {{
             OctopusSqlObjectTarget target = new OctopusSqlObjectTarget();
 
-            target.type = OctopusSqlObjectTarget.Type.DATASOURCE;
-            target.dataSource = dataSourceName;
+            target.setType(OctopusSqlObjectTarget.Type.DATASOURCE);
+            target.setDataSource(dataSourceName);
             anyRunner.commentOn(withArgThat(targetEqualTo(target)), comment);
 
-            target.type = OctopusSqlObjectTarget.Type.SCHEMA;
-            target.schema = schemaName;
+            target.setType(OctopusSqlObjectTarget.Type.SCHEMA);
+            target.setSchema(schemaName);
             anyRunner.commentOn(withArgThat(targetEqualTo(target)), comment);
 
-            target.type = OctopusSqlObjectTarget.Type.TABLE;
-            target.table = tableName;
+            target.setType(OctopusSqlObjectTarget.Type.TABLE);
+            target.setTable(tableName);
             anyRunner.commentOn(withArgThat(targetEqualTo(target)), comment);
 
-            target.type = OctopusSqlObjectTarget.Type.COLUMN;
-            target.column = columnName;
+            target.setType(OctopusSqlObjectTarget.Type.COLUMN);
+            target.setColumn(columnName);
             anyRunner.commentOn(withArgThat(targetEqualTo(target)), comment);
 
             target = new OctopusSqlObjectTarget();
-            target.type = OctopusSqlObjectTarget.Type.USER;
-            target.user = userName;
+            target.setType(OctopusSqlObjectTarget.Type.USER);
+            target.setUser(userName);
             anyRunner.commentOn(withArgThat(targetEqualTo(target)), comment);
         }};
     }
 
     @Test
-    public void testSetDataCategoryOn() throws Exception
-    {
+    public void testSetDataCategoryOn() throws Exception {
         final String dataSourceName = "bitnine";
         final String schemaName = "default";
         final String tableName = "employee";
         final String columnName = "permanent";
         final String category = "public";
 
-        parseAndRun("SET DATACATEGORY ON COLUMN \"" + dataSourceName + "\".\"" +
-                schemaName + "\".\"" +
-                tableName + "\".\"" +
-                columnName + "\" IS '" + category + "'");
+        parseAndRun("SET DATACATEGORY ON COLUMN \"" + dataSourceName + "\".\""
+                + schemaName + "\".\""
+                + tableName + "\".\""
+                + columnName + "\" IS '" + category + "'");
 
         new Verifications() {{
             OctopusSqlObjectTarget target = new OctopusSqlObjectTarget();
-            target.type = OctopusSqlObjectTarget.Type.COLUMN;
-            target.dataSource = dataSourceName;
-            target.schema = schemaName;
-            target.table = tableName;
-            target.column = columnName;
+            target.setType(OctopusSqlObjectTarget.Type.COLUMN);
+            target.setDataSource(dataSourceName);
+            target.setSchema(schemaName);
+            target.setTable(tableName);
+            target.setColumn(columnName);
 
             anyRunner.setDataCategoryOn(withArgThat(targetEqualTo(target)), category);
         }};

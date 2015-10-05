@@ -20,19 +20,16 @@ import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
-public final class MetaStores
-{
+public final class MetaStores {
     private MetaStores() { }
 
-    public static MetaStore newInstance(String className) throws ReflectiveOperationException
-    {
+    public static MetaStore newInstance(String className) throws ReflectiveOperationException {
         Class<?> clazz = Class.forName(className);
         Constructor<?> ctor = clazz.getConstructor();
         return (MetaStore) ctor.newInstance();
     }
 
-    public static void initialize(MetaStore metaStore) throws MetaException
-    {
+    public static void initialize(MetaStore metaStore) throws MetaException {
         MetaContext mc = metaStore.getMetaContext();
 
         if (mc.userExists("octopus"))

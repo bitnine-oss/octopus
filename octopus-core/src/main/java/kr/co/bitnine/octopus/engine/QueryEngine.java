@@ -17,7 +17,12 @@ package kr.co.bitnine.octopus.engine;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
-import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.meta.model.MetaSchema;
+import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
+import kr.co.bitnine.octopus.meta.model.MetaTable;
+import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
@@ -34,7 +39,11 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.schema.SchemaManager;
-import kr.co.bitnine.octopus.sql.*;
+import kr.co.bitnine.octopus.sql.OctopusSql;
+import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
+import kr.co.bitnine.octopus.sql.OctopusSqlObjectTarget;
+import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
+import kr.co.bitnine.octopus.sql.TupleSetSql;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -49,36 +58,40 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-public class QueryEngine extends AbstractQueryProcessor
-{
+public final class QueryEngine extends AbstractQueryProcessor {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
     private final MetaContext metaContext;
     private final SchemaManager schemaManager;
 
-    public QueryEngine(MetaContext metaContext, SchemaManager schemaManager)
-    {
+    public QueryEngine(MetaContext metaContext, SchemaManager schemaManager) {
         this.metaContext = metaContext;
         this.schemaManager = schemaManager;
     }
 
     @Override
-    protected CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException
-    {
+    protected CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException {
         /*
          * Format of PostgreSQL's parameter is $n (starts from 1)
          * Format of Calcite's parameter is ? (same as JDBC)
          */
-        queryString = queryString.replaceAll("\\$\\d+", "?");
-        LOG.debug("refined queryString='" + queryString + "'");
+        String refinedQuery = queryString.replaceAll("\\$\\d+", "?");
+        LOG.debug("refined queryString='" + refinedQuery + "'");
 
         // DDL
 
         List<OctopusSqlCommand> commands = null;
         try {
-            commands = OctopusSql.parse(queryString);
+            commands = OctopusSql.parse(refinedQuery);
         } catch (RecognitionException e) {
             LOG.debug(ExceptionUtils.getStackTrace(e));
         }
@@ -86,114 +99,114 @@ public class QueryEngine extends AbstractQueryProcessor
         if (commands != null && commands.size() > 0) {
             TupleDesc tupDesc;
             switch (commands.get(0).getType()) {
-                case SHOW_DATASOURCES:
-                    PostgresAttribute[] attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    FormatCode[] resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_SCHEMAS:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_TABLES:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_COLUMNS:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("NULLABLE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR, 16),
-                            new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR, 64),
-                            new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024),
-                            new PostgresAttribute("TABLE_NAME_REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_ALL_USERS:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("USER_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_OBJ_PRIVS_FOR:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("PRIVILEGE", PostgresType.VARCHAR, 16)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                case SHOW_COMMENTS:
-                    attrs  = new PostgresAttribute[] {
-                            new PostgresAttribute("OBJECT_TYPE", PostgresType.VARCHAR, 8),
-                            new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
-                            new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
-                    };
-                    resultFormats = new FormatCode[attrs.length];
-                    Arrays.fill(resultFormats, FormatCode.TEXT);
-                    tupDesc = new TupleDesc(attrs, resultFormats);
-                    break;
-                default:
-                    tupDesc = null;
+            case SHOW_DATASOURCES:
+                PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                FormatCode[] resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_SCHEMAS:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_CATALOG", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_TABLES:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_TYPE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TYPE_CAT", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("TYPE_SCHEM", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SELF_REFERENCING_COL_NAME", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("REF_GENERATION", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_COLUMNS:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("DATA_TYPE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("TYPE_NAME", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("COLUMN_SIZE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("BUFFER_LENGTH", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("DECIMAL_DIGITS", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("NUM_PREC_RADIX", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("NULLABLE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("COLUMN_DEF", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SQL_DATA_TYPE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SQL_DATETIME_SUB", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("CHAR_OCTET_LENGTH", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("ORDINAL_POSITION", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("IS_NULLABLE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SCOPE_CATALOG", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SCOPE_SCHEMA", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SCOPE_TABLE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("SOURCE_DATA_TYPE", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("IS_AUTOINCREMENT", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("IS_GENERATEDCOLUMN", PostgresType.VARCHAR, 16),
+                    new PostgresAttribute("DATA_CATEGORY", PostgresType.VARCHAR, 64),
+                    new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_NAME_REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_ALL_USERS:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("USER_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_OBJ_PRIVS_FOR:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("PRIVILEGE", PostgresType.VARCHAR, 16)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_COMMENTS:
+                attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("OBJECT_TYPE", PostgresType.VARCHAR, 8),
+                    new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
+                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
+                };
+                resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            default:
+                tupDesc = null;
             }
             return new CachedStatement(commands, tupDesc);
         }
@@ -208,7 +221,7 @@ public class QueryEngine extends AbstractQueryProcessor
                     .build();
             Planner planner = Frameworks.getPlanner(config);
 
-            SqlNode parse = planner.parse(queryString);
+            SqlNode parse = planner.parse(refinedQuery);
 
             TableNameTranslator.toFQN(schemaManager, parse);
             LOG.debug("FQN translated: " + parse.toString());
@@ -217,7 +230,7 @@ public class QueryEngine extends AbstractQueryProcessor
             SqlNode validated = planner.validate(parse);
             schemaManager.unlockRead();
 
-            return new CachedStatement(validated, queryString, paramTypes);
+            return new CachedStatement(validated, refinedQuery, paramTypes);
         } catch (SqlParseException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
@@ -233,8 +246,7 @@ public class QueryEngine extends AbstractQueryProcessor
     }
 
     @Override
-    protected Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException
-    {
+    protected Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException {
         CachedStatement cStmt = (CachedStatement) cachedQuery;
 
         if (cStmt.isDdl())
@@ -272,13 +284,11 @@ public class QueryEngine extends AbstractQueryProcessor
         return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
     }
 
-    private List<String> getDatasourceNames(SqlNode query)
-    {
+    private List<String> getDatasourceNames(SqlNode query) {
         final Set<String> dsSet = new HashSet<>();
         query.accept(new SqlShuttle() {
             @Override
-            public SqlNode visit(SqlIdentifier identifier)
-            {
+            public SqlNode visit(SqlIdentifier identifier) {
                 // check whether this is fully qualified table name
                 if (identifier.names.size() == 3) {
                     dsSet.add(identifier.names.get(0));
@@ -290,14 +300,12 @@ public class QueryEngine extends AbstractQueryProcessor
         return new ArrayList<>(dsSet);
     }
 
-    private void checkSelectPrivilegeThrow(SqlNode query) throws PostgresException
-    {
+    private void checkSelectPrivilegeThrow(SqlNode query) throws PostgresException {
         final PostgresException[] e = {null};
 
         query.accept(new SqlShuttle() {
             @Override
-            public SqlNode visit(SqlIdentifier identifier)
-            {
+            public SqlNode visit(SqlIdentifier identifier) {
                 if (identifier.names.size() == 3 && e[0] == null) {
                     String[] schemaName = {identifier.names.get(0), identifier.names.get(1)};
                     e[0] = checkObjectPrivilegeInternal(ObjectPrivilege.SELECT, schemaName);
@@ -310,20 +318,17 @@ public class QueryEngine extends AbstractQueryProcessor
             throw e[0];
     }
 
-    private boolean checkSystemPrivilege(SystemPrivilege sysPriv)
-    {
+    private boolean checkSystemPrivilege(SystemPrivilege sysPriv) {
         return checkSystemPrivilegeInternal(sysPriv) == null;
     }
 
-    private void checkSystemPrivilegeThrow(SystemPrivilege sysPriv) throws PostgresException
-    {
+    private void checkSystemPrivilegeThrow(SystemPrivilege sysPriv) throws PostgresException {
         PostgresException e = checkSystemPrivilegeInternal(sysPriv);
         if (e != null)
             throw e;
     }
 
-    private PostgresException checkSystemPrivilegeInternal(SystemPrivilege sysPriv)
-    {
+    private PostgresException checkSystemPrivilegeInternal(SystemPrivilege sysPriv) {
         Set<SystemPrivilege> userSysPrivs;
 
         try {
@@ -347,15 +352,13 @@ public class QueryEngine extends AbstractQueryProcessor
         return null;
     }
 
-    private void checkObjectPrivilegeThrow(ObjectPrivilege objPriv, String[] schemaName) throws PostgresException
-    {
+    private void checkObjectPrivilegeThrow(ObjectPrivilege objPriv, String[] schemaName) throws PostgresException {
         PostgresException e = checkObjectPrivilegeInternal(objPriv, schemaName);
         if (e != null)
             throw e;
     }
 
-    private PostgresException checkObjectPrivilegeInternal(ObjectPrivilege objPriv, String[] schemaName)
-    {
+    private PostgresException checkObjectPrivilegeInternal(ObjectPrivilege objPriv, String[] schemaName) {
         Set<ObjectPrivilege> schemaObjPrivs;
         String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
 
@@ -382,8 +385,7 @@ public class QueryEngine extends AbstractQueryProcessor
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
         @Override
-        public void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception
-        {
+        public void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
             // FIXME: all or nothing
@@ -392,89 +394,77 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void updateDataSource(OctopusSqlObjectTarget target) throws Exception
-        {
+        public void updateDataSource(OctopusSqlObjectTarget target) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             /* TODO: reloading schemaManager could be inefficient! */
-            schemaManager.dropDataSource(target.dataSource);
+            schemaManager.dropDataSource(target.getDataSource());
 
-            final String schemaRegex = target.schema == null ? null : convertPattern(target.schema);
-            final String tableRegex = target.table == null ? null : convertPattern(target.table);
-            MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.dataSource, schemaRegex, tableRegex);
+            final String schemaRegex = target.getSchema() == null ? null : convertPattern(target.getSchema());
+            final String tableRegex = target.getTable() == null ? null : convertPattern(target.getTable());
+            MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.getDataSource(), schemaRegex, tableRegex);
             schemaManager.addDataSource(dataSource);
         }
 
         @Override
-        public void dropDataSource(String dataSourceName) throws Exception
-        {
+        public void dropDataSource(String dataSourceName) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
             schemaManager.dropDataSource(dataSourceName);
             metaContext.dropJdbcDataSource(dataSourceName);
         }
 
         @Override
-        public void createUser(String name, String password) throws Exception
-        {
+        public void createUser(String name, String password) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.CREATE_USER);
             metaContext.createUser(name, password);
         }
 
         @Override
-        public void alterUser(String name, String password, String oldPassword) throws Exception
-        {
+        public void alterUser(String name, String password, String oldPassword) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_USER);
             metaContext.alterUser(name, password);
         }
 
         @Override
-        public void dropUser(String name) throws Exception
-        {
+        public void dropUser(String name) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.DROP_USER);
             metaContext.dropUser(name);
         }
 
-        public void createRole(String role) throws Exception
-        {
+        public void createRole(String role) throws Exception {
             metaContext.createRole(role);
         }
 
         @Override
-        public void dropRole(String role) throws Exception
-        {
+        public void dropRole(String role) throws Exception {
             metaContext.dropRoleByName(role);
         }
 
         @Override
-        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception
-        {
+        public void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.addSystemPrivileges(sysPrivs, grantees);
         }
 
         @Override
-        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception
-        {
+        public void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_PRIVILEGE);
             metaContext.removeSystemPrivileges(sysPrivs, revokees);
         }
 
         @Override
-        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception
-        {
+        public void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.addObjectPrivileges(objPrivs, objName, grantees);
         }
 
         @Override
-        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception
-        {
+        public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.removeObjectPrivileges(objPrivs, objName, revokees);
         }
 
         @Override
-        public TupleSet showDataSources() throws Exception
-        {
+        public TupleSet showDataSources() throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -487,8 +477,7 @@ public class QueryEngine extends AbstractQueryProcessor
             }
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr)
-                {
+                public int compare(Tuple tl, Tuple tr) {
                     return ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                 }
             });
@@ -498,8 +487,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception
-        {
+        public TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -526,11 +514,10 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_CATALOG and TABLE_SCHEM
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr)
-                {
-                    int r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
+                public int compare(Tuple tl, Tuple tr) {
+                    int r = ((String) tl.getDatum(1)).compareTo((String) tr.getDatum(1));
                     if (r == 0)
-                        return ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
+                        return ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                     else
                         return r;
                 }
@@ -541,8 +528,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception
-        {
+        public TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -584,15 +570,14 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr)
-                {
-                    int r = ((String) tl.getDatum(3)).compareTo(((String) tr.getDatum(3)));
+                public int compare(Tuple tl, Tuple tr) {
+                    int r = ((String) tl.getDatum(3)).compareTo((String) tr.getDatum(3));
                     if (r == 0)
-                        r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
+                        r = ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                     if (r == 0)
-                        r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
+                        r = ((String) tl.getDatum(1)).compareTo((String) tr.getDatum(1));
                     if (r == 0)
-                        r = ((String) tl.getDatum(2)).compareTo(((String) tr.getDatum(2)));
+                        r = ((String) tl.getDatum(2)).compareTo((String) tr.getDatum(2));
                     return r;
                 }
             });
@@ -602,8 +587,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception
-        {
+        public TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -669,15 +653,14 @@ public class QueryEngine extends AbstractQueryProcessor
             // ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr)
-                {
-                    int r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
+                public int compare(Tuple tl, Tuple tr) {
+                    int r = ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                     if (r == 0)
-                        r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
+                        r = ((String) tl.getDatum(1)).compareTo((String) tr.getDatum(1));
                     if (r == 0)
-                        r = ((String) tl.getDatum(2)).compareTo(((String) tr.getDatum(2)));
+                        r = ((String) tl.getDatum(2)).compareTo((String) tr.getDatum(2));
                     if (r == 0)
-                        r = ((String) tl.getDatum(16)).compareTo(((String) tr.getDatum(16)));
+                        r = ((String) tl.getDatum(16)).compareTo((String) tr.getDatum(16));
                     return r;
                 }
             });
@@ -687,22 +670,19 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showTablePrivileges(String dataSourceName, String schemapattern, String tablepattern) throws Exception
-        {
+        public TupleSet showTablePrivileges(String dataSourceName, String schemapattern, String tablepattern) throws Exception {
             //TODO
             return null;
         }
 
         @Override
-        public TupleSet showColumnPrivileges(String dataSourceName, String schemapattern, String tablepattern, String columnpattern) throws Exception
-        {
+        public TupleSet showColumnPrivileges(String dataSourceName, String schemapattern, String tablepattern, String columnpattern) throws Exception {
             // TODO
             return null;
         }
 
         @Override
-        public TupleSet showAllUsers() throws Exception
-        {
+        public TupleSet showAllUsers() throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -718,8 +698,7 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public TupleSet showObjPrivsFor(String userName) throws Exception
-        {
+        public TupleSet showObjPrivsFor(String userName) throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
@@ -746,8 +725,7 @@ public class QueryEngine extends AbstractQueryProcessor
             return ts;
         }
 
-        private Tuple makeTupleForShowcomments(String type, String dataSource, String schema, String table, String column, String comment)
-        {
+        private Tuple makeTupleForShowcomments(String type, String dataSource, String schema, String table, String column, String comment) {
             Tuple t = new Tuple(6);
             t.setDatum(0, type);
             t.setDatum(1, dataSource == null ? "NULL" : dataSource);
@@ -760,8 +738,7 @@ public class QueryEngine extends AbstractQueryProcessor
 
         @Override
         public TupleSet showComments(String commentPattern, String dataSourcePattern,
-                                     String schemaPattern, String tablePattern, String columnPattern) throws Exception
-        {
+                                     String schemaPattern, String tablePattern, String columnPattern) throws Exception {
             TupleSetSql ts = new TupleSetSql();
 
             final String dsType = "CATALOG";
@@ -813,17 +790,16 @@ public class QueryEngine extends AbstractQueryProcessor
 
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
-                public int compare(Tuple tl, Tuple tr)
-                {
-                    int r = ((String) tl.getDatum(0)).compareTo(((String) tr.getDatum(0)));
+                public int compare(Tuple tl, Tuple tr) {
+                    int r = ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
                     if (r == 0)
-                        r = ((String) tl.getDatum(1)).compareTo(((String) tr.getDatum(1)));
+                        r = ((String) tl.getDatum(1)).compareTo((String) tr.getDatum(1));
                     if (r == 0)
-                        r = ((String) tl.getDatum(2)).compareTo(((String) tr.getDatum(2)));
+                        r = ((String) tl.getDatum(2)).compareTo((String) tr.getDatum(2));
                     if (r == 0)
-                        r = ((String) tl.getDatum(3)).compareTo(((String) tr.getDatum(3)));
+                        r = ((String) tl.getDatum(3)).compareTo((String) tr.getDatum(3));
                     if (r == 0)
-                        r = ((String) tl.getDatum(4)).compareTo(((String) tr.getDatum(4)));
+                        r = ((String) tl.getDatum(4)).compareTo((String) tr.getDatum(4));
                     return r;
                 }
             });
@@ -834,47 +810,49 @@ public class QueryEngine extends AbstractQueryProcessor
         }
 
         @Override
-        public void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception
-        {
-            switch (target.type) {
-                case DATASOURCE:
-                case USER:
-                    checkSystemPrivilegeThrow(SystemPrivilege.COMMENT_ANY);
-                    break;
-                case SCHEMA:
-                case TABLE:
-                case COLUMN:
-                    if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
-                        checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
-                    break;
+        public void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception {
+            switch (target.getType()) {
+            case DATASOURCE:
+            case USER:
+                checkSystemPrivilegeThrow(SystemPrivilege.COMMENT_ANY);
+                break;
+            case SCHEMA:
+            case TABLE:
+            case COLUMN:
+                if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
+                    checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.getDataSource(), target.getSchema()});
+                break;
+            default:
+                throw new RuntimeException("could not reach here");
             }
 
-            switch (target.type) {
-                case DATASOURCE:
-                    metaContext.commentOnDataSource(comment, target.dataSource);
-                    break;
-                case SCHEMA:
-                    metaContext.commentOnSchema(comment, target.dataSource, target.schema);
-                    break;
-                case TABLE:
-                    metaContext.commentOnTable(comment, target.dataSource, target.schema, target.table);
-                    break;
-                case COLUMN:
-                    metaContext.commentOnColumn(comment, target.dataSource, target.schema, target.table, target.column);
-                    break;
-                case USER:
-                    metaContext.commentOnUser(comment, target.user);
-                    break;
+            switch (target.getType()) {
+            case DATASOURCE:
+                metaContext.commentOnDataSource(comment, target.getDataSource());
+                break;
+            case SCHEMA:
+                metaContext.commentOnSchema(comment, target.getDataSource(), target.getSchema());
+                break;
+            case TABLE:
+                metaContext.commentOnTable(comment, target.getDataSource(), target.getSchema(), target.getTable());
+                break;
+            case COLUMN:
+                metaContext.commentOnColumn(comment, target.getDataSource(), target.getSchema(), target.getTable(), target.getColumn());
+                break;
+            case USER:
+                metaContext.commentOnUser(comment, target.getUser());
+                break;
+            default:
+                throw new RuntimeException("could not reach here");
             }
         }
 
         @Override
-        public void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception
-        {
+        public void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception {
             if (!checkSystemPrivilege(SystemPrivilege.COMMENT_ANY))
-                checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.dataSource, target.schema});
+                checkObjectPrivilegeThrow(ObjectPrivilege.COMMENT, new String[] {target.getDataSource(), target.getSchema()});
 
-            metaContext.setDataCategoryOn(category, target.dataSource, target.schema, target.table, target.column);
+            metaContext.setDataCategoryOn(category, target.getDataSource(), target.getSchema(), target.getTable(), target.getColumn());
         }
     };
 
@@ -885,12 +863,11 @@ public class QueryEngine extends AbstractQueryProcessor
      * @param pattern input which may contain '%' or '_' wildcard characters
      * @return replace %/_ with regex search characters, also handle escaped
      * characters.
-     *
+     * <p/>
      * Borrowed from Tajo
      */
-    public static String convertPattern(final String pattern)
-    {
-        final char SEARCH_STRING_ESCAPE = '\\';
+    public static String convertPattern(final String pattern) {
+        final char searchStringEscape = '\\';
 
         if (pattern == null) {
             return ".*";
@@ -901,11 +878,11 @@ public class QueryEngine extends AbstractQueryProcessor
             for (int i = 0; i < pattern.length(); i++) {
                 char c = pattern.charAt(i);
                 if (escaped) {
-                    if (c != SEARCH_STRING_ESCAPE)
+                    if (c != searchStringEscape)
                         escaped = false;
                     result.append(c);
                 } else {
-                    if (c == SEARCH_STRING_ESCAPE)
+                    if (c == searchStringEscape)
                         escaped = true;
                     else if (c == '%')
                         result.append(".*");

@@ -14,23 +14,19 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlDropDataSource extends OctopusSqlCommand
-{
+class OctopusSqlDropDataSource extends OctopusSqlCommand {
     private final String dataSourceName;
 
-    OctopusSqlDropDataSource(String dataSourceName)
-    {
+    OctopusSqlDropDataSource(String dataSourceName) {
         this.dataSourceName = dataSourceName;
     }
 
-    String getDataSourceName()
-    {
+    String getDataSourceName() {
         return dataSourceName;
     }
 
     @Override
-    public Type getType()
-    {
+    public Type getType() {
         return Type.DROP_DATASOURCE;
     }
 }

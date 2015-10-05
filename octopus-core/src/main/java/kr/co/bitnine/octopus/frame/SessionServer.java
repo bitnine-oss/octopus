@@ -27,14 +27,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SessionServer extends AbstractService
-{
+public final class SessionServer extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SessionServer.class);
 
     private static final int EXECUTOR_MAX_DEFAULT = 5;
@@ -44,13 +44,12 @@ public class SessionServer extends AbstractService
     private final MetaStore metaStore;
     private final SchemaManager schemaManager;
 
-    private ConcurrentHashMap<Integer, Session> sessions = null;
-    private ThreadPoolExecutor executor = null;
-    private Listener listener = null;
-    private volatile boolean running = false;
+    private Map<Integer, Session> sessions;
+    private ThreadPoolExecutor executor;
+    private Listener listener;
+    private volatile boolean running;
 
-    public SessionServer(MetaStore metaStore, SchemaManager schemaManager)
-    {
+    public SessionServer(MetaStore metaStore, SchemaManager schemaManager) {
         super(SessionServer.class.getSimpleName());
 
         this.metaStore = metaStore;
@@ -58,8 +57,7 @@ public class SessionServer extends AbstractService
     }
 
     @Override
-    protected void serviceInit(Configuration conf) throws Exception
-    {
+    protected void serviceInit(Configuration conf) throws Exception {
         super.serviceInit(conf);
 
         sessions = new ConcurrentHashMap<>();
@@ -75,8 +73,7 @@ public class SessionServer extends AbstractService
     }
 
     @Override
-    protected void serviceStart() throws Exception
-    {
+    protected void serviceStart() throws Exception {
         running = true;
 
         listener.start();
@@ -85,8 +82,7 @@ public class SessionServer extends AbstractService
     }
 
     @Override
-    protected void serviceStop() throws Exception
-    {
+    protected void serviceStop() throws Exception {
         running = false;
 
         listener.interrupt();
@@ -102,12 +98,10 @@ public class SessionServer extends AbstractService
         super.serviceStop();
     }
 
-    private class Listener extends Thread
-    {
+    private class Listener extends Thread {
         private final ServerSocketChannel acceptChannel;
 
-        Listener() throws IOException
-        {
+        Listener() throws IOException {
             setName("SessionServer Listener");
 
             acceptChannel = ServerSocketChannel.open();
@@ -116,18 +110,15 @@ public class SessionServer extends AbstractService
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             Session.EventHandler sessEvtHandler = new Session.EventHandler() {
                 @Override
-                public void onClose(Session session)
-                {
+                public void onClose(Session session) {
                     unregisterSession(session);
                 }
 
                 @Override
-                public void onCancel(int sessionId)
-                {
+                public void onCancel(int sessionId) {
                     cancelSession(sessionId);
                 }
             };
@@ -146,7 +137,7 @@ public class SessionServer extends AbstractService
                 String clientAddress = "/unknown";
                 try {
                     clientAddress = clientChannel.getRemoteAddress().toString();
-                } catch (IOException e) { }
+                } catch (IOException ignore) { }
                 LOG.debug("connection from " + clientAddress + " is accepted");
 
                 Session sess = new Session(clientChannel, sessEvtHandler, metaStore.getMetaContext(), schemaManager);
@@ -161,22 +152,19 @@ public class SessionServer extends AbstractService
 
             try {
                 acceptChannel.close();
-            } catch (IOException e) { }
+            } catch (IOException ignore) { }
         }
     }
 
-    private void registerSession(Session session)
-    {
+    private void registerSession(Session session) {
         sessions.put(session.getId(), session);
     }
 
-    private void unregisterSession(Session session)
-    {
+    private void unregisterSession(Session session) {
         sessions.remove(session.getId());
     }
 
-    private void cancelSession(int sessionId)
-    {
+    private void cancelSession(int sessionId) {
         Session sess = sessions.get(sessionId);
         if (sess != null)
             sess.cancel();

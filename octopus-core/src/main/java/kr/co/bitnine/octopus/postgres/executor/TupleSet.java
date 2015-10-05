@@ -17,9 +17,9 @@ package kr.co.bitnine.octopus.postgres.executor;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 
-public interface TupleSet
-{
+public interface TupleSet {
     TupleDesc getTupleDesc();
+
     Tuple next() throws PostgresException;
 
     void close() throws PostgresException; // FIXME: remove

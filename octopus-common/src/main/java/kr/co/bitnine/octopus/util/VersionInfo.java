@@ -30,14 +30,12 @@ import java.util.Properties;
  */
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
-public class VersionInfo
-{
+public final class VersionInfo {
     private static final Log LOG = LogFactory.getLog(VersionInfo.class);
 
     private Properties info;
 
-    protected VersionInfo(String component)
-    {
+    private VersionInfo(String component) {
         info = new Properties();
         String versionInfoFile = component + "-version-info.properties";
         InputStream is = null;
@@ -53,106 +51,96 @@ public class VersionInfo
         }
     }
 
-    protected String _getVersion()
-    {
+    private String getInfoVersion() {
         return info.getProperty("version", "Unknown");
     }
 
-    protected String _getUrl()
-    {
+    private String getInfoUrl() {
         return info.getProperty("url", "Unknown");
     }
 
-    protected String _getBranch()
-    {
+    private String getInfoBranch() {
         return info.getProperty("branch", "Unknown");
     }
 
-    protected String _getRevision()
-    {
+    private String getInfoRevision() {
         return info.getProperty("revision", "Unknown");
     }
 
-    protected String _getUser()
-    {
+    private String getInfoUser() {
         return info.getProperty("user", "Unknown");
     }
 
-    protected String _getDate()
-    {
+    private String getInfoDate() {
         return info.getProperty("date", "Unknown");
     }
 
-    protected String _getSrcChecksum()
-    {
+    private String getInfoSrcChecksum() {
         return info.getProperty("srcChecksum", "Unknown");
     }
 
-    private static VersionInfo OCTOPUS_VERSION_INFO = new VersionInfo("octopus");
+    private static final VersionInfo OCTOPUS_VERSION_INFO = new VersionInfo("octopus");
 
     /**
      * Get the Octopus version.
+     *
      * @return the Octopus version string, eg. "0.1.0-SNAPSHOT"
      */
-    public static String getVersion()
-    {
-        return OCTOPUS_VERSION_INFO._getVersion();
+    public static String getVersion() {
+        return OCTOPUS_VERSION_INFO.getInfoVersion();
     }
 
     /**
      * Get the SCM URL for the root Octopus directory.
      */
-    public static String getUrl()
-    {
-        return OCTOPUS_VERSION_INFO._getUrl();
+    public static String getUrl() {
+        return OCTOPUS_VERSION_INFO.getInfoUrl();
     }
 
     /**
      * Get the branch on which this originated.
+     *
      * @return The branch name.
      */
-    public static String getBranch()
-    {
-        return OCTOPUS_VERSION_INFO._getBranch();
+    public static String getBranch() {
+        return OCTOPUS_VERSION_INFO.getInfoBranch();
     }
 
     /**
      * Get the SCM revision number for the root directory
+     *
      * @return the revision number.
      */
-    public static String getRevision()
-    {
-        return OCTOPUS_VERSION_INFO._getRevision();
+    public static String getRevision() {
+        return OCTOPUS_VERSION_INFO.getInfoRevision();
     }
 
     /**
      * The user that compiled Octopus.
+     *
      * @return the username of the user
      */
-    public static String getUser()
-    {
-        return OCTOPUS_VERSION_INFO._getUser();
+    public static String getUser() {
+        return OCTOPUS_VERSION_INFO.getInfoUser();
     }
 
     /**
      * The date that Octopus was compiled.
+     *
      * @return the compilation date in unix date format
      */
-    public static String getDate()
-    {
-        return OCTOPUS_VERSION_INFO._getDate();
+    public static String getDate() {
+        return OCTOPUS_VERSION_INFO.getInfoDate();
     }
 
     /**
      * Get the checksum of the source files from which Octopus was built.
      */
-    public static String getSrcChecksum()
-    {
-        return OCTOPUS_VERSION_INFO._getSrcChecksum();
+    public static String getSrcChecksum() {
+        return OCTOPUS_VERSION_INFO.getInfoSrcChecksum();
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         System.out.println("Octopus " + getVersion());
         System.out.println("SCM: " + getUrl() + ", revision: " + getRevision());
         System.out.println("Compiled by " + getUser() + " on " + getDate());

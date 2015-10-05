@@ -14,20 +14,16 @@
 
 package kr.co.bitnine.octopus.meta;
 
-public class MetaException extends Exception
-{
-    public MetaException(String message)
-    {
+public class MetaException extends Exception {
+    public MetaException(String message) {
         super(message);
     }
 
-    public MetaException(String message, Throwable cause)
-    {
+    public MetaException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public MetaException(Throwable cause)
-    {
+    public MetaException(Throwable cause) {
         super(cause);
     }
 }

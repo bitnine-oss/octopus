@@ -18,8 +18,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-final public class ByteBuffers
-{
+public final class ByteBuffers {
     /* Byte.BYTES, Integer.BYTES since Java 8 */
     public static final int BYTE_BYTES = Byte.SIZE / Byte.SIZE;
     public static final int SHORT_BYTES = Short.SIZE / Byte.SIZE;
@@ -30,8 +29,7 @@ final public class ByteBuffers
 
     private ByteBuffers() { }
 
-    static String getCString(ByteBuffer buf)
-    {
+    static String getCString(ByteBuffer buf) {
         int end;
         for (end = buf.position(); end < buf.limit(); end++) {
             if (buf.get(end) == '\0')
@@ -49,10 +47,9 @@ final public class ByteBuffers
         return str;
     }
 
-    static int BYTEBUFFER_CAPACITY_MAX = 1 << 30;
+    static final int BYTEBUFFER_CAPACITY_MAX = 1 << 30;
 
-    static ByteBuffer enlargeByteBuffer(ByteBuffer buf, int needed)
-    {
+    static ByteBuffer enlargeByteBuffer(ByteBuffer buf, int needed) {
         assert !buf.isDirect();
 
         if (needed < 0)

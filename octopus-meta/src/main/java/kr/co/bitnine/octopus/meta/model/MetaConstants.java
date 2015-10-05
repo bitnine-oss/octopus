@@ -12,27 +12,15 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.sql;
+package kr.co.bitnine.octopus.meta.model;
 
-class OctopusSqlCreateUser extends OctopusSqlCommand {
-    private final String name;
-    private final String password;
+public final class MetaConstants {
+    public static final int CLASSNAME_MAX = 128;
+    public static final int COMMENT_MAX = 1024;
+    public static final int CONNECTION_STRING_MAX = 256;
+    public static final int DATACATEGORY_MAX = 64;
+    public static final int IDENTIFIER_MAX = 128;
+    public static final int PASSWORD_MAX = 64;
 
-    OctopusSqlCreateUser(String name, String password) {
-        this.name = name;
-        this.password = password;
-    }
-
-    String getName() {
-        return name;
-    }
-
-    String getPassword() {
-        return password;
-    }
-
-    @Override
-    public OctopusSqlCommand.Type getType() {
-        return OctopusSqlCommand.Type.CREATE_USER;
-    }
+    private MetaConstants() { }
 }

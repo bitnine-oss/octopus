@@ -19,8 +19,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-public class MessageStream
-{
+public final class MessageStream {
     private static final int SEND_BUFFER_SIZE_DEFAULT = 8 * 1024;
     private static final int RECV_BUFFER_SIZE_DEFAULT = 8 * 1024;
 
@@ -28,29 +27,25 @@ public class MessageStream
     private final ByteBuffer sendBuffer = ByteBuffer.allocate(SEND_BUFFER_SIZE_DEFAULT);
     private final ByteBuffer recvBuffer = ByteBuffer.allocate(RECV_BUFFER_SIZE_DEFAULT);
 
-    public MessageStream(SocketChannel socketChannel)
-    {
+    public MessageStream(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
 
         // make receive buffer has no remaining elements
         recvBuffer.flip();
     }
 
-    public Message getInitialMessage() throws IOException
-    {
+    public Message getInitialMessage() throws IOException {
         byte[] body = getMessageBody();
         return new Message(body);
     }
 
-    public Message getMessage() throws IOException
-    {
+    public Message getMessage() throws IOException {
         char type = getChar();
         byte[] body = getMessageBody();
         return new Message(type, body);
     }
 
-    public void putMessage(Message message) throws IOException
-    {
+    public void putMessage(Message message) throws IOException {
         char type = message.getType();
         putChar(type);
         byte[] body = message.getBody();
@@ -59,14 +54,12 @@ public class MessageStream
     }
 
     // Flush sendBuffer so client will see buffered messages immediately
-    public void putMessageAndFlush(Message message) throws IOException
-    {
+    public void putMessageAndFlush(Message message) throws IOException {
         putMessage(message);
         flush();
     }
 
-    private byte[] getMessageBody() throws IOException
-    {
+    private byte[] getMessageBody() throws IOException {
         int len = getInt();
         /* length count includes itself */
         if (len < ByteBuffers.INTEGER_BYTES)
@@ -76,24 +69,21 @@ public class MessageStream
         return body;
     }
 
-    private char getChar() throws IOException
-    {
+    private char getChar() throws IOException {
         if (recvBuffer.remaining() < ByteBuffers.BYTE_BYTES)
             read();
 
         return (char) recvBuffer.get();
     }
 
-    private int getInt() throws IOException
-    {
+    private int getInt() throws IOException {
         if (recvBuffer.remaining() < ByteBuffers.INTEGER_BYTES)
             read();
 
         return recvBuffer.getInt();
     }
 
-    private void getBytes(byte[] bytes) throws IOException
-    {
+    private void getBytes(byte[] bytes) throws IOException {
         int pos = 0;
         int len = bytes.length;
         while (len > 0) {
@@ -110,24 +100,21 @@ public class MessageStream
         }
     }
 
-    private void putChar(char c) throws IOException
-    {
+    private void putChar(char c) throws IOException {
         if (sendBuffer.remaining() < ByteBuffers.BYTE_BYTES)
             flush();
 
         sendBuffer.put((byte) c);
     }
 
-    private void putInt(int i) throws IOException
-    {
+    private void putInt(int i) throws IOException {
         if (sendBuffer.remaining() < ByteBuffers.INTEGER_BYTES)
             flush();
 
         sendBuffer.putInt(i);
     }
 
-    private void putBytes(byte[] bytes) throws IOException
-    {
+    private void putBytes(byte[] bytes) throws IOException {
         int pos = 0;
         int len = bytes.length;
         while (len > 0) {
@@ -144,8 +131,7 @@ public class MessageStream
         }
     }
 
-    private void read() throws IOException
-    {
+    private void read() throws IOException {
         recvBuffer.compact();
 
         /*
@@ -160,8 +146,7 @@ public class MessageStream
         recvBuffer.flip();
     }
 
-    public void flush() throws IOException
-    {
+    public void flush() throws IOException {
         sendBuffer.flip();
 
         while (sendBuffer.hasRemaining())

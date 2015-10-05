@@ -18,13 +18,13 @@ import java.util.Properties;
 
 /**
  * Octopus MetaStore
- *
+ * <p/>
  * Octopus MetaStore has data source information; schemas, tables and columns.
  * It should support fast search on the information.
  */
-public interface MetaStore
-{
+public interface MetaStore {
     void start(Properties conf) throws MetaException;
+
     void stop();
 
     MetaContext getMetaContext();

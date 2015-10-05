@@ -16,58 +16,60 @@ package kr.co.bitnine.octopus.postgres.utils;
 
 import kr.co.bitnine.octopus.postgres.libpq.Message;
 
-public class PostgresErrorData
-{
-    public final PostgresSeverity severity;
-    public final PostgresSQLState sqlState;
-    public final String message;
+public final class PostgresErrorData {
+    private final PostgresSeverity severity;
+    private final PostgresSQLState sqlState;
+    private final String message;
 
-    public String detail = null;
-    public String hint = null;
-    public int position = 0;
-    public int internalPosition = 0;
-    public String internalQuery = null;
-    public String where = null; // context
-    public String schemaName = null;
-    public String tableName = null;
-    public String columnName = null;
-    public String datatypeName = null;
-    public String constraintName = null;
-    public String file = null;
-    public int line = 0;
-    public String routine = null;
+    private String detail;
+    private String hint;
+    private int position;
+    private int internalPosition;
+    private String internalQuery;
+    private String where;    // context
+    private String schemaName;
+    private String tableName;
+    private String columnName;
+    private String datatypeName;
+    private String constraintName;
+    private String file;
+    private int line;
+    private String routine;
 
-    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState)
-    {
+    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState) {
         this(severity, sqlState, "missing error text");
     }
 
-    public PostgresErrorData(PostgresSeverity severity, String message)
-    {
+    public PostgresErrorData(PostgresSeverity severity, String message) {
         this(severity, PostgresSQLState.defaultOf(severity), message);
     }
 
-    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState, String message)
-    {
+    public PostgresErrorData(PostgresSeverity severity, PostgresSQLState sqlState, String message) {
         this.severity = severity;
         this.sqlState = sqlState;
         this.message = message;
     }
 
-    public boolean isError()
-    {
+    public PostgresSeverity getSeverity() {
+        return severity;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public boolean isError() {
         switch (severity) {
-            case PANIC:
-            case FATAL:
-            case ERROR:
-                return true;
-            default:
-                return false;
+        case PANIC:
+        case FATAL:
+        case ERROR:
+            return true;
+        default:
+            return false;
         }
     }
 
-    public Message toMessage()
-    {
+    public Message toMessage() {
         // 'E' for ErrorResponse, 'N' for NoticeResponse
         char type = isError() ? 'E' : 'N';
 

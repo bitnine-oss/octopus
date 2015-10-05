@@ -14,10 +14,8 @@
 
 package kr.co.bitnine.octopus.sql;
 
-public abstract class OctopusSqlCommand
-{
-    public enum Type
-    {
+public abstract class OctopusSqlCommand {
+    public enum Type {
         ADD_DATASOURCE,
         UPDATE_DATASOURCE,
         DROP_DATASOURCE,
@@ -42,8 +40,5 @@ public abstract class OctopusSqlCommand
         OTHER
     }
 
-    public Type getType()
-    {
-        return Type.OTHER;
-    }
+    public abstract Type getType();
 }

@@ -14,15 +14,13 @@
 
 package kr.co.bitnine.octopus.postgres.libpq;
 
-public final class ProtocolConstants
-{
+public final class ProtocolConstants {
     public static final int CANCEL_REQUEST_CODE = (1234 << 16) | 5678;
     public static final int SSL_REQUEST_CODE = (1234 << 16) | 5679;
 
     private ProtocolConstants() { }
 
-    public static int PROTOCOL_VERSION(int major, int minor)
-    {
+    public static int protocolVersion(int major, int minor) {
         return (major << 16) | minor;
     }
 }

@@ -17,8 +17,7 @@ package kr.co.bitnine.octopus.postgres.catalog;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum PostgresType
-{
+public enum PostgresType {
     UNSPECIFIED         (0,     0),
 
     BOOL                (16,    1),
@@ -94,44 +93,38 @@ public enum PostgresType
      */
     private final int typeLength;
 
-    PostgresType(int oid, int typeLength)
-    {
+    PostgresType(int oid, int typeLength) {
         this.oid = oid;
 
-        String typeName = name().toLowerCase();
-        if (typeName.endsWith("_array"))
-            typeName = "_" + typeName.substring(0, typeName.lastIndexOf('_'));
-        this.typeName = typeName;
+        String tmpTypeName = name().toLowerCase();
+        if (tmpTypeName.endsWith("_array"))
+            tmpTypeName = "_" + tmpTypeName.substring(0, tmpTypeName.lastIndexOf('_'));
+        this.typeName = tmpTypeName;
 
         this.typeLength = typeLength;
     }
 
-    public int oid()
-    {
+    public int oid() {
         return oid;
     }
 
-    public String typeName()
-    {
+    public String typeName() {
         return typeName;
     }
 
-    public int typeLength()
-    {
+    public int typeLength() {
         return typeLength;
     }
 
-    private static final Map<Integer, PostgresType> oidToType = new HashMap<>();
+    private static final Map<Integer, PostgresType> OID_TO_TYPE = new HashMap<>();
 
-    static
-    {
+    static {
         for (PostgresType type : PostgresType.values())
-            oidToType.put(type.oid(), type);
+            OID_TO_TYPE.put(type.oid(), type);
     }
 
-    public static PostgresType ofOid(int oid)
-    {
-        PostgresType type = oidToType.get(oid);
+    public static PostgresType ofOid(int oid) {
+        PostgresType type = OID_TO_TYPE.get(oid);
         return type == null ? UNSPECIFIED : type;
     }
 }

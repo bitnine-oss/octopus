@@ -15,36 +15,39 @@
 package kr.co.bitnine.octopus.meta.jdo.model;
 
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaConstants;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 import java.util.ArrayList;
 import java.util.Collection;
 
 @PersistenceCapable
-public class MTable implements MetaTable
-{
+public final class MTable implements MetaTable {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
-    private long ID;
+    private long id;
 
     @Persistent
-    @Column(length = 128)
+    @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
     private String type;
     private MSchema schema;
 
     @Persistent
-    @Column(length = 1024)
+    @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
     @Persistent(mappedBy = "table")
     private Collection<MColumn> columns;
 
-    public MTable(String name, String type, MSchema schema)
-    {
+    public MTable(String name, String type, MSchema schema) {
         this.name = name;
         this.type = type;
         this.schema = schema;
@@ -52,37 +55,31 @@ public class MTable implements MetaTable
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public String getType()
-    {
+    public String getType() {
         return type;
     }
 
     @Override
-    public MetaSchema getSchema()
-    {
+    public MetaSchema getSchema() {
         return schema;
     }
 
     @Override
-    public String getComment()
-    {
+    public String getComment() {
         return comment;
     }
 
-    public void setComment(String comment)
-    {
+    public void setComment(String comment) {
         this.comment = comment;
     }
 
     @Override
-    public Collection<MetaColumn> getColumns()
-    {
+    public Collection<MetaColumn> getColumns() {
         return new ArrayList<MetaColumn>(columns);
     }
 }

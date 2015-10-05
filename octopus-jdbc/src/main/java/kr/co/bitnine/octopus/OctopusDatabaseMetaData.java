@@ -22,18 +22,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 
-class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
-{
+class OctopusDatabaseMetaData extends AbstractDatabaseMetaData {
     private final Connection connection;
 
-    OctopusDatabaseMetaData(Jdbc4Connection conn)
-    {
+    OctopusDatabaseMetaData(Jdbc4Connection conn) {
         this.connection = conn;
     }
 
     @Override
-    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String types[]) throws SQLException
-    {
+    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
         Statement stmt = createMetaDataStatement();
 
         String sql = "SHOW TABLES";
@@ -48,20 +45,30 @@ class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
     }
 
     @Override
-    public ResultSet getSchemas() throws SQLException
-    {
+    public ResultSet getSchemas() throws SQLException {
         return createMetaDataStatement().executeQuery("SHOW SCHEMAS");
     }
 
     @Override
-    public ResultSet getCatalogs() throws SQLException
-    {
+    public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+        Statement stmt = createMetaDataStatement();
+
+        String sql = "SHOW SCHEMAS";
+        if (catalog != null)
+            sql += " DATASOURCE \"" + catalog + '"';
+        if (schemaPattern != null)
+            sql += " SCHEMA '" + schemaPattern + "'";
+
+        return stmt.executeQuery(sql);
+    }
+
+    @Override
+    public ResultSet getCatalogs() throws SQLException {
         return createMetaDataStatement().executeQuery("SHOW DATASOURCES");
     }
 
     @Override
-    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
-    {
+    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
         Statement stmt = createMetaDataStatement();
 
         String sql = "SHOW COLUMNS";
@@ -78,27 +85,11 @@ class OctopusDatabaseMetaData extends AbstractDatabaseMetaData
     }
 
     @Override
-    public Connection getConnection() throws SQLException
-    {
+    public Connection getConnection() throws SQLException {
         return connection;
     }
 
-    @Override
-    public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException
-    {
-        Statement stmt = createMetaDataStatement();
-
-        String sql = "SHOW SCHEMAS";
-        if (catalog != null)
-            sql += " DATASOURCE \"" + catalog + '"';
-        if (schemaPattern != null)
-            sql += " SCHEMA '" + schemaPattern + "'";
-
-        return stmt.executeQuery(sql);
-    }
-
-    private Statement createMetaDataStatement() throws SQLException
-    {
+    private Statement createMetaDataStatement() throws SQLException {
         return getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
     }
 }

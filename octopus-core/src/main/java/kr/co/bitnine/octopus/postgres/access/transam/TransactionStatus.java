@@ -14,21 +14,18 @@
 
 package kr.co.bitnine.octopus.postgres.access.transam;
 
-public enum TransactionStatus
-{
+public enum TransactionStatus {
     IDLE('I'),          // not in transaction
     TRANSACTION('T'),   // in transaction
     ERROR('E');         // in failed transaction
 
     private final char indicator;
 
-    TransactionStatus(char indicator)
-    {
+    TransactionStatus(char indicator) {
         this.indicator = indicator;
     }
 
-    public char getIndicator()
-    {
+    public char getIndicator() {
         return indicator;
     }
 }

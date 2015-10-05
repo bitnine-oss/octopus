@@ -47,39 +47,37 @@ import java.util.TimeZone;
  * SCM commit, and an MD5 checksum of the contents of the files
  * in the codebase.
  */
-@Mojo(name="version-info")
-public class VersionInfoMojo extends AbstractMojo
-{
-    @Parameter(defaultValue="${project}")
+@Mojo(name = "version-info")
+public final class VersionInfoMojo extends AbstractMojo {
+    @Parameter(defaultValue = "${project}")
     private MavenProject project;
 
     @Parameter(required = true)
     private FileSet source;
 
-    @Parameter(defaultValue="version-info.scm.uri")
+    @Parameter(defaultValue = "version-info.scm.uri")
     private String scmUriProperty;
 
-    @Parameter(defaultValue="version-info.scm.branch")
+    @Parameter(defaultValue = "version-info.scm.branch")
     private String scmBranchProperty;
 
-    @Parameter(defaultValue="version-info.scm.commit")
+    @Parameter(defaultValue = "version-info.scm.commit")
     private String scmCommitProperty;
 
-    @Parameter(defaultValue="version-info.build.time")
+    @Parameter(defaultValue = "version-info.build.time")
     private String buildTimeProperty;
 
-    @Parameter(defaultValue="version-info.source.md5")
+    @Parameter(defaultValue = "version-info.source.md5")
     private String md5Property;
 
-    @Parameter(defaultValue="git")
+    @Parameter(defaultValue = "git")
     private String gitCommand;
 
-    @Parameter(defaultValue="svn")
+    @Parameter(defaultValue = "svn")
     private String svnCommand;
 
     @Override
-    public void execute() throws MojoExecutionException
-    {
+    public void execute() throws MojoExecutionException {
         try {
             AbstractSCM scm = determineSCM();
             project.getProperties().setProperty(scmUriProperty, scm.getUri());
@@ -100,8 +98,7 @@ public class VersionInfoMojo extends AbstractMojo
      * @return SCM in use for this build
      * @throws Exception if any error occurs attempting to determine SCM
      */
-    private AbstractSCM determineSCM() throws Exception
-    {
+    private AbstractSCM determineSCM() throws Exception {
         AbstractSCM scm = new GitSCM();
         if (scm.isInUse()) {
             VersionInfoMojo.this.getLog().info("SCM: git");
@@ -118,12 +115,14 @@ public class VersionInfoMojo extends AbstractMojo
         return new UnknownSCM();
     }
 
-    private abstract class AbstractSCM
-    {
-        protected boolean inUse = false;
+    private abstract class AbstractSCM {
+        private boolean inUse;
 
-        public boolean isInUse()
-        {
+        void markInUse() {
+            inUse = true;
+        }
+
+        boolean isInUse() {
             return inUse;
         }
 
@@ -132,8 +131,7 @@ public class VersionInfoMojo extends AbstractMojo
          *
          * @return String URI of SCM
          */
-        public String getUri()
-        {
+        String getUri() {
             return isInUse() ? getSCMUri() : "Unknown";
         }
 
@@ -142,8 +140,7 @@ public class VersionInfoMojo extends AbstractMojo
          *
          * @return String branch of SCM
          */
-        public String getBranch()
-        {
+        String getBranch() {
             return isInUse() ? getSCMBranch() : "Unknown";
         }
 
@@ -152,33 +149,27 @@ public class VersionInfoMojo extends AbstractMojo
          *
          * @return String commit of SCM
          */
-        public String getCommit()
-        {
+        String getCommit() {
             return isInUse() ? getSCMCommit() : "Unknown";
         }
 
-        protected String getSCMUri()
-        {
+        protected String getSCMUri() {
             return "Unknown";
         }
 
-        protected String getSCMBranch()
-        {
+        protected String getSCMBranch() {
             return "Unknown";
         }
 
-        protected String getSCMCommit()
-        {
+        protected String getSCMCommit() {
             return "Unknown";
         }
     }
 
-    private class GitSCM extends AbstractSCM
-    {
+    private class GitSCM extends AbstractSCM {
         private final List<String> output = new ArrayList<String>();
 
-        public GitSCM()
-        {
+        GitSCM() {
             Exec exec = new Exec(VersionInfoMojo.this);
             int retCode = exec.run(Arrays.asList(gitCommand, "branch"), output);
             if (retCode == 0) {
@@ -189,15 +180,14 @@ public class VersionInfoMojo extends AbstractMojo
                 if (retCode != 0)
                     return;
 
-                inUse = true;
+                markInUse();
             }
 
             VersionInfoMojo.this.getLog().debug(output.toString());
         }
 
         @Override
-        protected String getSCMUri()
-        {
+        protected String getSCMUri() {
             String uri = "Unknown";
 
             for (String s : output) {
@@ -212,8 +202,7 @@ public class VersionInfoMojo extends AbstractMojo
         }
 
         @Override
-        protected String getSCMBranch()
-        {
+        protected String getSCMBranch() {
             String branch = "Unknown";
 
             for (String s : output) {
@@ -227,8 +216,7 @@ public class VersionInfoMojo extends AbstractMojo
         }
 
         @Override
-        protected String getSCMCommit()
-        {
+        protected String getSCMCommit() {
             String commit = "Unknown";
 
             for (String s : output) {
@@ -242,23 +230,20 @@ public class VersionInfoMojo extends AbstractMojo
         }
     }
 
-    private class SvnSCM extends AbstractSCM
-    {
+    private class SvnSCM extends AbstractSCM {
         private final List<String> output = new ArrayList<String>();
 
-        public SvnSCM()
-        {
+        SvnSCM() {
             Exec exec = new Exec(VersionInfoMojo.this);
             int retCode = exec.run(Arrays.asList(svnCommand, "info"), output);
             if (retCode == 0)
-                inUse = true;
+                markInUse();
 
             VersionInfoMojo.this.getLog().debug(output.toString());
         }
 
         @Override
-        protected String getSCMUri()
-        {
+        protected String getSCMUri() {
             String uri = "Unknown";
 
             for (String s : output) {
@@ -273,8 +258,7 @@ public class VersionInfoMojo extends AbstractMojo
         }
 
         @Override
-        protected String getSCMBranch()
-        {
+        protected String getSCMBranch() {
             String branch = "Unknown";
 
             for (String s : output) {
@@ -294,9 +278,8 @@ public class VersionInfoMojo extends AbstractMojo
          * @param path String Subversion info output containing URI and branch
          * @return String[] containing URI and branch
          */
-        private String[] getSvnUriInfo(String path)
-        {
-            String[] res = new String[]{"Unknown", "Unknown"};
+        private String[] getSvnUriInfo(String path) {
+            String[] res = new String[] {"Unknown", "Unknown"};
 
             try {
                 int index = path.indexOf("trunk");
@@ -325,8 +308,7 @@ public class VersionInfoMojo extends AbstractMojo
         }
 
         @Override
-        protected String getSCMCommit()
-        {
+        protected String getSCMCommit() {
             String commit = "Unknown";
 
             for (String s : output) {
@@ -347,15 +329,13 @@ public class VersionInfoMojo extends AbstractMojo
      *
      * @return String representing current build time
      */
-    public String getBuildTime()
-    {
+    public String getBuildTime() {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(new Date());
     }
 
-    public String computeMD5() throws Exception
-    {
+    public String computeMD5() throws Exception {
         List<File> files = FileSetUtils.convertFileSetToFiles(source);
 
         /*
@@ -366,13 +346,11 @@ public class VersionInfoMojo extends AbstractMojo
          */
         Collections.sort(files, new Comparator<File>() {
             @Override
-            public int compare(File lhs, File rhs)
-            {
+            public int compare(File lhs, File rhs) {
                 return normalizePath(lhs).compareTo(normalizePath(rhs));
             }
 
-            private String normalizePath(File file)
-            {
+            private String normalizePath(File file) {
                 return file.getPath().toUpperCase().replaceAll("\\\\", "/");
             }
         });
@@ -389,11 +367,10 @@ public class VersionInfoMojo extends AbstractMojo
      *
      * @param files List<File> containing every file to input into the MD5 checksum
      * @return byte[] calculated MD5 checksum
-     * @throws IOException if there is an I/O error while reading a file
+     * @throws IOException              if there is an I/O error while reading a file
      * @throws NoSuchAlgorithmException if the MD5 algorithm is not supported
      */
-    private byte[] computeMD5(List<File> files) throws IOException, NoSuchAlgorithmException
-    {
+    private byte[] computeMD5(List<File> files) throws IOException, NoSuchAlgorithmException {
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         for (File file : files) {
             getLog().debug("Computing MD5 for: " + file);
@@ -409,10 +386,9 @@ public class VersionInfoMojo extends AbstractMojo
      * @return byte[] containing full contents of file
      * @throws IOException if there is an I/O error while reading the file
      */
-    private byte[] readFile(File file) throws IOException
-    {
+    private byte[] readFile(File file) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(file, "r");
-        byte[] buffer = new byte[(int)raf.length()];
+        byte[] buffer = new byte[(int) raf.length()];
         raf.readFully(buffer);
         raf.close();
         return buffer;
@@ -424,8 +400,7 @@ public class VersionInfoMojo extends AbstractMojo
      * @param array byte[] to convert
      * @return String containing hexadecimal representation of bytes
      */
-    private String byteArrayToString(byte[] array)
-    {
+    private String byteArrayToString(byte[] array) {
         StringBuilder sb = new StringBuilder();
         for (byte b : array)
             sb.append(Integer.toHexString(0xff & b));

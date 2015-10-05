@@ -28,20 +28,17 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ShutdownHookManager;
 
-public class OctopusMaster extends CompositeService
-{
+public final class OctopusMaster extends CompositeService {
     public static final int SHUTDOWN_HOOK_PRIORITY = 30;
 
     private static final Log LOG = LogFactory.getLog(OctopusMaster.class);
 
-    public OctopusMaster()
-    {
+    public OctopusMaster() {
         super(OctopusMaster.class.getName());
     }
 
     @Override
-    protected void serviceInit(Configuration conf) throws Exception
-    {
+    protected void serviceInit(Configuration conf) throws Exception {
         MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
         MetaStoreService metaStoreService = new MetaStoreService(metaStore);
         addService(metaStoreService);
@@ -56,13 +53,11 @@ public class OctopusMaster extends CompositeService
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "OctopusMaster";
     }
 
-    private void initAndStart(Configuration conf)
-    {
+    private void initAndStart(Configuration conf) {
         CompositeServiceShutdownHook hook = new CompositeServiceShutdownHook(this);
         ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
@@ -70,8 +65,7 @@ public class OctopusMaster extends CompositeService
         start();
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         StringUtils.startupShutdownMessage(OctopusMaster.class, args, LOG);
 
         OctopusMaster master = new OctopusMaster();

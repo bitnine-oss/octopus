@@ -42,24 +42,22 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Constructs in-memory schema from metadata in MetaStore
  */
-public class SchemaManager extends AbstractService
-{
+public final class SchemaManager extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SchemaManager.class);
 
     private final MetaStore metaStore;
     private final SchemaPlus rootSchema;
 
-    private final HashMap<String, List<OctopusDataSource>> dataSourceMap;
-    private final HashMap<String, List<OctopusSchema>> schemaMap;
-    private final HashMap<String, List<OctopusTable>> tableMap;
+    private final Map<String, List<OctopusDataSource>> dataSourceMap;
+    private final Map<String, List<OctopusSchema>> schemaMap;
+    private final Map<String, List<OctopusTable>> tableMap;
 
     // to synchronize requests for Calcite Schema
     private final ReadWriteLock lock = new ReentrantReadWriteLock(false);
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    public SchemaManager(MetaStore metaStore)
-    {
+    public SchemaManager(MetaStore metaStore) {
         super(SchemaManager.class.getName());
 
         this.metaStore = metaStore;
@@ -71,15 +69,13 @@ public class SchemaManager extends AbstractService
     }
 
     @Override
-    protected void serviceStart() throws Exception
-    {
+    protected void serviceStart() throws Exception {
         loadMeta();
 
         super.serviceStart();
     }
 
-    private void loadMeta() throws MetaException
-    {
+    private void loadMeta() throws MetaException {
         MetaContext mc = metaStore.getMetaContext();
 
         for (MetaDataSource dataSource : mc.getDataSources())
@@ -88,8 +84,7 @@ public class SchemaManager extends AbstractService
         mc.close();
     }
 
-    public void addDataSource(MetaDataSource metaDataSource)
-    {
+    public void addDataSource(MetaDataSource metaDataSource) {
         writeLock.lock();
 
         // FIXME: all or nothing
@@ -108,8 +103,7 @@ public class SchemaManager extends AbstractService
         writeLock.unlock();
     }
 
-    public void dropDataSource(String dataSourceName)
-    {
+    public void dropDataSource(String dataSourceName) {
         writeLock.lock();
 
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
@@ -151,8 +145,7 @@ public class SchemaManager extends AbstractService
         writeLock.unlock();
     }
 
-    public void dropSchema(String dataSourceName, String schemaName)
-    {
+    public void dropSchema(String dataSourceName, String schemaName) {
         writeLock.lock();
 
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
@@ -184,8 +177,7 @@ public class SchemaManager extends AbstractService
         writeLock.unlock();
     }
 
-    public void dropTable(String dataSourceName, String schemaName, String tableName)
-    {
+    public void dropTable(String dataSourceName, String schemaName, String tableName) {
         writeLock.lock();
 
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
@@ -196,7 +188,7 @@ public class SchemaManager extends AbstractService
                 if (tj.next().getName().equals(tableName)
                         && tj.next().getSchema().getName().equals(schemaName)
                         && tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
-                tj.remove();
+                    tj.remove();
             }
             if (tables.isEmpty())
                 ti.remove();
@@ -205,8 +197,7 @@ public class SchemaManager extends AbstractService
         writeLock.unlock();
     }
 
-    private <T> void addToListMap(Map<String, List<T>> map, String key, T value)
-    {
+    private <T> void addToListMap(Map<String, List<T>> map, String key, T value) {
         List<T> values = map.get(key);
         if (values == null) {
             values = new ArrayList<>();
@@ -215,46 +206,46 @@ public class SchemaManager extends AbstractService
         values.add(value);
     }
 
-    public SchemaPlus getCurrentSchema()
-    {
+    public SchemaPlus getCurrentSchema() {
         return rootSchema;
     }
 
-    public List<String> toFullyQualifiedTableName(List<String> names) throws PostgresException
-    {
+    public List<String> toFullyQualifiedTableName(List<String> names) throws PostgresException {
         OctopusDataSource dataSource;
         OctopusSchema schema = null;
         OctopusTable table = null;
         int namesIdx = 0;
 
         switch (names.size()) {
-            case 1: // table
-                table = getUniqueTable(names.get(namesIdx));
-                schema = table.getSchema();
-                dataSource = schema.getDataSource();
-                break;
-            case 2: // schema.table
-                schema = getUniqueSchema(names.get(namesIdx));
-                dataSource = schema.getDataSource();
-                break;
-            case 3: // dataSource.schema.table
-                dataSource = getUniqueDataSource(names.get(namesIdx));
-                break;
-            default:
-                throw new RuntimeException("invalid name size: " + names.size());
+        case 1: // table
+            table = getUniqueTable(names.get(namesIdx));
+            schema = table.getSchema();
+            dataSource = schema.getDataSource();
+            break;
+        case 2: // schema.table
+            schema = getUniqueSchema(names.get(namesIdx));
+            dataSource = schema.getDataSource();
+            break;
+        case 3: // dataSource.schema.table
+            dataSource = getUniqueDataSource(names.get(namesIdx));
+            break;
+        default:
+            throw new RuntimeException("invalid name size: " + names.size());
         }
         namesIdx++;
 
         switch (names.size()) {
-            case 3:
-                schema = (OctopusSchema) dataSource.getSubSchema(names.get(namesIdx));
-                namesIdx++;
-                // fall-through
-            case 2:
-                table = (OctopusTable) schema.getTable(names.get(namesIdx));
-                // fall-through
-            case 1:
-                break;
+        case 3:
+            schema = (OctopusSchema) dataSource.getSubSchema(names.get(namesIdx));
+            namesIdx++;
+            // fall through
+        case 2:
+            table = (OctopusTable) schema.getTable(names.get(namesIdx));
+            // fall through
+        case 1:
+            break;
+        default:
+            throw new RuntimeException("invalid name size: " + names.size());
         }
 
         List<String> fqn = new ArrayList<>();
@@ -264,8 +255,7 @@ public class SchemaManager extends AbstractService
         return fqn;
     }
 
-    private OctopusTable getUniqueTable(String tableName) throws PostgresException
-    {
+    private OctopusTable getUniqueTable(String tableName) throws PostgresException {
         List<OctopusTable> tables = tableMap.get(tableName);
         if (tables == null || tables.size() < 1) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -285,8 +275,7 @@ public class SchemaManager extends AbstractService
         return tables.get(0);
     }
 
-    private OctopusSchema getUniqueSchema(String schemaName) throws PostgresException
-    {
+    private OctopusSchema getUniqueSchema(String schemaName) throws PostgresException {
         List<OctopusSchema> schemas = schemaMap.get(schemaName);
         if (schemas == null || schemas.size() < 1) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -306,8 +295,7 @@ public class SchemaManager extends AbstractService
         return schemas.get(0);
     }
 
-    private OctopusDataSource getUniqueDataSource(String dataSourceName) throws PostgresException
-    {
+    private OctopusDataSource getUniqueDataSource(String dataSourceName) throws PostgresException {
         List<OctopusDataSource> dataSources = dataSourceMap.get(dataSourceName);
         if (dataSources == null || dataSources.size() < 1) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -332,13 +320,11 @@ public class SchemaManager extends AbstractService
      * getCurrentSchema() because we don't know how long the schema will be used
      */
 
-    public void lockRead()
-    {
+    public void lockRead() {
         readLock.lock();
     }
 
-    public void unlockRead()
-    {
+    public void unlockRead() {
         readLock.unlock();
     }
 }

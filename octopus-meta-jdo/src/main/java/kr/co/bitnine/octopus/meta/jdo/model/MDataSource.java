@@ -14,43 +14,46 @@
 
 package kr.co.bitnine.octopus.meta.jdo.model;
 
+import kr.co.bitnine.octopus.meta.model.MetaConstants;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 import java.util.ArrayList;
 import java.util.Collection;
 
 @PersistenceCapable
-public class MDataSource implements MetaDataSource
-{
+public final class MDataSource implements MetaDataSource {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
-    private long ID;
+    private long id;
 
     @Persistent
-    @Column(length = 128)
+    @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
     private int type;
 
     @Persistent
-    @Column(length = 128)
+    @Column(length = MetaConstants.CLASSNAME_MAX)
     private String jdbcDriverName;
 
     @Persistent
-    @Column(length = 256)
+    @Column(length = MetaConstants.CONNECTION_STRING_MAX)
     private String jdbcConnectionString;
 
     @Persistent
-    @Column(length = 1024)
+    @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
     @Persistent(mappedBy = "dataSource")
     private Collection<MSchema> schemas;
 
-    public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString)
-    {
+    public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString) {
         this.name = name;
         this.type = type;
         this.jdbcDriverName = jdbcDriverName;
@@ -59,42 +62,35 @@ public class MDataSource implements MetaDataSource
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public String getDriverName()
-    {
+    public String getDriverName() {
         return jdbcDriverName;
     }
 
     @Override
-    public String getConnectionString()
-    {
+    public String getConnectionString() {
         return jdbcConnectionString;
     }
 
     @Override
-    public String getComment()
-    {
+    public String getComment() {
         return comment;
     }
 
-    public void setComment(String comment)
-    {
+    public void setComment(String comment) {
         this.comment = comment;
     }
 
     @Override
-    public Collection<MetaSchema> getSchemas()
-    {
+    public Collection<MetaSchema> getSchemas() {
         return new ArrayList<MetaSchema>(schemas);
     }
 
-    public void setSchemas(Collection<MSchema> newSchemas)
-    {
+    public void setSchemas(Collection<MSchema> newSchemas) {
         schemas = newSchemas;
     }
 }

@@ -47,13 +47,13 @@ public class JDOMetaContextTest
         metaStore = new JDOMetaStore();
         Properties conf = new Properties();
         conf.setProperty("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
-        conf.setProperty("metastore.jdo.connection.URL", memDbMeta.CONNECTION_STRING);
+        conf.setProperty("metastore.jdo.connection.URL", memDbMeta.connectionString);
         conf.setProperty("metastore.jdo.connection.username", "");
         conf.setProperty("metastore.jdo.connection.password", "");
         metaStore.start(conf);
 
         metaContext = metaStore.getMetaContext();
-        metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, memDbData.CONNECTION_STRING, memDbData.NAME);
+        metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, memDbData.connectionString, memDbData.name);
     }
 
     @After
@@ -107,9 +107,9 @@ public class JDOMetaContextTest
     @Test
     public void testAddDropJdbcDataSource() throws Exception
     {
-        MetaDataSource dataSource = metaContext.getDataSource(memDbData.NAME);
+        MetaDataSource dataSource = metaContext.getDataSource(memDbData.name);
 
-        assertEquals(memDbData.NAME, dataSource.getName());
+        assertEquals(memDbData.name, dataSource.getName());
 
         Collection<MetaSchema> schemas = dataSource.getSchemas();
         assertEquals(1, schemas.size());
@@ -140,16 +140,16 @@ public class JDOMetaContextTest
         MemoryDatabase memDbAnon = new MemoryDatabase("anon");
         memDbAnon.start();
         memDbAnon.importJSON(getClass(), "/sample.json");
-        MetaDataSource anon = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, memDbAnon.CONNECTION_STRING, memDbAnon.NAME);
+        MetaDataSource anon = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, memDbAnon.connectionString, memDbAnon.name);
         Collection<MetaDataSource> dataSources = metaContext.getDataSources();
         assertTrue(dataSources.contains(dataSource));
         assertTrue(dataSources.contains(anon));
         memDbAnon.stop();
 
-        metaContext.dropJdbcDataSource(memDbData.NAME);
+        metaContext.dropJdbcDataSource(memDbData.name);
         thrown.expect(MetaException.class);
         thrown.expectMessage("does not exist");
-        metaContext.getDataSource(memDbData.NAME);
+        metaContext.getDataSource(memDbData.name);
     }
 
     @Test
@@ -163,24 +163,24 @@ public class JDOMetaContextTest
     @Test
     public void testDataSourceDescription() throws Exception
     {
-        MetaDataSource dataSource = metaContext.getDataSource(memDbData.NAME);
+        MetaDataSource dataSource = metaContext.getDataSource(memDbData.name);
 
-        metaContext.commentOnDataSource("bitnine", memDbData.NAME);
+        metaContext.commentOnDataSource("bitnine", memDbData.name);
         assertEquals("bitnine", dataSource.getComment());
 
         JDOMetaContext jdoMetaContext = (JDOMetaContext) metaContext;
 
-        metaContext.commentOnSchema("default", memDbData.NAME, SCHEMA_NAME);
-        MetaSchema schema = jdoMetaContext.getSchemaByQualifiedName(memDbData.NAME, SCHEMA_NAME);
+        metaContext.commentOnSchema("default", memDbData.name, SCHEMA_NAME);
+        MetaSchema schema = jdoMetaContext.getSchemaByQualifiedName(memDbData.name, SCHEMA_NAME);
         assertEquals("default", schema.getComment());
 
-        metaContext.commentOnTable("Employees", memDbData.NAME, SCHEMA_NAME, "employee");
-        MetaTable table = jdoMetaContext.getTableByQualifiedName(memDbData.NAME, SCHEMA_NAME, "employee");
+        metaContext.commentOnTable("Employees", memDbData.name, SCHEMA_NAME, "employee");
+        MetaTable table = jdoMetaContext.getTableByQualifiedName(memDbData.name, SCHEMA_NAME, "employee");
         assertEquals("Employees", table.getComment());
 
-        metaContext.commentOnColumn("Permanent?", memDbData.NAME, SCHEMA_NAME, "employee", "permanent");
-        metaContext.setDataCategoryOn("public", memDbData.NAME, SCHEMA_NAME, "employee", "permanent");
-        MetaColumn column = jdoMetaContext.getColumnByQualifiedName(memDbData.NAME, SCHEMA_NAME, "employee", "permanent");
+        metaContext.commentOnColumn("Permanent?", memDbData.name, SCHEMA_NAME, "employee", "permanent");
+        metaContext.setDataCategoryOn("public", memDbData.name, SCHEMA_NAME, "employee", "permanent");
+        MetaColumn column = jdoMetaContext.getColumnByQualifiedName(memDbData.name, SCHEMA_NAME, "employee", "permanent");
         assertEquals("Permanent?", column.getComment());
         assertEquals("public", column.getDataCategory());
     }
@@ -190,7 +190,7 @@ public class JDOMetaContextTest
     {
         thrown.expect(MetaException.class);
         thrown.expectMessage("does not exist");
-        ((JDOMetaContext) metaContext).getSchemaByQualifiedName(memDbData.NAME, "any");
+        ((JDOMetaContext) metaContext).getSchemaByQualifiedName(memDbData.name, "any");
     }
 
     @Test
@@ -198,7 +198,7 @@ public class JDOMetaContextTest
     {
         thrown.expect(MetaException.class);
         thrown.expectMessage("does not exist");
-        ((JDOMetaContext) metaContext).getTableByQualifiedName(memDbData.NAME, SCHEMA_NAME, "any");
+        ((JDOMetaContext) metaContext).getTableByQualifiedName(memDbData.name, SCHEMA_NAME, "any");
     }
 
     @Test
@@ -206,7 +206,7 @@ public class JDOMetaContextTest
     {
         thrown.expect(MetaException.class);
         thrown.expectMessage("does not exist");
-        ((JDOMetaContext) metaContext).getColumnByQualifiedName(memDbData.NAME, SCHEMA_NAME, "employee", "any");
+        ((JDOMetaContext) metaContext).getColumnByQualifiedName(memDbData.name, SCHEMA_NAME, "employee", "any");
     }
 
     @Test
@@ -233,7 +233,7 @@ public class JDOMetaContextTest
     @Test
     public void testObjectPrivilege() throws Exception
     {
-        final String[] schemaName = new String[] {memDbData.NAME, SCHEMA_NAME};
+        final String[] schemaName = new String[] {memDbData.name, SCHEMA_NAME};
 
         assertNull(metaContext.getSchemaPrivilege(schemaName, "any"));
 

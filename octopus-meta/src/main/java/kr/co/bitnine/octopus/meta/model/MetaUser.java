@@ -18,10 +18,12 @@ import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
 import java.util.Set;
 
-public interface MetaUser
-{
+public interface MetaUser {
     String getName();
+
     String getPassword();
+
     Set<SystemPrivilege> getSystemPrivileges();
+
     String getComment();
 }

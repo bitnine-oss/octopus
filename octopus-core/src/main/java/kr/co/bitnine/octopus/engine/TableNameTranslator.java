@@ -22,18 +22,18 @@ import org.apache.calcite.sql.SqlNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class TableNameTranslator
-{
+public final class TableNameTranslator {
+    private TableNameTranslator() { }
+
     // translate FQN(Fully Qualified Name) to DSN(DataSource Name)
-    public static void toDSN(SqlNode query)
-    {
+    public static void toDSN(SqlNode query) {
         ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 
         for (SqlIdentifier tableId : tableIds) {
             List<String> dsn = new ArrayList<>();
             String schemaName = tableId.names.get(1);
-            if (!schemaName.equals("__DEFAULT"))
+            if (!"__DEFAULT".equals(schemaName))
                 dsn.add(schemaName);
             dsn.add(tableId.names.get(2));
             tableId.setNames(dsn, null);
@@ -41,8 +41,7 @@ public final class TableNameTranslator
     }
 
     // translate DSN to FQN
-    public static void toFQN(SchemaManager schemaManager, SqlNode query) throws PostgresException
-    {
+    public static void toFQN(SchemaManager schemaManager, SqlNode query) throws PostgresException {
         ArrayList<SqlIdentifier> tableIds = new ArrayList<>();
         query.accept(new SqlTableIdentifierFindVisitor(tableIds));
 

@@ -14,30 +14,31 @@
 
 package kr.co.bitnine.octopus.meta.jdo.model;
 
+import kr.co.bitnine.octopus.meta.model.MetaConstants;
 import kr.co.bitnine.octopus.meta.model.MetaRole;
 
-import javax.jdo.annotations.*;
-import java.sql.Date;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 
 @PersistenceCapable
-public class MRole implements MetaRole
-{
+public final class MRole implements MetaRole {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
-    private long ID;
+    private long id;
 
     @Persistent
-    @Column(length = 128)
+    @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
-    public MRole(String name)
-    {
+    public MRole(String name) {
         this.name = name;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 }

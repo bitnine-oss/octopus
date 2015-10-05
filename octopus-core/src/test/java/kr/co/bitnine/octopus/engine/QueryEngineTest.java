@@ -25,8 +25,7 @@ import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.*;
 
-public class QueryEngineTest
-{
+public class QueryEngineTest {
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
     private static MetaStore metaStore;
@@ -36,8 +35,7 @@ public class QueryEngineTest
     private static QueryEngine queryEngine;
 
     @BeforeClass
-    public static void setUpClass() throws Exception
-    {
+    public static void setUpClass() throws Exception {
         metaMemDb = new MemoryDatabase("META");
         metaMemDb.start();
 
@@ -47,7 +45,7 @@ public class QueryEngineTest
 
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
-        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
+        conf.set("metastore.jdo.connection.URL", metaMemDb.connectionString);
         conf.set("metastore.jdo.connection.username", "");
         conf.set("metastore.jdo.connection.password", "");
 
@@ -62,15 +60,14 @@ public class QueryEngineTest
 
         metaContext = metaStore.getMetaContext();
 
-        MetaDataSource metaDataSource = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.CONNECTION_STRING, dataMemDb.NAME);
+        MetaDataSource metaDataSource = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.connectionString, dataMemDb.name);
         schemaManager.addDataSource(metaDataSource);
 
         queryEngine = new QueryEngine(metaContext, schemaManager);
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception
-    {
+    public static void tearDownClass() throws Exception {
         metaContext.close();
 
         schemaManager.stop();
@@ -104,7 +101,7 @@ public class QueryEngineTest
     @Test
     public void testShow() throws Exception
     {
-        Portal p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.NAME + " SCHEMA '%DEFAULT'");
+        Portal p = queryEngine.query("SHOW TABLES DATASOURCE " + dataMemDb.name + " SCHEMA '%DEFAULT'");
         TupleSet ts = p.run(0);
         while (true) {
             Tuple t = ts.next();

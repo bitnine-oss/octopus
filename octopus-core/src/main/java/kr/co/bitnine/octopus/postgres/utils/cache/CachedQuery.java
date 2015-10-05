@@ -20,28 +20,26 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 
 import java.util.Arrays;
 
-public abstract class CachedQuery
-{
+public abstract class CachedQuery {
     private final String queryString;
     private final PostgresType[] paramTypes;
 
-    public CachedQuery(String queryString, PostgresType[] paramTypes)
-    {
+    public CachedQuery(String queryString, PostgresType[] paramTypes) {
         this.queryString = queryString;
         this.paramTypes = paramTypes;
     }
 
-    public String getQueryString()
-    {
+    public final String getQueryString() {
         return queryString;
     }
 
-    public PostgresType[] getParamTypes()
-    {
+    public final PostgresType[] getParamTypes() {
         return Arrays.copyOf(paramTypes, paramTypes.length);
     }
 
     public abstract String getCommandTag();
+
     public abstract TupleDesc describe() throws PostgresException;
+
     public abstract void close();
 }

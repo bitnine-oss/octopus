@@ -14,16 +14,26 @@
 
 package kr.co.bitnine.octopus.postgres.catalog;
 
-public class PostgresAttribute
-{
-    public final String name;
-    public final PostgresType type;
-    public final int typeInfo;
+public final class PostgresAttribute {
+    private final String name;
+    private final PostgresType type;
+    private final int typeInfo;
 
-    public PostgresAttribute(String name, PostgresType type, int typeInfo)
-    {
+    public PostgresAttribute(String name, PostgresType type, int typeInfo) {
         this.name = name;
         this.type = type;
         this.typeInfo = typeInfo;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public PostgresType getType() {
+        return type;
+    }
+
+    public int getTypeInfo() {
+        return typeInfo;
     }
 }

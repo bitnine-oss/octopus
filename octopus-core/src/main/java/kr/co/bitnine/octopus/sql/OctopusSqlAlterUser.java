@@ -14,37 +14,31 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlAlterUser extends OctopusSqlCommand
-{
+class OctopusSqlAlterUser extends OctopusSqlCommand {
     private final String name;
     private final String password;
     private final String oldPassword;
 
-    OctopusSqlAlterUser(String name, String password, String oldPassword)
-    {
+    OctopusSqlAlterUser(String name, String password, String oldPassword) {
         this.name = name;
         this.password = password;
         this.oldPassword = oldPassword;
     }
 
-    String getName()
-    {
+    String getName() {
         return name;
     }
 
-    String getPassword()
-    {
+    String getPassword() {
         return password;
     }
 
-    String getOldPassword()
-    {
+    String getOldPassword() {
         return oldPassword;
     }
 
     @Override
-    public Type getType()
-    {
+    public Type getType() {
         return Type.ALTER_USER;
     }
 }

@@ -19,18 +19,17 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 
 import java.util.Arrays;
 
-public class TupleDesc
-{
+public final class TupleDesc {
     private final PostgresAttribute[] attrs;
     private final FormatCode[] resultFormats;
 
-    public TupleDesc(PostgresAttribute[] attrs, FormatCode[] resultFormats)
-    {
+    public TupleDesc(PostgresAttribute[] attrs, FormatCode[] resultFormats) {
         this.attrs = attrs;
 
         if (resultFormats.length > 1) {
-            if (resultFormats.length != attrs.length)
-                ; // TODO: throw PROTOCOL_VIOLATION
+            if (resultFormats.length != attrs.length) {
+                // TODO: throw PROTOCOL_VIOLATION
+            }
             this.resultFormats = resultFormats;
         } else if (resultFormats.length > 0) {
             FormatCode[] formats = new FormatCode[attrs.length];
@@ -43,18 +42,15 @@ public class TupleDesc
         }
     }
 
-    public PostgresAttribute[] getAttributes()
-    {
+    public PostgresAttribute[] getAttributes() {
         return Arrays.copyOf(attrs, attrs.length);
     }
 
-    public int getNumAttributes()
-    {
+    public int getNumAttributes() {
         return attrs.length;
     }
 
-    public FormatCode[] getResultFormats()
-    {
+    public FormatCode[] getResultFormats() {
         return Arrays.copyOf(resultFormats, resultFormats.length);
     }
 }

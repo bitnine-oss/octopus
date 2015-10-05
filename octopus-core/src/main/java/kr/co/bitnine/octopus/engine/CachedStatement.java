@@ -23,16 +23,14 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.util.List;
 
-public class CachedStatement extends CachedQuery
-{
+public final class CachedStatement extends CachedQuery {
     private boolean isDdl;
     private final SqlNode validatedQuery;
     private List<OctopusSqlCommand> ddlCommands;
     private final TupleDesc tupDesc;
     private final String commandTag;
 
-    public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes)
-    {
+    public CachedStatement(SqlNode validatedQuery, String queryString, PostgresType[] paramTypes) {
         super(queryString, paramTypes);
 
         isDdl = false;
@@ -42,8 +40,7 @@ public class CachedStatement extends CachedQuery
         commandTag = "SELECT";
     }
 
-    public CachedStatement(List<OctopusSqlCommand> commands, TupleDesc tupDesc)
-    {
+    public CachedStatement(List<OctopusSqlCommand> commands, TupleDesc tupDesc) {
         super(null, new PostgresType[0]);
 
         isDdl = true;
@@ -53,30 +50,25 @@ public class CachedStatement extends CachedQuery
         commandTag = "???";
     }
 
-    public boolean isDdl()
-    {
+    public boolean isDdl() {
         return isDdl;
     }
 
-    public SqlNode getValidatedQuery()
-    {
+    public SqlNode getValidatedQuery() {
         return validatedQuery;
     }
 
-    public List<OctopusSqlCommand> getDdlCommands()
-    {
+    public List<OctopusSqlCommand> getDdlCommands() {
         return ddlCommands;
     }
 
     @Override
-    public String getCommandTag()
-    {
+    public String getCommandTag() {
         return commandTag;
     }
 
     @Override
-    public TupleDesc describe() throws PostgresException
-    {
+    public TupleDesc describe() throws PostgresException {
         return tupDesc;
     }
 
