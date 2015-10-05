@@ -56,11 +56,11 @@ limitations under the License.
           <fileSet>
             <outputDirectory>sbin</outputDirectory>
             <directory>${project.build.scriptSourceDirectory}</directory>
-            <excludes>
-              <exclude>octaline</exclude>
-              <exclude>octopus</exclude>
-              <exclude>octopus-config.sh</exclude>
-            </excludes>
+            <includes>
+              <include>octopus-daemon.sh</include>
+              <include>start-octopus.sh</include>
+              <include>stop-octopus.sh</include>
+            </includes>
             <fileMode>0755</fileMode>
           </fileSet>
         </fileSets>
