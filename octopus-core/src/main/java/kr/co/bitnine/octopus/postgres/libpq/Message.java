@@ -18,75 +18,63 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class Message
-{
+public final class Message {
     private char type;
     private byte[] body;
     private ByteBuffer buf;
 
-    public Message(byte[] body)
-    {
+    public Message(byte[] body) {
         this(' ', body);
     }
 
-    public Message(char type, byte[] body)
-    {
+    public Message(char type, byte[] body) {
         this.type = type;
         this.body = body;
         this.buf = ByteBuffer.wrap(body);
     }
 
-    public char getType()
-    {
+    public char getType() {
         return type;
     }
 
-    public byte[] getBody()
-    {
+    public byte[] getBody() {
         return body;
     }
 
-    public static class Builder
-    {
+    public static final class Builder {
         private char type;
         private ByteBuffer buf;
 
-        public Builder(char type)
-        {
+        public Builder(char type) {
             this.type = type;
             buf = ByteBuffer.allocate(1024);
         }
 
-        public Builder putChar(char c)
-        {
+        public Builder putChar(char c) {
             buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.BYTE_BYTES);
             buf.put((byte) c);
             return this;
         }
 
-        public Builder putShort(short h)
-        {
+        public Builder putShort(short h) {
             buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.SHORT_BYTES);
             buf.putShort(h);
             return this;
         }
 
-        public Builder putInt(int i)
-        {
+        public Builder putInt(int i) {
             buf = ByteBuffers.enlargeByteBuffer(buf, ByteBuffers.INTEGER_BYTES);
             buf.putInt(i);
             return this;
         }
 
-        public Builder putBytes(byte[] bytes)
-        {
+        public Builder putBytes(byte[] bytes) {
             buf = ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
             return this;
         }
 
-        public Builder putCString(String s)
-        {
+        public Builder putCString(String s) {
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             buf = ByteBuffers.enlargeByteBuffer(buf, bytes.length);
             buf.put(bytes);
@@ -94,47 +82,39 @@ public class Message
             return this;
         }
 
-        public Message build()
-        {
+        public Message build() {
             byte[] body = Arrays.copyOf(buf.array(), buf.position());
             return new Message(type, body);
         }
     }
 
-    public static Builder builder(char type)
-    {
+    public static Builder builder(char type) {
         return new Builder(type);
     }
 
-    public int peekInt()
-    {
+    public int peekInt() {
         return buf.getInt(buf.position());
     }
 
-    public char getChar()
-    {
+    public char getChar() {
         return (char) buf.get();
     }
 
-    public short getShort()
-    {
+    public short getShort() {
         return buf.getShort();
     }
 
-    public int getInt()
-    {
+    public int getInt() {
         return buf.getInt();
     }
 
-    public byte[] getBytes(int length)
-    {
+    public byte[] getBytes(int length) {
         byte[] bytes = new byte[length];
         buf.get(bytes);
         return bytes;
     }
 
-    public String getCString()
-    {
+    public String getCString() {
         return ByteBuffers.getCString(buf);
     }
 }

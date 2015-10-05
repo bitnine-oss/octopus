@@ -25,11 +25,9 @@ import java.sql.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class MemoryDatabaseTest
-{
+public class MemoryDatabaseTest {
     @Test
-    public void testImport() throws Exception
-    {
+    public void testImport() throws Exception {
         MemoryDatabase memDb = new MemoryDatabase("sample");
         memDb.start();
 
@@ -59,11 +57,10 @@ public class MemoryDatabaseTest
         memDb.stop();
     }
 
-    private void verifyTableEquals(JSONObject expectedTable, ResultSet actualRows) throws Exception
-    {
+    private void verifyTableEquals(JSONObject expectedTable, ResultSet actualRows) throws Exception {
         ResultSetMetaData actualRowsMetaData = actualRows.getMetaData();
 
-        JSONArray expectedSchema =(JSONArray) expectedTable.get("table-schema");
+        JSONArray expectedSchema = (JSONArray) expectedTable.get("table-schema");
         assertEquals(expectedSchema.size(), actualRowsMetaData.getColumnCount());
         for (int i = 0; i < expectedSchema.size(); i++)
             assertEquals(expectedSchema.get(i), actualRowsMetaData.getColumnName(i + 1));
@@ -78,18 +75,18 @@ public class MemoryDatabaseTest
 
                 int sqlType = actualRowsMetaData.getColumnType(i + 1);
                 switch (sqlType) {
-                    case Types.INTEGER:
-                        if (expected instanceof Boolean)
-                            expected = (long) ((Boolean) expected ? 1 : 0);
-                        actual = actualRows.getLong(i + 1);
-                        break;
-                    case Types.NULL:
-                    case Types.FLOAT:
-                    case Types.VARCHAR:
-                        actual = actualRows.getObject(i + 1);
-                        break;
-                    default:
-                        throw new RuntimeException("java.sql.Types " + sqlType + " is not supported");
+                case Types.INTEGER:
+                    if (expected instanceof Boolean)
+                        expected = (long) ((Boolean) expected ? 1 : 0);
+                    actual = actualRows.getLong(i + 1);
+                    break;
+                case Types.NULL:
+                case Types.FLOAT:
+                case Types.VARCHAR:
+                    actual = actualRows.getObject(i + 1);
+                    break;
+                default:
+                    throw new RuntimeException("java.sql.Types " + sqlType + " is not supported");
                 }
 
                 assertEquals(expected, actual);

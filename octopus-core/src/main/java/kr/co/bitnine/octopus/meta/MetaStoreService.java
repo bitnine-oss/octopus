@@ -20,29 +20,25 @@ import org.apache.hadoop.service.AbstractService;
 import java.util.Map;
 import java.util.Properties;
 
-public class MetaStoreService extends AbstractService
-{
+public class MetaStoreService extends AbstractService {
     private final Properties props = new Properties();
     private final MetaStore metaStore;
 
-    public MetaStoreService(MetaStore metaStore)
-    {
+    public MetaStoreService(MetaStore metaStore) {
         super(metaStore.getClass().getName());
 
         this.metaStore = metaStore;
     }
 
     @Override
-    protected final void serviceInit(Configuration conf)
-    {
+    protected final void serviceInit(Configuration conf) {
         props.clear();
         for (Map.Entry e : conf)
             props.put(e.getKey(), e.getValue());
     }
 
     @Override
-    protected final void serviceStart() throws Exception
-    {
+    protected final void serviceStart() throws Exception {
         metaStore.start(props);
         MetaStores.initialize(metaStore);
 
@@ -50,8 +46,7 @@ public class MetaStoreService extends AbstractService
     }
 
     @Override
-    protected final void serviceStop() throws Exception
-    {
+    protected final void serviceStop() throws Exception {
         metaStore.stop();
 
         super.serviceStop();

@@ -14,8 +14,7 @@
 
 package kr.co.bitnine.octopus.meta.privilege;
 
-public enum ObjectPrivilege
-{
+public enum ObjectPrivilege {
     SELECT,
     COMMENT
 }

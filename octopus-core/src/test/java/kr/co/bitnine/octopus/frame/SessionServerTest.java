@@ -33,8 +33,7 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.*;
 
-public class SessionServerTest
-{
+public class SessionServerTest {
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
     private static MetaStoreService metaStoreService;
@@ -46,8 +45,7 @@ public class SessionServerTest
 
 
     @BeforeClass
-    public static void setUpClass() throws Exception
-    {
+    public static void setUpClass() throws Exception {
         Class.forName("kr.co.bitnine.octopus.Driver");
         metaMemDb = new MemoryDatabase("meta");
         metaMemDb.start();
@@ -58,7 +56,7 @@ public class SessionServerTest
 
         Configuration conf = new OctopusConfiguration();
         conf.set("metastore.jdo.connection.drivername", MemoryDatabase.DRIVER_NAME);
-        conf.set("metastore.jdo.connection.URL", metaMemDb.CONNECTION_STRING);
+        conf.set("metastore.jdo.connection.URL", metaMemDb.connectionString);
         conf.set("metastore.jdo.connection.username", "");
         conf.set("metastore.jdo.connection.password", "");
 
@@ -77,16 +75,15 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.NAME +
-                "\" CONNECT TO '" + dataMemDb.CONNECTION_STRING +
-                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.name
+                + "\" CONNECT TO '" + dataMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
         stmt.close();
         conn.close();
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception
-    {
+    public static void tearDownClass() throws Exception {
         sessionServer.stop();
         schemaManager.stop();
         metaStoreService.stop();
@@ -95,8 +92,7 @@ public class SessionServerTest
         metaMemDb.stop();
     }
 
-    private static Connection getConnection(String user, String password) throws Exception
-    {
+    private static Connection getConnection(String user, String password) throws Exception {
         InetSocketAddress addr = NetUtils.createSocketAddr("127.0.0.1:58000");
         String url = "jdbc:octopus://" + NetUtils.getHostPortString(addr);
 
@@ -113,22 +109,20 @@ public class SessionServerTest
     }
 
     @Test
-    public void testAddDataSourceExists() throws Exception
-    {
+    public void testAddDataSourceExists() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
         exception.expect(SQLException.class);
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.NAME +
-                "\" CONNECT TO '" + dataMemDb.CONNECTION_STRING +
-                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.name
+                + "\" CONNECT TO '" + dataMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         stmt.close();
         conn.close();
     }
 
-    private boolean existDataSource(DatabaseMetaData metaData, String name) throws SQLException
-    {
+    private boolean existDataSource(DatabaseMetaData metaData, String name) throws SQLException {
         ResultSet rs = metaData.getCatalogs();
         while (rs.next()) {
             String dsName = rs.getString("TABLE_CAT");
@@ -139,8 +133,7 @@ public class SessionServerTest
         return false;
     }
 
-    private boolean existTable(DatabaseMetaData metaData, String dsName, String name) throws SQLException
-    {
+    private boolean existTable(DatabaseMetaData metaData, String dsName, String name) throws SQLException {
         ResultSet rs = metaData.getTables(dsName, "%DEFAULT", "%", null);
         while (rs.next()) {
             String tblName = rs.getString("TABLE_NAME");
@@ -151,8 +144,7 @@ public class SessionServerTest
         return false;
     }
 
-    private int checkNumRows(Statement stmt, String tblName) throws SQLException
-    {
+    private int checkNumRows(Statement stmt, String tblName) throws SQLException {
         ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM \"" + tblName + '"');
         if (!rs.next())
             return 0;
@@ -162,8 +154,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testDropDataSource1() throws Exception
-    {
+    public void testDropDataSource1() throws Exception {
         /* add a new dataSource and populate some data */
         MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
         newMemDb.start();
@@ -173,19 +164,19 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.NAME +
-                " CONNECT TO '" + newMemDb.CONNECTION_STRING +
-                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.name
+                + " CONNECT TO '" + newMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         DatabaseMetaData metaData = conn.getMetaData();
 
-        assertTrue(existDataSource(metaData, newMemDb.NAME));
-        assertTrue(existTable(metaData, newMemDb.NAME, tblName));
+        assertTrue(existDataSource(metaData, newMemDb.name));
+        assertTrue(existTable(metaData, newMemDb.name, tblName));
 
-        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.NAME);
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.name);
 
-        assertFalse(existDataSource(metaData, newMemDb.NAME));
-        assertFalse(existTable(metaData, newMemDb.NAME, tblName));
+        assertFalse(existDataSource(metaData, newMemDb.name));
+        assertFalse(existTable(metaData, newMemDb.name, tblName));
 
         /* cleanup */
         stmt.close();
@@ -194,8 +185,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testDropDataSource2() throws Exception
-    {
+    public void testDropDataSource2() throws Exception {
         MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
         newMemDb.start();
 
@@ -203,32 +193,32 @@ public class SessionServerTest
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.NAME +
-                " CONNECT TO '" + newMemDb.CONNECTION_STRING +
-                "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.name
+                + " CONNECT TO '" + newMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         stmt.execute("CREATE USER \"yjchoi\" IDENTIFIED BY 'piggy'");
-        stmt.execute("GRANT SELECT ON " + newMemDb.NAME + ".__DEFAULT TO \"yjchoi\"");
+        stmt.execute("GRANT SELECT ON " + newMemDb.name + ".__DEFAULT TO \"yjchoi\"");
 
         ResultSet rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"yjchoi\"");
         int numRows = 0;
         while (rs.next()) {
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("PRIVILEGE"));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("PRIVILEGE"));
             ++numRows;
         }
         rs.close();
         assertEquals(numRows, 1);
 
-        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.NAME);
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.name);
 
         rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"yjchoi\"");
         numRows = 0;
         while (rs.next()) {
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("PRIVILEGE"));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("PRIVILEGE"));
             ++numRows;
         }
         rs.close();
@@ -242,8 +232,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testUpdateDataSource1() throws Exception
-    {
+    public void testUpdateDataSource1() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
@@ -263,14 +252,14 @@ public class SessionServerTest
         assertEquals(rows, 10);
 
         DatabaseMetaData metaData = conn.getMetaData();
-        ResultSet rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", "%", null);
+        ResultSet rs = metaData.getTables(dataMemDb.name, "%DEFAULT", "%", null);
         while (rs.next())
             System.out.println(" *** " + rs.getString("TABLE_NAME"));
 
-        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.NAME + '"');
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.name + '"');
 
         metaData = conn.getMetaData();
-        rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", "%", null);
+        rs = metaData.getTables(dataMemDb.name, "%DEFAULT", "%", null);
         while (rs.next())
             System.out.println(" *** " + rs.getString("TABLE_NAME"));
 
@@ -284,13 +273,12 @@ public class SessionServerTest
     }
 
     @Test
-    public void testUpdateDataSource2() throws Exception
-    {
+    public void testUpdateDataSource2() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
         stmt.execute("CREATE USER \"yjchoi\" IDENTIFIED BY 'piggy'");
-        stmt.execute("GRANT SELECT ON \"" + dataMemDb.NAME + "\".__DEFAULT TO \"yjchoi\"");
+        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"yjchoi\"");
 
         Connection conn2 = getConnection("yjchoi", "piggy");
         Statement stmt2 = conn.createStatement();
@@ -301,26 +289,28 @@ public class SessionServerTest
         ResultSet rs;
         DatabaseMetaData metaData = conn.getMetaData();
         System.out.println("* Columns");
-        rs = metaData.getColumns(dataMemDb.NAME, "%DEFAULT", "employee", "%");
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("COLUMN_NAME") + ", " +
-                    rs.getString("REMARKS"));
+        rs = metaData.getColumns(dataMemDb.name, "%DEFAULT", "employee", "%");
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("COLUMN_NAME") + ", "
+                    + rs.getString("REMARKS"));
+        }
         rs.close();
 
-        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.NAME + '"');
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.name + '"');
 
         metaData = conn.getMetaData();
         System.out.println("* Columns");
-        rs = metaData.getColumns(dataMemDb.NAME, "%DEFAULT", "employee", "%");
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("COLUMN_NAME") + ", " +
-                    rs.getString("REMARKS"));
+        rs = metaData.getColumns(dataMemDb.name, "%DEFAULT", "employee", "%");
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("COLUMN_NAME") + ", "
+                    + rs.getString("REMARKS"));
+        }
         rs.close();
 
         /* privileges should be preserved after update dataSource */
@@ -334,38 +324,37 @@ public class SessionServerTest
     }
 
     @Test
-    public void testUpdateDataSource3() throws Exception
-    {
+    public void testUpdateDataSource3() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
         final String comment = "commentOnTable";
         final String tblName = "employee";
 
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.\"" + tblName + "\" IS '" + comment + "'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"" + tblName + "\" IS '" + comment + "'");
         DatabaseMetaData metaData = conn.getMetaData();
 
-        ResultSet rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", tblName, null);
+        ResultSet rs = metaData.getTables(dataMemDb.name, "%DEFAULT", tblName, null);
         while (rs.next()) {
             if (rs.getString("TABLE_NAME").equals(tblName))
                 assertTrue(rs.getString("REMARKS").equals(comment));
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("REMARKS"));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("REMARKS"));
         }
         rs.close();
 
-        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.NAME + '"');
+        stmt.execute("ALTER SYSTEM UPDATE DATASOURCE \"" + dataMemDb.name + '"');
 
-        rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", tblName, null);
+        rs = metaData.getTables(dataMemDb.name, "%DEFAULT", tblName, null);
         while (rs.next()) {
             if (rs.getString("TABLE_NAME").equals(tblName))
                 assertTrue(rs.getString("REMARKS").equals(comment));
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("REMARKS"));
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("REMARKS"));
         }
         rs.close();
 
@@ -374,8 +363,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testUpdateDataSource4() throws Exception
-    {
+    public void testUpdateDataSource4() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
@@ -392,7 +380,7 @@ public class SessionServerTest
         }
         assertTrue(exceptionCaught);
 
-        stmt.execute("ALTER SYSTEM UPDATE TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.'AA%'");
+        stmt.execute("ALTER SYSTEM UPDATE TABLE \"" + dataMemDb.name + "\".__DEFAULT.'AA%'");
 
         int rows = checkNumRows(stmt, "AA1");
         assertEquals(1, rows);
@@ -417,8 +405,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testSelect() throws Exception
-    {
+    public void testSelect() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
 
         Statement stmt = conn.createStatement();
@@ -461,8 +448,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testUser() throws Exception
-    {
+    public void testUser() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009'");
@@ -491,8 +477,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testRole() throws Exception
-    {
+    public void testRole() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
@@ -504,8 +489,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testSystemPrivileges() throws Exception
-    {
+    public void testSystemPrivileges() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009'");
@@ -516,9 +500,9 @@ public class SessionServerTest
         stmt = conn.createStatement();
 
         try {
-            stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.NAME +
-                    "\" CONNECT TO '" + dataMemDb.CONNECTION_STRING +
-                    "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+            stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + dataMemDb.name
+                    + "\" CONNECT TO '" + dataMemDb.connectionString
+                    + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -554,13 +538,13 @@ public class SessionServerTest
         }
 
         try {
-            stmt.execute("COMMENT ON TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\" IS 'test'");
+            stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'test'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
 
         try {
-            stmt.execute("SET DATACATEGORY ON COLUMN \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\".\"name\" IS 'category'");
+            stmt.execute("SET DATACATEGORY ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'category'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -572,12 +556,12 @@ public class SessionServerTest
         stmt = conn.createStatement();
 
         stmt.execute("GRANT ALL PRIVILEGES TO \"jsyang\"");
-        String query = "REVOKE ALTER SYSTEM, " +
-                "SELECT ANY TABLE, " +
-                "ALTER USER, DROP USER, " +
-                "COMMENT ANY, " +
-                "GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE " +
-                "FROM \"jsyang\"";
+        String query = "REVOKE ALTER SYSTEM, "
+                + "SELECT ANY TABLE, "
+                + "ALTER USER, DROP USER, "
+                + "COMMENT ANY, "
+                + "GRANT ANY OBJECT PRIVILEGE, GRANT ANY PRIVILEGE "
+                + "FROM \"jsyang\"";
         stmt.execute(query);
 
         stmt.close();
@@ -622,8 +606,7 @@ public class SessionServerTest
     }
 
     @Test
-    public void testSelectPrivilege() throws Exception
-    {
+    public void testSelectPrivilege() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009'");
@@ -641,7 +624,7 @@ public class SessionServerTest
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("GRANT SELECT ON \"" + dataMemDb.NAME + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
         stmt.close();
         conn.close();
 
@@ -659,68 +642,72 @@ public class SessionServerTest
     }
 
     @Test
-    public void testShow() throws Exception
-    {
+    public void testShow() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
 
         System.out.println("* DataSources");
         DatabaseMetaData metaData = conn.getMetaData();
         ResultSet rs = metaData.getCatalogs();
-        while (rs.next())
-             System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("REMARKS"));
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("REMARKS"));
+        }
         rs.close();
 
         System.out.println("* Schemas");
-        rs = metaData.getSchemas(dataMemDb.NAME, "%DEFAULT");
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_CATALOG") + ", " +
-                    rs.getString("REMARKS") + ", " +
-                    rs.getString("TABLE_CAT_REMARKS"));
-
+        rs = metaData.getSchemas(dataMemDb.name, "%DEFAULT");
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_CATALOG") + ", "
+                    + rs.getString("REMARKS") + ", "
+                    + rs.getString("TABLE_CAT_REMARKS"));
+        }
         rs.close();
 
         System.out.println("* Tables");
-        rs = metaData.getTables(dataMemDb.NAME, "%DEFAULT", "employee", null);
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("REMARKS") + ", " +
-                    rs.getString("TABLE_CAT_REMARKS") + ", " +
-                    rs.getString("TABLE_SCHEM_REMARKS"));
+        rs = metaData.getTables(dataMemDb.name, "%DEFAULT", "employee", null);
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("REMARKS") + ", "
+                    + rs.getString("TABLE_CAT_REMARKS") + ", "
+                    + rs.getString("TABLE_SCHEM_REMARKS"));
+        }
         rs.close();
 
         System.out.println("* Columns");
-        rs = metaData.getColumns(dataMemDb.NAME, "%DEFAULT", "employee", "%");
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("COLUMN_NAME") + ", " +
-                    rs.getString("REMARKS") + ", " +
-                    rs.getString("TABLE_CAT_REMARKS") + ", " +
-                    rs.getString("TABLE_SCHEM_REMARKS") + ", " +
-                    rs.getString("TABLE_NAME_REMARKS"));
+        rs = metaData.getColumns(dataMemDb.name, "%DEFAULT", "employee", "%");
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("COLUMN_NAME") + ", "
+                    + rs.getString("REMARKS") + ", "
+                    + rs.getString("TABLE_CAT_REMARKS") + ", "
+                    + rs.getString("TABLE_SCHEM_REMARKS") + ", "
+                    + rs.getString("TABLE_NAME_REMARKS"));
+        }
         rs.close();
 
         System.out.println("* Users");
         Statement stmt = conn.createStatement();
 
         rs = stmt.executeQuery("SHOW ALL USERS");
-        while (rs.next())
-            System.out.println("  " + rs.getString("USER_NAME") + ", " +
-                    rs.getString("REMARKS"));
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("USER_NAME") + ", "
+                    + rs.getString("REMARKS"));
+        }
         rs.close();
 
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009'");
-        stmt.execute("GRANT ALL ON \"" + dataMemDb.NAME + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT ALL ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
         rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"jsyang\"");
-        while (rs.next())
-            System.out.println("  " + rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("PRIVILEGE"));
+        while (rs.next()) {
+            System.out.println("  " + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("PRIVILEGE"));
+        }
         rs.close();
         stmt.execute("DROP USER \"jsyang\"");
 
@@ -730,28 +717,27 @@ public class SessionServerTest
     }
 
     @Test
-    public void testShowComments() throws Exception
-    {
+    public void testShowComments() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
 
         System.out.println("* Comments");
         Statement stmt = conn.createStatement();
 
-        stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.NAME + "\" IS 'DS_COMMENT'");
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.NAME + "\".__DEFAULT IS 'SCHEMA_COMMENT'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\" IS 'TABLE_COMMENT'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\".\"name\" IS 'COLUMN_COMMENT_EXTRA'");
+        stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.name + "\" IS 'DS_COMMENT'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'SCHEMA_COMMENT'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'TABLE_COMMENT'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'COLUMN_COMMENT_EXTRA'");
 
         ResultSet rs = stmt.executeQuery("SHOW COMMENTS '%COMMENT' TABLE 'emp%' ");
         int rowCnt = 0;
         while (rs.next()) {
             ++rowCnt;
-            System.out.println("  " + rs.getString("OBJECT_TYPE") + ", " +
-                    rs.getString("TABLE_CAT") + ", " +
-                    rs.getString("TABLE_SCHEM") + ", " +
-                    rs.getString("TABLE_NAME") + ", " +
-                    rs.getString("COLUMN_NAME") + ", " +
-                    rs.getString("REMARKS"));
+            System.out.println("  " + rs.getString("OBJECT_TYPE") + ", "
+                    + rs.getString("TABLE_CAT") + ", "
+                    + rs.getString("TABLE_SCHEM") + ", "
+                    + rs.getString("TABLE_NAME") + ", "
+                    + rs.getString("COLUMN_NAME") + ", "
+                    + rs.getString("REMARKS"));
         }
         rs.close();
         assertEquals(rowCnt, 3);
@@ -761,15 +747,14 @@ public class SessionServerTest
     }
 
     @Test
-    public void testComment() throws Exception
-    {
+    public void testComment() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
 
-        stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.NAME + "\" IS 'dataSource'");
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.NAME + "\".__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\" IS 'table'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
+        stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.name + "\" IS 'dataSource'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
         stmt.execute("COMMENT ON USER \"octopus\" IS 'superuser'");
 
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009';");
@@ -781,7 +766,7 @@ public class SessionServerTest
         stmt = conn.createStatement();
 
         try {
-            stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.NAME + "\" IS 'dataSource'");
+            stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.name + "\" IS 'dataSource'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -793,7 +778,7 @@ public class SessionServerTest
         }
 
         try {
-            stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.NAME + "\".__DEFAULT IS 'schema'");
+            stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -803,15 +788,15 @@ public class SessionServerTest
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("GRANT COMMENT ON \"" + dataMemDb.NAME + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT COMMENT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
         stmt.close();
         conn.close();
 
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.NAME + "\".__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\" IS 'table'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.NAME + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
         stmt.close();
         conn.close();
 

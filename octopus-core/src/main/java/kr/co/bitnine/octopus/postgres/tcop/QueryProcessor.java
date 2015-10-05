@@ -20,15 +20,18 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 
-public interface QueryProcessor
-{
+public interface QueryProcessor {
     Portal query(String queryString) throws PostgresException;
+
     CachedQuery parse(String queryString, String stmtName, PostgresType[] paramTypes) throws PostgresException;
+
     Portal bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException;
 
     CachedQuery getCachedQuery(String stmtName) throws PostgresException;
+
     Portal getPortal(String portalName) throws PostgresException;
 
     void closeCachedQuery(String stmtName) throws PostgresException;
+
     void closePortal(String portalName) throws PostgresException;
 }

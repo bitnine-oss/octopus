@@ -44,7 +44,7 @@ does not already exist, create it.
   <property>
     <name>metastore.jdo.connection.drivername</name>
     <value></value>
-    <description></description>
+    <description>The JDBC driver class name of the database for Octopus Metastore.</description>
   </property>
 
   <property>

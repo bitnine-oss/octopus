@@ -16,8 +16,20 @@ package kr.co.bitnine.octopus.meta.jdo;
 
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
-import kr.co.bitnine.octopus.meta.jdo.model.*;
-import kr.co.bitnine.octopus.meta.model.*;
+import kr.co.bitnine.octopus.meta.jdo.model.MColumn;
+import kr.co.bitnine.octopus.meta.jdo.model.MDataSource;
+import kr.co.bitnine.octopus.meta.jdo.model.MRole;
+import kr.co.bitnine.octopus.meta.jdo.model.MSchema;
+import kr.co.bitnine.octopus.meta.jdo.model.MSchemaPrivilege;
+import kr.co.bitnine.octopus.meta.jdo.model.MTable;
+import kr.co.bitnine.octopus.meta.jdo.model.MUser;
+import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaDataSource;
+import kr.co.bitnine.octopus.meta.model.MetaRole;
+import kr.co.bitnine.octopus.meta.model.MetaSchema;
+import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
+import kr.co.bitnine.octopus.meta.model.MetaTable;
+import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import org.apache.commons.logging.Log;
@@ -36,21 +48,23 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
-public class JDOMetaContext implements MetaContext
-{
+public final class JDOMetaContext implements MetaContext {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
 
     private final PersistenceManager pm;
 
-    public JDOMetaContext(PersistenceManager persistenceManager)
-    {
+    public JDOMetaContext(PersistenceManager persistenceManager) {
         pm = persistenceManager;
     }
 
-    private MUser getMUser(String name, boolean nothrow) throws MetaException
-    {
+    private MUser getMUser(String name, boolean nothrow) throws MetaException {
         try {
             Query query = pm.newQuery(MUser.class);
             query.setFilter("name == userName");
@@ -67,20 +81,17 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public boolean userExists(String name) throws MetaException
-    {
+    public boolean userExists(String name) throws MetaException {
         return getMUser(name, true) != null;
     }
 
     @Override
-    public MetaUser getUser(String name) throws MetaException
-    {
+    public MetaUser getUser(String name) throws MetaException {
         return getMUser(name, false);
     }
 
     @Override
-    public MetaUser createUser(String name, String password) throws MetaException
-    {
+    public MetaUser createUser(String name, String password) throws MetaException {
         try {
             MUser mUser = new MUser(name, password);
             pm.makePersistent(mUser);
@@ -91,8 +102,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void alterUser(String name, String newPassword) throws MetaException
-    {
+    public void alterUser(String name, String newPassword) throws MetaException {
         MUser mUser = (MUser) getUser(name);
         mUser.setPassword(newPassword);
         try {
@@ -103,8 +113,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void dropUser(String name) throws MetaException
-    {
+    public void dropUser(String name) throws MetaException {
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
@@ -122,8 +131,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnUser(String comment, String name) throws MetaException
-    {
+    public void commentOnUser(String comment, String name) throws MetaException {
         MUser mUser = (MUser) getUser(name);
         mUser.setComment(comment);
         try {
@@ -134,8 +142,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public Collection<MetaUser> getUsers() throws MetaException
-    {
+    public Collection<MetaUser> getUsers() throws MetaException {
         try {
             Query query = pm.newQuery(MUser.class);
             List<MetaUser> users = (List<MetaUser>) query.execute();
@@ -145,8 +152,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private MDataSource getMDataSource(String name, boolean nothrow) throws MetaException
-    {
+    private MDataSource getMDataSource(String name, boolean nothrow) throws MetaException {
         try {
             Query query = pm.newQuery(MDataSource.class);
             query.setFilter("name == dataSourceName");
@@ -163,14 +169,12 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaDataSource getDataSource(String name) throws MetaException
-    {
+    public MetaDataSource getDataSource(String name) throws MetaException {
         return getMDataSource(name, false);
     }
 
     @Override
-    public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException
-    {
+    public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException {
         if (getMDataSource(name, true) != null)
             throw new MetaException("data source '" + name + "' already exists");
 
@@ -205,7 +209,7 @@ public class JDOMetaContext implements MetaContext
             if (conn != null) {
                 try {
                     conn.close();
-                } catch (SQLException e) { }
+                } catch (SQLException ignore) { }
             }
             if (tx.isActive())
                 tx.rollback();
@@ -213,8 +217,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void dropJdbcDataSource(String name) throws MetaException
-    {
+    public void dropJdbcDataSource(String name) throws MetaException {
         Transaction tx = pm.currentTransaction();
 
         try {
@@ -233,8 +236,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void addColumn(Column rawColumn, MTable mTable)
-    {
+    private void addColumn(Column rawColumn, MTable mTable) {
         String columnName = rawColumn.getName();
         int jdbcType = rawColumn.getType().getJdbcType();
         int typeInfo = -1;
@@ -246,14 +248,12 @@ public class JDOMetaContext implements MetaContext
         pm.makePersistent(mColumn);
     }
 
-    private void addColumnsOfTable(Table rawTable, MTable mTable)
-    {
+    private void addColumnsOfTable(Table rawTable, MTable mTable) {
         for (Column rawColumn : rawTable.getColumns())
             addColumn(rawColumn, mTable);
     }
 
-    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema)
-    {
+    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema) {
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
             TableType tableType = rawTable.getType();
@@ -267,8 +267,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource)
-    {
+    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) {
         for (Schema rawSchema : dc.getSchemas()) {
             String schemaName = rawSchema.getName();
             if (schemaName == null)
@@ -282,15 +281,14 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void updateColumnsOfTable(Table rawTable, MTable mTable)
-    {
+    private void updateColumnsOfTable(Table rawTable, MTable mTable) {
         Map<String, MColumn> oldColumns = new HashMap<>();
 
         for (MetaColumn col : mTable.getColumns())
             oldColumns.put(col.getName(), (MColumn) col);
 
-        TreeSet<String> oldColumnNames = new TreeSet<>(oldColumns.keySet());
-        TreeSet<String> newColumnNames = new TreeSet<>();
+        Set<String> oldColumnNames = new TreeSet<>(oldColumns.keySet());
+        Set<String> newColumnNames = new TreeSet<>();
 
         for (Column rawColumn : rawTable.getColumns()) {
             String colName = rawColumn.getName();
@@ -308,15 +306,14 @@ public class JDOMetaContext implements MetaContext
             pm.deletePersistent(oldColumns.get(name));
     }
 
-    private void updateTablesOfSchema(Schema rawSchema, MSchema mSchema, final String tableRegex)
-    {
+    private void updateTablesOfSchema(Schema rawSchema, MSchema mSchema, final String tableRegex) {
         Map<String, MTable> oldTables = new HashMap<>();
 
         for (MetaTable table : mSchema.getTables())
             oldTables.put(table.getName(), (MTable) table);
 
-        TreeSet<String> oldTableNames = new TreeSet<>(oldTables.keySet());
-        TreeSet<String> newTableNames = new TreeSet<>();
+        Set<String> oldTableNames = new TreeSet<>(oldTables.keySet());
+        Set<String> newTableNames = new TreeSet<>();
 
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
@@ -347,15 +344,14 @@ public class JDOMetaContext implements MetaContext
     }
 
     private void updateJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource,
-                                              final String schemaRegex, final String tableRegex) throws MetaException
-    {
+                                              final String schemaRegex, final String tableRegex) throws MetaException {
         Map<String, MSchema> oldSchemas = new HashMap<>();
 
         for (MetaSchema schema : mDataSource.getSchemas())
             oldSchemas.put(schema.getName(), (MSchema) schema);
 
-        TreeSet<String> oldSchemaNames = new TreeSet<>(oldSchemas.keySet());
-        TreeSet<String> newSchemaNames = new TreeSet<>();
+        Set<String> oldSchemaNames = new TreeSet<>(oldSchemas.keySet());
+        Set<String> newSchemaNames = new TreeSet<>();
 
         for (Schema rawSchema : dc.getSchemas()) {
             String schemaName = rawSchema.getName();
@@ -390,8 +386,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaDataSource updateJdbcDataSource(String dataSourceName, final String schemaRegex, final String tableRegex) throws MetaException
-    {
+    public MetaDataSource updateJdbcDataSource(String dataSourceName, final String schemaRegex, final String tableRegex) throws MetaException {
         MDataSource mDataSource = getMDataSource(dataSourceName, false);
 
         Transaction tx = pm.currentTransaction();
@@ -416,8 +411,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnDataSource(String comment, String name) throws MetaException
-    {
+    public void commentOnDataSource(String comment, String name) throws MetaException {
         MDataSource mDataSource = (MDataSource) getDataSource(name);
         mDataSource.setComment(comment);
         try {
@@ -428,8 +422,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public Collection<MetaDataSource> getDataSources() throws MetaException
-    {
+    public Collection<MetaDataSource> getDataSources() throws MetaException {
         try {
             Query query = pm.newQuery(MDataSource.class);
             List<MetaDataSource> dataSources = (List<MetaDataSource>) query.execute();
@@ -439,12 +432,11 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException
-    {
+    MetaSchema getSchemaByQualifiedName(String dataSourceName, String schemaName) throws MetaException {
         try {
             Query query = pm.newQuery(MSchema.class);
-            query.setFilter("name == schemaName && " +
-                    "dataSource.name == dataSourceName");
+            query.setFilter("name == schemaName && "
+                    + "dataSource.name == dataSourceName");
             query.declareParameters("String dataSourceName, String schemaName");
             query.setUnique(true);
 
@@ -458,8 +450,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnSchema(String comment, String dataSourceName, String schemaName) throws MetaException
-    {
+    public void commentOnSchema(String comment, String dataSourceName, String schemaName) throws MetaException {
         MSchema mSchema = (MSchema) getSchemaByQualifiedName(dataSourceName, schemaName);
         mSchema.setComment(comment);
         try {
@@ -469,19 +460,18 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException
-    {
+    MetaTable getTableByQualifiedName(String dataSourceName, String schemaName, String tableName) throws MetaException {
         try {
             Query query = pm.newQuery(MTable.class);
-            query.setFilter("name == tableName && " +
-                    "schema.name == schemaName && " +
-                    "schema.dataSource.name == dataSourceName");
+            query.setFilter("name == tableName && "
+                    + "schema.name == schemaName && "
+                    + "schema.dataSource.name == dataSourceName");
             query.declareParameters("String dataSourceName, String schemaName, String tableName");
             query.setUnique(true);
 
             MTable mTable = (MTable) query.execute(dataSourceName, schemaName, tableName);
             if (mTable == null)
-                throw new MetaException("table '" + dataSourceName + "." + schemaName + "." + tableName +"' does not exist");
+                throw new MetaException("table '" + dataSourceName + "." + schemaName + "." + tableName + "' does not exist");
             return mTable;
         } catch (RuntimeException e) {
             throw new MetaException("failed to get table '" + dataSourceName + "." + schemaName + "." + tableName + "'", e);
@@ -489,8 +479,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnTable(String comment, String dataSourceName, String schemaName, String tableName) throws MetaException
-    {
+    public void commentOnTable(String comment, String dataSourceName, String schemaName, String tableName) throws MetaException {
         MTable mTable = (MTable) getTableByQualifiedName(dataSourceName, schemaName, tableName);
         mTable.setComment(comment);
         try {
@@ -500,14 +489,13 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
-    {
+    MetaColumn getColumnByQualifiedName(String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException {
         try {
             Query query = pm.newQuery(MColumn.class);
-            query.setFilter("name == columnName && " +
-                    "table.name == tableName && " +
-                    "table.schema.name == schemaName && " +
-                    "table.schema.dataSource.name == dataSourceName");
+            query.setFilter("name == columnName && "
+                    + "table.name == tableName && "
+                    + "table.schema.name == schemaName && "
+                    + "table.schema.dataSource.name == dataSourceName");
             query.declareParameters("String dataSourceName, String schemaName, String tableName, String columnName");
             query.setUnique(true);
 
@@ -521,8 +509,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void commentOnColumn(String comment, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
-    {
+    public void commentOnColumn(String comment, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setComment(comment);
         try {
@@ -533,8 +520,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void setDataCategoryOn(String category, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException
-    {
+    public void setDataCategoryOn(String category, String dataSourceName, String schemaName, String tableName, String columnName) throws MetaException {
         MColumn mColumn = (MColumn) getColumnByQualifiedName(dataSourceName, schemaName, tableName, columnName);
         mColumn.setDataCategory(category);
         try {
@@ -545,8 +531,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaRole createRole(String name) throws MetaException
-    {
+    public MetaRole createRole(String name) throws MetaException {
         try {
             MRole mRole = new MRole(name);
             pm.makePersistent(mRole);
@@ -557,8 +542,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void dropRoleByName(String name) throws MetaException
-    {
+    public void dropRoleByName(String name) throws MetaException {
         try {
             Query query = pm.newQuery(MRole.class);
             query.setFilter("name == '" + name + "'");
@@ -575,8 +559,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
-    {
+    public void addSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException {
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
@@ -599,8 +582,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException
-    {
+    public void removeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> userNames) throws MetaException {
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
@@ -623,15 +605,14 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public MetaSchemaPrivilege getSchemaPrivilege(String[] schemaName, String userName) throws MetaException
-    {
+    public MetaSchemaPrivilege getSchemaPrivilege(String[] schemaName, String userName) throws MetaException {
         assert schemaName.length == 2;
 
         try {
             Query query = pm.newQuery(MSchemaPrivilege.class);
-            query.setFilter("schema.name == schemaName && " +
-                    "schema.dataSource.name == dataSourceName && " +
-                    "user.name == userName");
+            query.setFilter("schema.name == schemaName && "
+                    + "schema.dataSource.name == dataSourceName && "
+                    + "user.name == userName");
             query.declareParameters("String dataSourceName, String schemaName, String userName");
             query.setUnique(true);
 
@@ -642,8 +623,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public Collection<MetaSchemaPrivilege> getSchemaPrivilegesByUser(String userName) throws MetaException
-    {
+    public Collection<MetaSchemaPrivilege> getSchemaPrivilegesByUser(String userName) throws MetaException {
         try {
             Query query = pm.newQuery(MSchemaPrivilege.class);
             query.setFilter("user.name == userName");
@@ -656,8 +636,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException
-    {
+    public void addObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException {
         assert schemaName.length == 2;
 
         Transaction tx = pm.currentTransaction();
@@ -688,8 +667,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException
-    {
+    public void removeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] schemaName, List<String> userNames) throws MetaException {
         assert schemaName.length == 2;
 
         Transaction tx = pm.currentTransaction();
@@ -719,8 +697,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void deleteSchemaPrivilegesByUser(String userName) throws MetaException
-    {
+    private void deleteSchemaPrivilegesByUser(String userName) throws MetaException {
         try {
             Query query = pm.newQuery(MSchemaPrivilege.class);
             query.setFilter("user.name == userName");
@@ -731,8 +708,7 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void deleteSchemaPrivilegesByDataSource(String dataSourceName) throws MetaException
-    {
+    private void deleteSchemaPrivilegesByDataSource(String dataSourceName) throws MetaException {
         try {
             Query query = pm.newQuery(MSchemaPrivilege.class);
             query.setFilter("schema.dataSource.name == dataSourceName");
@@ -743,12 +719,11 @@ public class JDOMetaContext implements MetaContext
         }
     }
 
-    private void deleteSchemaPrivilegeBySchema(String dataSourceName, String schemaName) throws MetaException
-    {
+    private void deleteSchemaPrivilegeBySchema(String dataSourceName, String schemaName) throws MetaException {
         try {
             Query query = pm.newQuery(MSchemaPrivilege.class);
-            query.setFilter("schema.dataSource.name == dataSourceName && " +
-                    "schema.name == schemaName");
+            query.setFilter("schema.dataSource.name == dataSourceName && "
+                    + "schema.name == schemaName");
             query.declareParameters("String dataSourceName, String schemaName");
             query.deletePersistentAll(dataSourceName, schemaName);
         } catch (RuntimeException e) {
@@ -757,8 +732,7 @@ public class JDOMetaContext implements MetaContext
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         pm.close();
     }
 }

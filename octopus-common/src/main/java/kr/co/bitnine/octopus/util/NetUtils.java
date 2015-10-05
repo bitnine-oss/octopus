@@ -19,15 +19,15 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 
-public class NetUtils
-{
+public final class NetUtils {
+    private NetUtils() { }
+
     /**
      * Util method to build socket addr from either:
-     *   <host>:<port>
-     *   <scheme>://<host>:<port>/<path>
+     * <host>:<port>
+     * <scheme>://<host>:<port>/<path>
      */
-    public static InetSocketAddress createSocketAddr(String target)
-    {
+    public static InetSocketAddress createSocketAddr(String target) {
         return createSocketAddr(target, null);
     }
 
@@ -37,13 +37,12 @@ public class NetUtils
      * as part of the exception message, allowing the user to better diagnose
      * the misconfiguration.
      *
-     * @param target a string of either "host" or "host:port"
+     * @param target     a string of either "host" or "host:port"
      * @param configName the name of the configuration from which
      *                   <code>target</code> was loaded. This is used in the
      *                   exception message in the case that parsing fails.
      */
-    public static InetSocketAddress createSocketAddr(String target, String configName)
-    {
+    public static InetSocketAddress createSocketAddr(String target, String configName) {
         String helpText = "";
         if (configName != null)
             helpText = " (configuration property '" + configName + "')";
@@ -80,8 +79,7 @@ public class NetUtils
     /**
      * Compose a "host:port" string from the address.
      */
-    public static String getHostPortString(InetSocketAddress addr)
-    {
+    public static String getHostPortString(InetSocketAddress addr) {
         return addr.getHostName() + ":" + addr.getPort();
     }
 }

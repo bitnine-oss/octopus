@@ -14,7 +14,6 @@
 
 package kr.co.bitnine.octopus.meta.model;
 
-public interface MetaRole
-{
+public interface MetaRole {
     String getName();
 }

@@ -23,33 +23,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TupleSetSql implements TupleSet
-{
-    private TupleDesc tupDesc;
+public final class TupleSetSql implements TupleSet {
+    private TupleDesc tupleDesc;
     private final List<Tuple> tuples;
     private Iterator<Tuple> iter;
 
-    public TupleSetSql()
-    {
-        tupDesc = null;
+    public TupleSetSql() {
         tuples = new ArrayList<>();
-        iter = null;
     }
 
     @Override
-    public TupleDesc getTupleDesc()
-    {
-        return tupDesc;
+    public TupleDesc getTupleDesc() {
+        return tupleDesc;
     }
 
-    public void setTupleDesc(TupleDesc tupDesc)
-    {
-        this.tupDesc = tupDesc;
+    public void setTupleDesc(TupleDesc tupleDesc) {
+        this.tupleDesc = tupleDesc;
     }
 
     @Override
-    public Tuple next() throws PostgresException
-    {
+    public Tuple next() throws PostgresException {
         if (iter == null)
             iter = tuples.iterator();
 
@@ -59,8 +52,7 @@ public class TupleSetSql implements TupleSet
     @Override
     public void close() throws PostgresException { }
 
-    public void addTuples(List<Tuple> ts)
-    {
+    public void addTuples(List<Tuple> ts) {
         tuples.addAll(ts);
     }
 }

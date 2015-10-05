@@ -14,20 +14,23 @@
 
 package kr.co.bitnine.octopus.engine;
 
-import org.apache.calcite.sql.*;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 
 import java.util.ArrayList;
 import java.util.Stack;
 
-public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
-{
+public final class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode> {
     /*
      * To find table name identifiers, we use a state stack.
      * It is used to indicate whether an identifier is in FROM clause.
      */
-    private enum State
-    {
+    private enum State {
         NOT_FROM,
         FROM
     }
@@ -35,14 +38,12 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
     private final Stack<State> nodeStack = new Stack<>();
     private final ArrayList<SqlIdentifier> tableIds;
 
-    public SqlTableIdentifierFindVisitor(ArrayList<SqlIdentifier> tableIds)
-    {
+    public SqlTableIdentifierFindVisitor(ArrayList<SqlIdentifier> tableIds) {
         this.tableIds = tableIds;
     }
 
     @Override
-    public SqlNode visit(SqlCall call)
-    {
+    public SqlNode visit(SqlCall call) {
         if (call instanceof SqlSelect) {
             int i = 0;
             for (SqlNode operand : call.getOperandList()) {
@@ -75,8 +76,7 @@ public class SqlTableIdentifierFindVisitor extends SqlBasicVisitor<SqlNode>
     }
 
     @Override
-    public SqlNode visit(SqlIdentifier identifier)
-    {
+    public SqlNode visit(SqlIdentifier identifier) {
         // check whether this is fully qualified table name
         if (nodeStack.peek() == State.FROM)
             tableIds.add(identifier);

@@ -18,58 +18,47 @@ import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 
 import java.util.List;
 
-abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand
-{
+abstract class OctopusSqlObjectPrivileges extends OctopusSqlCommand {
     private final List<ObjectPrivilege> objPrivs;
     private final String[] objName;
     private final List<String> grantees;
 
-    OctopusSqlObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees)
-    {
+    OctopusSqlObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) {
         this.objPrivs = objPrivs;
         this.objName = objName;
         this.grantees = grantees;
     }
 
-    List<ObjectPrivilege> getObjPrivs()
-    {
+    List<ObjectPrivilege> getObjPrivs() {
         return objPrivs;
     }
 
-    String[] getObjName()
-    {
+    String[] getObjName() {
         return objName;
     }
 
-    List<String> getGrantees()
-    {
+    List<String> getGrantees() {
         return grantees;
     }
 
-    static class OctopusSqlGrantObjPrivs extends OctopusSqlObjectPrivileges
-    {
-        OctopusSqlGrantObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees)
-        {
+    static class OctopusSqlGrantObjPrivs extends OctopusSqlObjectPrivileges {
+        OctopusSqlGrantObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) {
             super(objPrivs, objName, grantees);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.GRANT_OBJ_PRIVS;
         }
     }
 
-    static class OctopusSqlRevokeObjPrivs extends OctopusSqlObjectPrivileges
-    {
-        OctopusSqlRevokeObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees)
-        {
+    static class OctopusSqlRevokeObjPrivs extends OctopusSqlObjectPrivileges {
+        OctopusSqlRevokeObjPrivs(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) {
             super(objPrivs, objName, revokees);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.REVOKE_OBJ_PRIVS;
         }
     }

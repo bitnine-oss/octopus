@@ -26,8 +26,7 @@ import java.util.List;
 /**
  * Exec is a helper class for executing an external process from a mojo.
  */
-public class Exec
-{
+public final class Exec {
     private Mojo mojo;
 
     /**
@@ -36,8 +35,7 @@ public class Exec
      *
      * @param mojo Mojo executing external process
      */
-    public Exec(Mojo mojo)
-    {
+    public Exec(Mojo mojo) {
         this.mojo = mojo;
     }
 
@@ -46,11 +44,10 @@ public class Exec
      * to the given list.
      *
      * @param command List<String> containing command and all arguments
-     * @param output List<String> in/out parameter to receive command output
+     * @param output  List<String> in/out parameter to receive command output
      * @return int exit code of command
      */
-    public int run(List<String> command, List<String> output)
-    {
+    public int run(List<String> command, List<String> output) {
         int retCode = 1;
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -83,8 +80,7 @@ public class Exec
      * OutputBufferThread is a background thread for consuming and
      * storing output of the external process.
      */
-    private static class OutputBufferThread extends Thread
-    {
+    private static class OutputBufferThread extends Thread {
         private List<String> output;
         private BufferedReader reader;
 
@@ -93,8 +89,7 @@ public class Exec
          *
          * @param is InputStream to consume
          */
-        public OutputBufferThread(InputStream is)
-        {
+        OutputBufferThread(InputStream is) {
             this.setDaemon(true);
 
             output = new ArrayList<String>();
@@ -102,8 +97,7 @@ public class Exec
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 while (true) {
                     String line = reader.readLine();
@@ -122,8 +116,7 @@ public class Exec
          *
          * @return List<String> every line consumed from the input
          */
-        public List<String> getOutput()
-        {
+        List<String> getOutput() {
             return output;
         }
     }

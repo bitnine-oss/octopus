@@ -29,9 +29,8 @@ import org.apache.commons.logging.LogFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TupleSetByPass implements TupleSet
-{
-    private final Log LOG = LogFactory.getLog(TupleSetByPass.class);
+public final class TupleSetByPass implements TupleSet {
+    private static final Log LOG = LogFactory.getLog(TupleSetByPass.class);
 
     private final CursorByPass cursorByPass;
     private final ResultSet resultSet;
@@ -40,8 +39,7 @@ public class TupleSetByPass implements TupleSet
     private int fetchSize;
     private int fetchCount;
 
-    TupleSetByPass(CursorByPass cursorByPass, ResultSet resultSet, TupleDesc tupDesc)
-    {
+    TupleSetByPass(CursorByPass cursorByPass, ResultSet resultSet, TupleDesc tupDesc) {
         this.cursorByPass = cursorByPass;
         this.resultSet = resultSet;
         this.tupDesc = tupDesc;
@@ -51,14 +49,12 @@ public class TupleSetByPass implements TupleSet
     }
 
     @Override
-    public TupleDesc getTupleDesc()
-    {
+    public TupleDesc getTupleDesc() {
         return tupDesc;
     }
 
     @Override
-    public Tuple next() throws PostgresException
-    {
+    public Tuple next() throws PostgresException {
         if (fetchSize > 0 && fetchCount >= fetchSize)
             return null;
 
@@ -72,31 +68,31 @@ public class TupleSetByPass implements TupleSet
             Tuple t = new Tuple(attrs.length);
             for (int i = 0; i < attrs.length; i++) {
                 Object datum;
-                switch (attrs[i].type) {
-                    case INT4:
-                        datum = resultSet.getInt(i + 1);
-                        break;
-                    case INT8:
-                        datum = resultSet.getLong(i + 1);
-                        break;
-                    case FLOAT4:
-                        datum = resultSet.getFloat(i + 1);
-                        break;
-                    case FLOAT8:
-                        datum = resultSet.getDouble(i + 1);
-                        break;
-                    case VARCHAR:
-                        datum = resultSet.getString(i + 1);
-                        break;
-                    case TIMESTAMP:
-                        datum = resultSet.getTimestamp(i + 1);
-                        break;
-                    default:
-                        PostgresErrorData edata = new PostgresErrorData(
-                                PostgresSeverity.ERROR,
-                                PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                                "currently data type " + attrs[i].type.name() + " is not supported");
-                        throw new PostgresException(edata);
+                switch (attrs[i].getType()) {
+                case INT4:
+                    datum = resultSet.getInt(i + 1);
+                    break;
+                case INT8:
+                    datum = resultSet.getLong(i + 1);
+                    break;
+                case FLOAT4:
+                    datum = resultSet.getFloat(i + 1);
+                    break;
+                case FLOAT8:
+                    datum = resultSet.getDouble(i + 1);
+                    break;
+                case VARCHAR:
+                    datum = resultSet.getString(i + 1);
+                    break;
+                case TIMESTAMP:
+                    datum = resultSet.getTimestamp(i + 1);
+                    break;
+                default:
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.ERROR,
+                            PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                            "currently data type " + attrs[i].getType().name() + " is not supported");
+                    throw new PostgresException(edata);
                 }
 
                 if (resultSet.wasNull())
@@ -114,8 +110,7 @@ public class TupleSetByPass implements TupleSet
     }
 
     @Override
-    public void close() throws PostgresException
-    {
+    public void close() throws PostgresException {
         try {
             resultSet.close();
         } catch (SQLException e) {
@@ -126,8 +121,7 @@ public class TupleSetByPass implements TupleSet
         }
     }
 
-    void resetFetchSize(int numRows)
-    {
+    void resetFetchSize(int numRows) {
         fetchSize = numRows;
         fetchCount = 0;
     }

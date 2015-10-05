@@ -19,29 +19,24 @@ import kr.co.bitnine.octopus.postgres.libpq.ByteBuffers;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public class IoInt8 implements IoFunction
-{
+public final class IoInt8 implements IoFunction {
     @Override
-    public Object in(byte[] bytes)
-    {
+    public Object in(byte[] bytes) {
         return Long.valueOf(new String(bytes, StandardCharsets.UTF_8));
     }
 
     @Override
-    public byte[] out(Object value)
-    {
+    public byte[] out(Object value) {
         return value == null ? null : String.valueOf(value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
-    public Object recv(byte[] bytes)
-    {
+    public Object recv(byte[] bytes) {
         return ByteBuffer.wrap(bytes).getLong();
     }
 
     @Override
-    public byte[] send(Object value)
-    {
+    public byte[] send(Object value) {
         return value == null ? null : ByteBuffer.allocate(ByteBuffers.LONG_BYTES).putLong((Long) value).array();
     }
 }

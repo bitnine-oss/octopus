@@ -26,22 +26,19 @@ import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractQueryProcessor implements QueryProcessor
-{
+public abstract class AbstractQueryProcessor implements QueryProcessor {
     private final Map<String, CachedQuery> cachedQueries = new HashMap<>();
     private final Map<String, Portal> portals = new HashMap<>();
 
     @Override
-    public Portal query(String queryString) throws PostgresException
-    {
+    public final Portal query(String queryString) throws PostgresException {
         parse(queryString, "", new PostgresType[0]);
         bind("", "", new FormatCode[0], new byte[0][], new FormatCode[0]);
         return getPortal("");
     }
 
     @Override
-    public CachedQuery parse(String queryString, String stmtName, PostgresType[] paramTypes) throws PostgresException
-    {
+    public final CachedQuery parse(String queryString, String stmtName, PostgresType[] paramTypes) throws PostgresException {
         CachedQuery cq = processParse(queryString, paramTypes);
 
         if (cachedQueries.containsKey(stmtName)) {
@@ -61,8 +58,7 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
     }
 
     @Override
-    public Portal bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException
-    {
+    public final Portal bind(String stmtName, String portalName, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException {
         CachedQuery cq = getCachedQuery(stmtName);
 
         if (paramFormats.length > 1 && paramFormats.length != paramValues.length) {
@@ -99,8 +95,7 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
     }
 
     @Override
-    public CachedQuery getCachedQuery(String stmtName) throws PostgresException
-    {
+    public final CachedQuery getCachedQuery(String stmtName) throws PostgresException {
         CachedQuery cq = cachedQueries.get(stmtName);
         if (cq == null) {
             String msg;
@@ -119,8 +114,7 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
     }
 
     @Override
-    public Portal getPortal(String portalName) throws PostgresException
-    {
+    public final Portal getPortal(String portalName) throws PostgresException {
         Portal p = portals.get(portalName);
         if (p == null) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -134,21 +128,20 @@ public abstract class AbstractQueryProcessor implements QueryProcessor
     }
 
     @Override
-    public void closeCachedQuery(String stmtName) throws PostgresException
-    {
+    public final void closeCachedQuery(String stmtName) throws PostgresException {
         CachedQuery cq = getCachedQuery(stmtName);
         cachedQueries.remove(stmtName);
         cq.close();
     }
 
     @Override
-    public void closePortal(String portalName) throws PostgresException
-    {
+    public final void closePortal(String portalName) throws PostgresException {
         Portal p = getPortal(portalName);
         portals.remove(portalName);
         p.close();
     }
 
     protected abstract CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException;
+
     protected abstract Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException;
 }

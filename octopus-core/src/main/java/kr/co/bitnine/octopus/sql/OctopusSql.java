@@ -22,25 +22,28 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static kr.co.bitnine.octopus.sql.OctopusSqlObjectPrivileges.*;
-import static kr.co.bitnine.octopus.sql.OctopusSqlSystemPrivileges.*;
+import static kr.co.bitnine.octopus.sql.OctopusSqlObjectPrivileges.OctopusSqlGrantObjPrivs;
+import static kr.co.bitnine.octopus.sql.OctopusSqlObjectPrivileges.OctopusSqlRevokeObjPrivs;
+import static kr.co.bitnine.octopus.sql.OctopusSqlSystemPrivileges.OctopusSqlGrantSysPrivs;
+import static kr.co.bitnine.octopus.sql.OctopusSqlSystemPrivileges.OctopusSqlRevokeSysPrivs;
 
-public final class OctopusSql
-{
+public final class OctopusSql {
     private OctopusSql() { }
 
-    private static class Listener extends OctopusSqlBaseListener
-    {
+    private static class Listener extends OctopusSqlBaseListener {
         private List<OctopusSqlCommand> commands;
 
         private Set<SystemPrivilege> sysPrivs;
         private Set<ObjectPrivilege> objPrivs;
-        OctopusSqlObjectTarget commentTarget;
+        private OctopusSqlObjectTarget commentTarget;
 
-        Listener()
-        {
+        Listener() {
             commands = new ArrayList<>();
 
             sysPrivs = null;
@@ -49,15 +52,13 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitDdl(OctopusSqlParser.DdlContext ctx)
-        {
+        public void exitDdl(OctopusSqlParser.DdlContext ctx) {
             if (ctx.exception != null)
                 throw ctx.exception;
         }
 
         @Override
-        public void exitAddDataSourceClause(OctopusSqlParser.AddDataSourceClauseContext ctx)
-        {
+        public void exitAddDataSourceClause(OctopusSqlParser.AddDataSourceClauseContext ctx) {
             String dataSourceName = ctx.dataSourceName().getText();
             String jdbcConnectionString = ctx.jdbcConnectionString().getText();
             String jdbcDriverName = ctx.jdbcDriverName().getText();
@@ -65,15 +66,13 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitUpdateDataSource(OctopusSqlParser.UpdateDataSourceContext ctx)
-        {
+        public void exitUpdateDataSource(OctopusSqlParser.UpdateDataSourceContext ctx) {
             String dataSourceName = ctx.dataSourceName().getText();
             commands.add(new OctopusSqlUpdateDataSource(dataSourceName));
         }
 
         @Override
-        public void exitUpdateSchemas(OctopusSqlParser.UpdateSchemasContext ctx)
-        {
+        public void exitUpdateSchemas(OctopusSqlParser.UpdateSchemasContext ctx) {
             // FIXME: dataSourceName and schemaPattern will never be set to null
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
@@ -81,8 +80,7 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitUpdateTables(OctopusSqlParser.UpdateTablesContext ctx)
-        {
+        public void exitUpdateTables(OctopusSqlParser.UpdateTablesContext ctx) {
             // FIXME: dataSourceName, schemaPattern and tablePattern will never be set to null
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaName = ctx.schemaName() == null ? null : ctx.schemaName().getText();
@@ -91,23 +89,20 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitDropDataSourceClause(OctopusSqlParser.DropDataSourceClauseContext ctx)
-        {
+        public void exitDropDataSourceClause(OctopusSqlParser.DropDataSourceClauseContext ctx) {
             String dataSourceName = ctx.dataSourceName().getText();
             commands.add(new OctopusSqlDropDataSource(dataSourceName));
         }
 
         @Override
-        public void exitCreateUser(OctopusSqlParser.CreateUserContext ctx)
-        {
+        public void exitCreateUser(OctopusSqlParser.CreateUserContext ctx) {
             String name = ctx.user().getText();
             String password = ctx.password().getText();
             commands.add(new OctopusSqlCreateUser(name, password));
         }
 
         @Override
-        public void exitAlterUser(OctopusSqlParser.AlterUserContext ctx)
-        {
+        public void exitAlterUser(OctopusSqlParser.AlterUserContext ctx) {
             String name = ctx.user().getText();
             String password = ctx.password().getText();
             OctopusSqlParser.OldPasswordContext oldPasswordCtx = ctx.oldPassword();
@@ -116,215 +111,191 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitDropUser(OctopusSqlParser.DropUserContext ctx)
-        {
+        public void exitDropUser(OctopusSqlParser.DropUserContext ctx) {
             String name = ctx.user().getText();
             commands.add(new OctopusSqlDropUser(name));
         }
 
         @Override
-        public void exitCreateRole(OctopusSqlParser.CreateRoleContext ctx)
-        {
+        public void exitCreateRole(OctopusSqlParser.CreateRoleContext ctx) {
             String name = ctx.role().getText();
             commands.add(new OctopusSqlCreateRole(name));
         }
 
         @Override
-        public void exitDropRole(OctopusSqlParser.DropRoleContext ctx)
-        {
+        public void exitDropRole(OctopusSqlParser.DropRoleContext ctx) {
             String name = ctx.role().getText();
             commands.add(new OctopusSqlDropRole(name));
         }
 
         @Override
-        public void exitGrantSystemPrivileges(OctopusSqlParser.GrantSystemPrivilegesContext ctx)
-        {
+        public void exitGrantSystemPrivileges(OctopusSqlParser.GrantSystemPrivilegesContext ctx) {
             assert this.sysPrivs != null;
 
-            List<SystemPrivilege> sysPrivs = new ArrayList<>(this.sysPrivs);
+            List<SystemPrivilege> sysPrivsList = new ArrayList<>(this.sysPrivs);
 
             Set<String> grantees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext grantee : ctx.grantees().grantee())
                 grantees.add(grantee.getText());
 
-            commands.add(new OctopusSqlGrantSysPrivs(sysPrivs, new ArrayList<>(grantees)));
+            commands.add(new OctopusSqlGrantSysPrivs(sysPrivsList, new ArrayList<>(grantees)));
 
             this.sysPrivs = null;
         }
 
         @Override
-        public void exitRevokeSystemPrivileges(OctopusSqlParser.RevokeSystemPrivilegesContext ctx)
-        {
+        public void exitRevokeSystemPrivileges(OctopusSqlParser.RevokeSystemPrivilegesContext ctx) {
             assert this.sysPrivs != null;
 
-            List<SystemPrivilege> sysPrivs = new ArrayList<>(this.sysPrivs);
+            List<SystemPrivilege> sysPrivsList = new ArrayList<>(this.sysPrivs);
 
             Set<String> revokees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext revokee : ctx.grantees().grantee())
                 revokees.add(revokee.getText());
 
-            commands.add(new OctopusSqlRevokeSysPrivs(sysPrivs, new ArrayList<>(revokees)));
+            commands.add(new OctopusSqlRevokeSysPrivs(sysPrivsList, new ArrayList<>(revokees)));
 
             this.sysPrivs = null;
         }
 
         @Override
-        public void enterSystemPrivileges(OctopusSqlParser.SystemPrivilegesContext ctx)
-        {
+        public void enterSystemPrivileges(OctopusSqlParser.SystemPrivilegesContext ctx) {
             assert sysPrivs == null;
             sysPrivs = new HashSet<>();
         }
 
         @Override
-        public void exitSysPrivAlterSystem(OctopusSqlParser.SysPrivAlterSystemContext ctx)
-        {
+        public void exitSysPrivAlterSystem(OctopusSqlParser.SysPrivAlterSystemContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.ALTER_SYSTEM);
         }
 
         @Override
-        public void exitSysPrivSelectAnyTable(OctopusSqlParser.SysPrivSelectAnyTableContext ctx)
-        {
+        public void exitSysPrivSelectAnyTable(OctopusSqlParser.SysPrivSelectAnyTableContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.SELECT_ANY_TABLE);
         }
 
         @Override
-        public void exitSysPrivCreateUser(OctopusSqlParser.SysPrivCreateUserContext ctx)
-        {
+        public void exitSysPrivCreateUser(OctopusSqlParser.SysPrivCreateUserContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.CREATE_USER);
         }
 
         @Override
-        public void exitSysPrivAlterUser(OctopusSqlParser.SysPrivAlterUserContext ctx)
-        {
+        public void exitSysPrivAlterUser(OctopusSqlParser.SysPrivAlterUserContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.ALTER_USER);
         }
 
         @Override
-        public void exitSysPrivDropUser(OctopusSqlParser.SysPrivDropUserContext ctx)
-        {
+        public void exitSysPrivDropUser(OctopusSqlParser.SysPrivDropUserContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.DROP_USER);
         }
 
         @Override
-        public void exitSysPrivCommentAny(OctopusSqlParser.SysPrivCommentAnyContext ctx)
-        {
+        public void exitSysPrivCommentAny(OctopusSqlParser.SysPrivCommentAnyContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.COMMENT_ANY);
         }
 
         @Override
-        public void exitSysPrivGrantAnyObjPriv(OctopusSqlParser.SysPrivGrantAnyObjPrivContext ctx)
-        {
+        public void exitSysPrivGrantAnyObjPriv(OctopusSqlParser.SysPrivGrantAnyObjPrivContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
         }
 
         @Override
-        public void exitSysPrivGrantAnyPriv(OctopusSqlParser.SysPrivGrantAnyPrivContext ctx)
-        {
+        public void exitSysPrivGrantAnyPriv(OctopusSqlParser.SysPrivGrantAnyPrivContext ctx) {
             assert sysPrivs != null;
             sysPrivs.add(SystemPrivilege.GRANT_ANY_PRIVILEGE);
         }
 
         @Override
-        public void exitSysPrivAllPrivs(OctopusSqlParser.SysPrivAllPrivsContext ctx)
-        {
+        public void exitSysPrivAllPrivs(OctopusSqlParser.SysPrivAllPrivsContext ctx) {
             assert sysPrivs != null;
             sysPrivs.addAll(Arrays.asList(SystemPrivilege.values()));
         }
 
         @Override
-        public void exitGrantObjectPrivileges(OctopusSqlParser.GrantObjectPrivilegesContext ctx)
-        {
+        public void exitGrantObjectPrivileges(OctopusSqlParser.GrantObjectPrivilegesContext ctx) {
             assert this.objPrivs != null;
 
-            List<ObjectPrivilege> objPrivs = new ArrayList<>(this.objPrivs);
+            List<ObjectPrivilege> objPrivsList = new ArrayList<>(this.objPrivs);
 
             String[] objName = {
-                    ctx.object().dataSourceName().getText(),
-                    ctx.object().schemaName().getText()
+                ctx.object().dataSourceName().getText(),
+                ctx.object().schemaName().getText()
             };
 
             Set<String> grantees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext grantee : ctx.grantees().grantee())
                 grantees.add(grantee.getText());
 
-            commands.add(new OctopusSqlGrantObjPrivs(objPrivs, objName, new ArrayList<>(grantees)));
+            commands.add(new OctopusSqlGrantObjPrivs(objPrivsList, objName, new ArrayList<>(grantees)));
 
             this.objPrivs = null;
         }
 
         @Override
-        public void exitRevokeObjectPrivileges(OctopusSqlParser.RevokeObjectPrivilegesContext ctx)
-        {
+        public void exitRevokeObjectPrivileges(OctopusSqlParser.RevokeObjectPrivilegesContext ctx) {
             assert this.objPrivs != null;
 
-            List<ObjectPrivilege> objPrivs = new ArrayList<>(this.objPrivs);
+            List<ObjectPrivilege> objPrivsList = new ArrayList<>(this.objPrivs);
 
             String[] objName = {
-                    ctx.object().dataSourceName().getText(),
-                    ctx.object().schemaName().getText()
+                ctx.object().dataSourceName().getText(),
+                ctx.object().schemaName().getText()
             };
 
             Set<String> revokees = new HashSet<>();
             for (OctopusSqlParser.GranteeContext revokee : ctx.grantees().grantee())
                 revokees.add(revokee.getText());
 
-            commands.add(new OctopusSqlRevokeObjPrivs(objPrivs, objName, new ArrayList<>(revokees)));
+            commands.add(new OctopusSqlRevokeObjPrivs(objPrivsList, objName, new ArrayList<>(revokees)));
 
             this.objPrivs = null;
         }
 
         @Override
-        public void enterObjectPrivileges(OctopusSqlParser.ObjectPrivilegesContext ctx)
-        {
+        public void enterObjectPrivileges(OctopusSqlParser.ObjectPrivilegesContext ctx) {
             assert objPrivs == null;
             objPrivs = new HashSet<>();
         }
 
         @Override
-        public void exitObjPrivSelect(OctopusSqlParser.ObjPrivSelectContext ctx)
-        {
+        public void exitObjPrivSelect(OctopusSqlParser.ObjPrivSelectContext ctx) {
             assert objPrivs != null;
             objPrivs.add(ObjectPrivilege.SELECT);
         }
 
         @Override
-        public void exitObjPrivComment(OctopusSqlParser.ObjPrivCommentContext ctx)
-        {
+        public void exitObjPrivComment(OctopusSqlParser.ObjPrivCommentContext ctx) {
             assert objPrivs != null;
             objPrivs.add(ObjectPrivilege.COMMENT);
         }
 
         @Override
-        public void exitObjPrivAllPrivs(OctopusSqlParser.ObjPrivAllPrivsContext ctx)
-        {
+        public void exitObjPrivAllPrivs(OctopusSqlParser.ObjPrivAllPrivsContext ctx) {
             assert objPrivs != null;
             objPrivs.addAll(Arrays.asList(ObjectPrivilege.values()));
         }
 
         @Override
-        public void exitShowDataSources(OctopusSqlParser.ShowDataSourcesContext ctx)
-        {
+        public void exitShowDataSources(OctopusSqlParser.ShowDataSourcesContext ctx) {
             commands.add(new OctopusSqlShow.DataSources());
         }
 
         @Override
-        public void exitShowSchemas(OctopusSqlParser.ShowSchemasContext ctx)
-        {
+        public void exitShowSchemas(OctopusSqlParser.ShowSchemasContext ctx) {
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             commands.add(new OctopusSqlShow.Schemas(dataSourceName, schemaPattern));
         }
 
         @Override
-        public void exitShowTables(OctopusSqlParser.ShowTablesContext ctx)
-        {
+        public void exitShowTables(OctopusSqlParser.ShowTablesContext ctx) {
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
@@ -332,8 +303,7 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitShowColumns(OctopusSqlParser.ShowColumnsContext ctx)
-        {
+        public void exitShowColumns(OctopusSqlParser.ShowColumnsContext ctx) {
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
@@ -342,31 +312,26 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitShowAllUsers(OctopusSqlParser.ShowAllUsersContext ctx)
-        {
+        public void exitShowAllUsers(OctopusSqlParser.ShowAllUsersContext ctx) {
             commands.add(new OctopusSqlShow.AllUsers());
         }
 
         @Override
-        public void exitShowObjPrivsFor(OctopusSqlParser.ShowObjPrivsForContext ctx)
-        {
+        public void exitShowObjPrivsFor(OctopusSqlParser.ShowObjPrivsForContext ctx) {
             String userName = ctx.user().getText();
             commands.add(new OctopusSqlShow.ObjPrivsFor(userName));
         }
 
         @Override
-        public void exitShowTablePrivileges(OctopusSqlParser.ShowTablePrivilegesContext ctx)
-        {
+        public void exitShowTablePrivileges(OctopusSqlParser.ShowTablePrivilegesContext ctx) {
         }
 
         @Override
-        public void exitShowColumnPrivileges(OctopusSqlParser.ShowColumnPrivilegesContext ctx)
-        {
+        public void exitShowColumnPrivileges(OctopusSqlParser.ShowColumnPrivilegesContext ctx) {
         }
 
         @Override
-        public void exitShowComments(OctopusSqlParser.ShowCommentsContext ctx)
-        {
+        public void exitShowComments(OctopusSqlParser.ShowCommentsContext ctx) {
             String commentPattern = ctx.commentPattern() == null ? null : ctx.commentPattern().getText();
             String dataSourcePattern = ctx.dataSourcePattern() == null ? null : ctx.dataSourcePattern().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
@@ -376,8 +341,7 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx)
-        {
+        public void exitCommentOn(OctopusSqlParser.CommentOnContext ctx) {
             assert commentTarget != null;
 
             String comment = ctx.comment().getText();
@@ -387,84 +351,76 @@ public final class OctopusSql
         }
 
         @Override
-        public void exitCommentDataSource(OctopusSqlParser.CommentDataSourceContext ctx)
-        {
+        public void exitCommentDataSource(OctopusSqlParser.CommentDataSourceContext ctx) {
             assert commentTarget == null;
 
             commentTarget = new OctopusSqlObjectTarget();
-            commentTarget.type = OctopusSqlObjectTarget.Type.DATASOURCE;
-            commentTarget.dataSource = ctx.dataSourceName().getText();
+            commentTarget.setType(OctopusSqlObjectTarget.Type.DATASOURCE);
+            commentTarget.setDataSource(ctx.dataSourceName().getText());
         }
 
         @Override
-        public void exitCommentSchema(OctopusSqlParser.CommentSchemaContext ctx)
-        {
+        public void exitCommentSchema(OctopusSqlParser.CommentSchemaContext ctx) {
             assert commentTarget == null;
 
             commentTarget = new OctopusSqlObjectTarget();
-            commentTarget.type = OctopusSqlObjectTarget.Type.SCHEMA;
-            commentTarget.dataSource = ctx.dataSourceName().getText();
-            commentTarget.schema = ctx.schemaName().getText();
+            commentTarget.setType(OctopusSqlObjectTarget.Type.SCHEMA);
+            commentTarget.setDataSource(ctx.dataSourceName().getText());
+            commentTarget.setSchema(ctx.schemaName().getText());
         }
 
         @Override
-        public void exitCommentTable(OctopusSqlParser.CommentTableContext ctx)
-        {
+        public void exitCommentTable(OctopusSqlParser.CommentTableContext ctx) {
             assert commentTarget == null;
 
             commentTarget = new OctopusSqlObjectTarget();
-            commentTarget.type = OctopusSqlObjectTarget.Type.TABLE;
-            commentTarget.dataSource = ctx.dataSourceName().getText();
-            commentTarget.schema = ctx.schemaName().getText();
-            commentTarget.table = ctx.tableName().getText();
+            commentTarget.setType(OctopusSqlObjectTarget.Type.TABLE);
+            commentTarget.setDataSource(ctx.dataSourceName().getText());
+            commentTarget.setSchema(ctx.schemaName().getText());
+            commentTarget.setTable(ctx.tableName().getText());
         }
 
         @Override
-        public void exitCommentColumn(OctopusSqlParser.CommentColumnContext ctx)
-        {
+        public void exitCommentColumn(OctopusSqlParser.CommentColumnContext ctx) {
             assert commentTarget == null;
 
             commentTarget = new OctopusSqlObjectTarget();
-            commentTarget.type = OctopusSqlObjectTarget.Type.COLUMN;
-            commentTarget.dataSource = ctx.dataSourceName().getText();
-            commentTarget.schema = ctx.schemaName().getText();
-            commentTarget.table = ctx.tableName().getText();
-            commentTarget.column = ctx.columnName().getText();
+            commentTarget.setType(OctopusSqlObjectTarget.Type.COLUMN);
+            commentTarget.setDataSource(ctx.dataSourceName().getText());
+            commentTarget.setSchema(ctx.schemaName().getText());
+            commentTarget.setTable(ctx.tableName().getText());
+            commentTarget.setColumn(ctx.columnName().getText());
         }
 
         @Override
-        public void exitCommentUser(OctopusSqlParser.CommentUserContext ctx)
-        {
+        public void exitCommentUser(OctopusSqlParser.CommentUserContext ctx) {
             assert commentTarget == null;
 
             commentTarget = new OctopusSqlObjectTarget();
-            commentTarget.type = OctopusSqlObjectTarget.Type.USER;
-            commentTarget.user = ctx.user().getText();
+            commentTarget.setType(OctopusSqlObjectTarget.Type.USER);
+            commentTarget.setUser(ctx.user().getText());
         }
 
         @Override
-        public void exitSetDataCategoryOn(OctopusSqlParser.SetDataCategoryOnContext ctx)
-        {
+        public void exitSetDataCategoryOn(OctopusSqlParser.SetDataCategoryOnContext ctx) {
             OctopusSqlObjectTarget target = new OctopusSqlObjectTarget();
-            target.type = OctopusSqlObjectTarget.Type.COLUMN;
-            target.dataSource = ctx.dataSourceName().getText();
-            target.schema = ctx.schemaName().getText();
-            target.table = ctx.tableName().getText();
-            target.column = ctx.columnName().getText();
+            target.setType(OctopusSqlObjectTarget.Type.COLUMN);
+            target.setDataSource(ctx.dataSourceName().getText());
+            target.setSchema(ctx.schemaName().getText());
+            target.setTable(ctx.tableName().getText());
+            target.setColumn(ctx.columnName().getText());
 
             String category = ctx.category().getText();
 
             commands.add(new OctopusSqlSetDataCategoryOn(target, category));
         }
 
-        List<OctopusSqlCommand> getSqlCommands()
-        {
+        List<OctopusSqlCommand> getSqlCommands() {
             return commands;
         }
     }
 
-    public static List<OctopusSqlCommand> parse(String query)
-    {
+    public static List<OctopusSqlCommand> parse(String query) {
         ANTLRInputStream input = new ANTLRInputStream(query);
         OctopusSqlLexer lexer = new OctopusSqlLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -478,89 +434,88 @@ public final class OctopusSql
         return lsnr.getSqlCommands();
     }
 
-    public static TupleSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception
-    {
+    public static TupleSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception {
         switch (command.getType()) {
-            case ADD_DATASOURCE:
-                OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
-                runner.addDataSource(addDataSource.getDataSourceName(),
-                        addDataSource.getJdbcConnectionString(), addDataSource.getJdbcDriverName());
-                break;
-            case UPDATE_DATASOURCE:
-                OctopusSqlUpdateDataSource updateDataSource = (OctopusSqlUpdateDataSource) command;
-                runner.updateDataSource(updateDataSource.getTarget());
-                break;
-            case DROP_DATASOURCE:
-                OctopusSqlDropDataSource dropDataSource = (OctopusSqlDropDataSource) command;
-                runner.dropDataSource(dropDataSource.getDataSourceName());
-                break;
-            case CREATE_USER:
-                OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;
-                runner.createUser(createUser.getName(), createUser.getPassword());
-                break;
-            case ALTER_USER:
-                OctopusSqlAlterUser alterUser = (OctopusSqlAlterUser) command;
-                runner.alterUser(alterUser.getName(), alterUser.getPassword(), alterUser.getOldPassword());
-                break;
-            case DROP_USER:
-                OctopusSqlDropUser dropUser = (OctopusSqlDropUser) command;
-                runner.dropUser(dropUser.getName());
-                break;
-            case CREATE_ROLE:
-                OctopusSqlCreateRole createRole = (OctopusSqlCreateRole) command;
-                runner.createRole(createRole.getName());
-                break;
-            case DROP_ROLE:
-                OctopusSqlDropRole dropRole = (OctopusSqlDropRole) command;
-                runner.dropRole(dropRole.getName());
-                break;
-            case GRANT_SYS_PRIVS:
-                OctopusSqlGrantSysPrivs grantSys = (OctopusSqlGrantSysPrivs) command;
-                runner.grantSystemPrivileges(grantSys.getSysPrivs(), grantSys.getGrantees());
-                break;
-            case REVOKE_SYS_PRIVS:
-                OctopusSqlRevokeSysPrivs revokeSys = (OctopusSqlRevokeSysPrivs) command;
-                runner.revokeSystemPrivileges(revokeSys.getSysPrivs(), revokeSys.getGrantees());
-                break;
-            case GRANT_OBJ_PRIVS:
-                OctopusSqlGrantObjPrivs grantObj = (OctopusSqlGrantObjPrivs) command;
-                runner.grantObjectPrivileges(grantObj.getObjPrivs(), grantObj.getObjName(), grantObj.getGrantees());
-                break;
-            case REVOKE_OBJ_PRIVS:
-                OctopusSqlRevokeObjPrivs revokeObj = (OctopusSqlRevokeObjPrivs) command;
-                runner.revokeObjectPrivileges(revokeObj.getObjPrivs(), revokeObj.getObjName(), revokeObj.getGrantees());
-                break;
-            case SHOW_DATASOURCES:
-                return runner.showDataSources();
-            case SHOW_SCHEMAS:
-                OctopusSqlShow.Schemas showSchemas = (OctopusSqlShow.Schemas) command;
-                return runner.showSchemas(showSchemas.getDataSourceName(), showSchemas.getSchemaPattern());
-            case SHOW_TABLES:
-                OctopusSqlShow.Tables showTables = (OctopusSqlShow.Tables) command;
-                return runner.showTables(showTables.getDataSourceName(), showTables.getSchemaPattern(), showTables.getTablePattern());
-            case SHOW_COLUMNS:
-                OctopusSqlShow.Columns showColumns = (OctopusSqlShow.Columns) command;
-                return runner.showColumns(showColumns.getDataSourceName(), showColumns.getSchemaPattern(), showColumns.getTablePattern(), showColumns.getcolumnPattern());
-            case SHOW_ALL_USERS:
-                return runner.showAllUsers();
-            case SHOW_OBJ_PRIVS_FOR:
-                OctopusSqlShow.ObjPrivsFor showObjPrivsFor = (OctopusSqlShow.ObjPrivsFor) command;
-                return runner.showObjPrivsFor(showObjPrivsFor.getUserName());
-            case SHOW_COMMENTS:
-                OctopusSqlShow.Comments showComments = (OctopusSqlShow.Comments) command;
-                return runner.showComments(showComments.getCommentPattern(), showComments.getDataSourceName(),
-                        showComments.getSchemaPattern(), showComments.getTablePattern(),
-                        showComments.getcolumnPattern());
-            case COMMENT_ON:
-                OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
-                runner.commentOn(commentOn.getTarget(), commentOn.getComment());
-                break;
-            case SET_DATACATEGORY_ON:
-                OctopusSqlSetDataCategoryOn setDataCategoryOn = (OctopusSqlSetDataCategoryOn) command;
-                runner.setDataCategoryOn(setDataCategoryOn.getTarget(), setDataCategoryOn.getCategory());
-                break;
-            default:
-                throw new RuntimeException("invalid Octopus SQL command");
+        case ADD_DATASOURCE:
+            OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
+            runner.addDataSource(addDataSource.getDataSourceName(),
+                    addDataSource.getJdbcConnectionString(), addDataSource.getJdbcDriverName());
+            break;
+        case UPDATE_DATASOURCE:
+            OctopusSqlUpdateDataSource updateDataSource = (OctopusSqlUpdateDataSource) command;
+            runner.updateDataSource(updateDataSource.getTarget());
+            break;
+        case DROP_DATASOURCE:
+            OctopusSqlDropDataSource dropDataSource = (OctopusSqlDropDataSource) command;
+            runner.dropDataSource(dropDataSource.getDataSourceName());
+            break;
+        case CREATE_USER:
+            OctopusSqlCreateUser createUser = (OctopusSqlCreateUser) command;
+            runner.createUser(createUser.getName(), createUser.getPassword());
+            break;
+        case ALTER_USER:
+            OctopusSqlAlterUser alterUser = (OctopusSqlAlterUser) command;
+            runner.alterUser(alterUser.getName(), alterUser.getPassword(), alterUser.getOldPassword());
+            break;
+        case DROP_USER:
+            OctopusSqlDropUser dropUser = (OctopusSqlDropUser) command;
+            runner.dropUser(dropUser.getName());
+            break;
+        case CREATE_ROLE:
+            OctopusSqlCreateRole createRole = (OctopusSqlCreateRole) command;
+            runner.createRole(createRole.getName());
+            break;
+        case DROP_ROLE:
+            OctopusSqlDropRole dropRole = (OctopusSqlDropRole) command;
+            runner.dropRole(dropRole.getName());
+            break;
+        case GRANT_SYS_PRIVS:
+            OctopusSqlGrantSysPrivs grantSys = (OctopusSqlGrantSysPrivs) command;
+            runner.grantSystemPrivileges(grantSys.getSysPrivs(), grantSys.getGrantees());
+            break;
+        case REVOKE_SYS_PRIVS:
+            OctopusSqlRevokeSysPrivs revokeSys = (OctopusSqlRevokeSysPrivs) command;
+            runner.revokeSystemPrivileges(revokeSys.getSysPrivs(), revokeSys.getGrantees());
+            break;
+        case GRANT_OBJ_PRIVS:
+            OctopusSqlGrantObjPrivs grantObj = (OctopusSqlGrantObjPrivs) command;
+            runner.grantObjectPrivileges(grantObj.getObjPrivs(), grantObj.getObjName(), grantObj.getGrantees());
+            break;
+        case REVOKE_OBJ_PRIVS:
+            OctopusSqlRevokeObjPrivs revokeObj = (OctopusSqlRevokeObjPrivs) command;
+            runner.revokeObjectPrivileges(revokeObj.getObjPrivs(), revokeObj.getObjName(), revokeObj.getGrantees());
+            break;
+        case SHOW_DATASOURCES:
+            return runner.showDataSources();
+        case SHOW_SCHEMAS:
+            OctopusSqlShow.Schemas showSchemas = (OctopusSqlShow.Schemas) command;
+            return runner.showSchemas(showSchemas.getDataSourceName(), showSchemas.getSchemaPattern());
+        case SHOW_TABLES:
+            OctopusSqlShow.Tables showTables = (OctopusSqlShow.Tables) command;
+            return runner.showTables(showTables.getDataSourceName(), showTables.getSchemaPattern(), showTables.getTablePattern());
+        case SHOW_COLUMNS:
+            OctopusSqlShow.Columns showColumns = (OctopusSqlShow.Columns) command;
+            return runner.showColumns(showColumns.getDataSourceName(), showColumns.getSchemaPattern(), showColumns.getTablePattern(), showColumns.getcolumnPattern());
+        case SHOW_ALL_USERS:
+            return runner.showAllUsers();
+        case SHOW_OBJ_PRIVS_FOR:
+            OctopusSqlShow.ObjPrivsFor showObjPrivsFor = (OctopusSqlShow.ObjPrivsFor) command;
+            return runner.showObjPrivsFor(showObjPrivsFor.getUserName());
+        case SHOW_COMMENTS:
+            OctopusSqlShow.Comments showComments = (OctopusSqlShow.Comments) command;
+            return runner.showComments(showComments.getCommentPattern(), showComments.getDataSourceName(),
+                    showComments.getSchemaPattern(), showComments.getTablePattern(),
+                    showComments.getcolumnPattern());
+        case COMMENT_ON:
+            OctopusSqlCommentOn commentOn = (OctopusSqlCommentOn) command;
+            runner.commentOn(commentOn.getTarget(), commentOn.getComment());
+            break;
+        case SET_DATACATEGORY_ON:
+            OctopusSqlSetDataCategoryOn setDataCategoryOn = (OctopusSqlSetDataCategoryOn) command;
+            runner.setDataCategoryOn(setDataCategoryOn.getTarget(), setDataCategoryOn.getCategory());
+            break;
+        default:
+            throw new RuntimeException("invalid Octopus SQL command");
         }
         return null;
     }

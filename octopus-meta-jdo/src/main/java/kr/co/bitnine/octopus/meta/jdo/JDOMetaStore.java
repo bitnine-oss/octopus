@@ -24,15 +24,13 @@ import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManagerFactory;
 import java.util.Properties;
 
-public class JDOMetaStore implements MetaStore
-{
+public final class JDOMetaStore implements MetaStore {
     private static final Log LOG = LogFactory.getLog(JDOMetaStore.class);
 
-    private static PersistenceManagerFactory pmf = null;
+    private static PersistenceManagerFactory pmf;
 
     @Override
-    public void start(Properties conf) throws MetaException
-    {
+    public void start(Properties conf) throws MetaException {
         Properties props = new Properties();
         props.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
         props.setProperty("datanucleus.ConnectionDriverName", conf.getProperty("metastore.jdo.connection.drivername"));
@@ -53,14 +51,12 @@ public class JDOMetaStore implements MetaStore
     }
 
     @Override
-    public void stop()
-    {
+    public void stop() {
         pmf.close();
     }
 
     @Override
-    public MetaContext getMetaContext()
-    {
+    public MetaContext getMetaContext() {
         return new JDOMetaContext(pmf.getPersistenceManager());
     }
 }

@@ -14,37 +14,31 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlAddDataSource extends OctopusSqlCommand
-{
+class OctopusSqlAddDataSource extends OctopusSqlCommand {
     private final String dataSourceName;
     private final String jdbcConnectionString;
     private final String jdbcDriverName;
 
-    OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName)
-    {
+    OctopusSqlAddDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) {
         this.dataSourceName = dataSourceName;
         this.jdbcConnectionString = jdbcConnectionString;
         this.jdbcDriverName = jdbcDriverName;
     }
 
-    String getDataSourceName()
-    {
+    String getDataSourceName() {
         return dataSourceName;
     }
 
-    String getJdbcConnectionString()
-    {
+    String getJdbcConnectionString() {
         return jdbcConnectionString;
     }
 
-    String getJdbcDriverName()
-    {
+    String getJdbcDriverName() {
         return jdbcDriverName;
     }
 
     @Override
-    public Type getType()
-    {
+    public Type getType() {
         return Type.ADD_DATASOURCE;
     }
 }

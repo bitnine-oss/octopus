@@ -16,16 +16,13 @@ package kr.co.bitnine.octopus.conf;
 
 import org.apache.hadoop.conf.Configuration;
 
-public class OctopusConfiguration extends Configuration
-{
-    static
-    {
+public class OctopusConfiguration extends Configuration {
+    static {
         Configuration.addDefaultResource("octopus-default.xml");
         Configuration.addDefaultResource("octopus-site.xml");
     }
 
-    public OctopusConfiguration()
-    {
+    public OctopusConfiguration() {
         super();
     }
 }

@@ -16,10 +16,12 @@ package kr.co.bitnine.octopus.meta.model;
 
 import java.util.Collection;
 
-public interface MetaSchema
-{
+public interface MetaSchema {
     String getName();
+
     MetaDataSource getDataSource();
+
     String getComment();
+
     Collection<MetaTable> getTables();
 }

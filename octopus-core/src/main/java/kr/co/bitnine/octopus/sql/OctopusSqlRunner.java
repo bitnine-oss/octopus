@@ -20,30 +20,51 @@ import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 
 import java.util.List;
 
-public interface OctopusSqlRunner
-{
+public interface OctopusSqlRunner {
     void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception;
+
     void updateDataSource(OctopusSqlObjectTarget target) throws Exception;
+
     void dropDataSource(String dataSourceName) throws Exception;
+
     void createUser(String name, String password) throws Exception;
+
     void alterUser(String name, String password, String oldPassword) throws Exception;
+
     void dropUser(String name) throws Exception;
+
     void createRole(String role) throws Exception;
+
     void dropRole(String role) throws Exception;
+
     void grantSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> grantees) throws Exception;
+
     void revokeSystemPrivileges(List<SystemPrivilege> sysPrivs, List<String> revokees) throws Exception;
+
     void grantObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> grantees) throws Exception;
+
     void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception;
+
     TupleSet showDataSources() throws Exception;
+
     TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception;
+
     TupleSet showTables(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
+
     TupleSet showColumns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+
     TupleSet showTablePrivileges(String dataSourceName, String schemaPattern, String tablePattern) throws Exception;
+
     TupleSet showColumnPrivileges(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+
     TupleSet showAllUsers() throws Exception;
+
     TupleSet showObjPrivsFor(String userName) throws Exception;
+
     TupleSet showComments(String commentPatter, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern) throws Exception;
+
     void commentOn(OctopusSqlObjectTarget target, String comment) throws Exception;
+
     void setDataCategoryOn(OctopusSqlObjectTarget target, String category) throws Exception;
 }
 

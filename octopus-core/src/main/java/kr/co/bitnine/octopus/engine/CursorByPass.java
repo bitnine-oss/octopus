@@ -33,11 +33,15 @@ import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
-public class CursorByPass extends Portal
-{
-    private final Log LOG = LogFactory.getLog(CursorByPass.class);
+public final class CursorByPass extends Portal {
+    private static final Log LOG = LogFactory.getLog(CursorByPass.class);
 
     private final String jdbcDriver;
     private final String jdbcConnectionString;
@@ -48,8 +52,7 @@ public class CursorByPass extends Portal
     private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
 
-    public CursorByPass(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats, String jdbcDriver, String jdbcConnectionString) throws PostgresException
-    {
+    public CursorByPass(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats, String jdbcDriver, String jdbcConnectionString) throws PostgresException {
         super(cachedStatement, paramFormats, paramValues, resultFormats);
 
         this.jdbcDriver = jdbcDriver;
@@ -66,8 +69,7 @@ public class CursorByPass extends Portal
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
             @Override
-            public SqlNode visit(SqlIdentifier id)
-            {
+            public SqlNode visit(SqlIdentifier id) {
                 return id.clone(id.getParserPosition());
             }
         });
@@ -82,8 +84,7 @@ public class CursorByPass extends Portal
         tupDesc = null;
     }
 
-    private void prepareStatement() throws PostgresException
-    {
+    private void prepareStatement() throws PostgresException {
         if (getState() != State.NEW)
             return;
 
@@ -101,55 +102,12 @@ public class CursorByPass extends Portal
                 for (int i = 0; i < types.length; i++) {
                     if (values[i] == null) {
                         switch (types[i]) {
-                            case INT4:
-                            case INT8:
-                            case FLOAT4:
-                            case FLOAT8:
-                            case VARCHAR:
-                                stmt.setNull(i + 1, TypeInfo.jdbcTypeOfPostgresType(types[i]));
-                                break;
-                            case TIMESTAMP: // TODO
-                            default:
-                                PostgresErrorData edata = new PostgresErrorData(
-                                        PostgresSeverity.ERROR,
-                                        PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                                        "parameter type " + types[i].name() + "not supported");
-                                throw new PostgresException(edata);
-                        }
-                        continue;
-                    }
-
-                    IoFunction io = IoFunctions.ofType(types[i]);
-                    switch (types[i]) {
                         case INT4:
-                            if (formats[i] == FormatCode.TEXT)
-                                stmt.setInt(i + 1, (Integer) io.in(values[i]));
-                            else
-                                stmt.setInt(i + 1, (Integer) io.recv(values[i]));
-                            break;
                         case INT8:
-                            if (formats[i] == FormatCode.TEXT)
-                                stmt.setLong(i + 1, (Long) io.in(values[i]));
-                            else
-                                stmt.setLong(i + 1, (Long) io.recv(values[i]));
-                            break;
                         case FLOAT4:
-                            if (formats[i] == FormatCode.TEXT)
-                                stmt.setFloat(i + 1, (Float) io.in(values[i]));
-                            else
-                                stmt.setFloat(i + 1, (Float) io.recv(values[i]));
-                            break;
                         case FLOAT8:
-                            if (formats[i] == FormatCode.TEXT)
-                                stmt.setDouble(i + 1, (Double) io.in(values[i]));
-                            else
-                                stmt.setDouble(i + 1, (Double) io.recv(values[i]));
-                            break;
                         case VARCHAR:
-                            if (formats[i] == FormatCode.TEXT)
-                                stmt.setString(i + 1, (String) io.in(values[i]));
-                            else
-                                stmt.setString(i + 1, (String) io.recv(values[i]));
+                            stmt.setNull(i + 1, TypeInfo.jdbcTypeOfPostgresType(types[i]));
                             break;
                         case TIMESTAMP: // TODO
                         default:
@@ -158,6 +116,49 @@ public class CursorByPass extends Portal
                                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
                                     "parameter type " + types[i].name() + "not supported");
                             throw new PostgresException(edata);
+                        }
+                        continue;
+                    }
+
+                    IoFunction io = IoFunctions.ofType(types[i]);
+                    switch (types[i]) {
+                    case INT4:
+                        if (formats[i] == FormatCode.TEXT)
+                            stmt.setInt(i + 1, (Integer) io.in(values[i]));
+                        else
+                            stmt.setInt(i + 1, (Integer) io.recv(values[i]));
+                        break;
+                    case INT8:
+                        if (formats[i] == FormatCode.TEXT)
+                            stmt.setLong(i + 1, (Long) io.in(values[i]));
+                        else
+                            stmt.setLong(i + 1, (Long) io.recv(values[i]));
+                        break;
+                    case FLOAT4:
+                        if (formats[i] == FormatCode.TEXT)
+                            stmt.setFloat(i + 1, (Float) io.in(values[i]));
+                        else
+                            stmt.setFloat(i + 1, (Float) io.recv(values[i]));
+                        break;
+                    case FLOAT8:
+                        if (formats[i] == FormatCode.TEXT)
+                            stmt.setDouble(i + 1, (Double) io.in(values[i]));
+                        else
+                            stmt.setDouble(i + 1, (Double) io.recv(values[i]));
+                        break;
+                    case VARCHAR:
+                        if (formats[i] == FormatCode.TEXT)
+                            stmt.setString(i + 1, (String) io.in(values[i]));
+                        else
+                            stmt.setString(i + 1, (String) io.recv(values[i]));
+                        break;
+                    case TIMESTAMP: // TODO
+                    default:
+                        PostgresErrorData edata = new PostgresErrorData(
+                                PostgresSeverity.ERROR,
+                                PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                                "parameter type " + types[i].name() + "not supported");
+                        throw new PostgresException(edata);
                     }
                 }
             }
@@ -176,8 +177,7 @@ public class CursorByPass extends Portal
         }
     }
 
-    private void execute(int numRows) throws PostgresException
-    {
+    private void execute(int numRows) throws PostgresException {
         if (getState() == State.DONE || getState() == State.FAILED)
             setState(State.READY);
 
@@ -222,8 +222,7 @@ public class CursorByPass extends Portal
     }
 
     @Override
-    public TupleDesc describe() throws PostgresException
-    {
+    public TupleDesc describe() throws PostgresException {
         prepareStatement();
         execute(0);
 
@@ -232,8 +231,7 @@ public class CursorByPass extends Portal
     }
 
     @Override
-    public TupleSet run(int numRows) throws PostgresException
-    {
+    public TupleSet run(int numRows) throws PostgresException {
         prepareStatement();
         execute(numRows);
 
@@ -243,14 +241,12 @@ public class CursorByPass extends Portal
     }
 
     @Override
-    public String generateCompletionTag(String commandTag)
-    {
+    public String generateCompletionTag(String commandTag) {
         return commandTag;
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         if (stmt == null)
             return;
 
@@ -258,6 +254,6 @@ public class CursorByPass extends Portal
             Connection conn = stmt.getConnection();
             stmt.close();
             conn.close();
-        } catch (SQLException e) { }
+        } catch (SQLException ignore) { }
     }
 }

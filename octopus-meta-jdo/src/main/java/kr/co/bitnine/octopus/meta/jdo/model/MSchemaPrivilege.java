@@ -18,17 +18,21 @@ import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.Unique;
 import java.util.HashSet;
 import java.util.Set;
 
 @PersistenceCapable
 @Unique(name = "SCHEMA_USER_IDX", members = {"schema", "user"})
-public class MSchemaPrivilege implements MetaSchemaPrivilege
-{
+public final class MSchemaPrivilege implements MetaSchemaPrivilege {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
-    private long ID;
+    private long id;
 
     private Set<ObjectPrivilege> objPrivs;
 
@@ -38,37 +42,31 @@ public class MSchemaPrivilege implements MetaSchemaPrivilege
     @Column(name = "MUSER_ID")
     private MUser user;
 
-    public MSchemaPrivilege(MSchema schema, MUser user)
-    {
+    public MSchemaPrivilege(MSchema schema, MUser user) {
         objPrivs = new HashSet<>();
         this.schema = schema;
         this.user = user;
     }
 
     @Override
-    public MetaSchema getSchema()
-    {
+    public MetaSchema getSchema() {
         return schema;
     }
 
     @Override
-    public Set<ObjectPrivilege> getObjectPrivileges()
-    {
+    public Set<ObjectPrivilege> getObjectPrivileges() {
         return new HashSet<>(objPrivs);
     }
 
-    public boolean addObjectPrivilege(ObjectPrivilege objPriv)
-    {
+    public boolean addObjectPrivilege(ObjectPrivilege objPriv) {
         return objPrivs.add(objPriv);
     }
 
-    public boolean removeObjectPrivilege(ObjectPrivilege objPriv)
-    {
+    public boolean removeObjectPrivilege(ObjectPrivilege objPriv) {
         return objPrivs.remove(objPriv);
     }
 
-    public boolean isEmpty()
-    {
+    public boolean isEmpty() {
         return objPrivs.isEmpty();
     }
 }

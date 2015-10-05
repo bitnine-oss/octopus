@@ -14,13 +14,20 @@
 
 package kr.co.bitnine.octopus.postgres.utils.adt;
 
-public interface IoFunction
-{
-    // FormatCode.TEXT
+public interface IoFunction {
+    /*
+     * FormatCode.TEXT
+     */
+
     Object in(byte[] bytes);
+
     byte[] out(Object value);
 
-    // FormatCode.BINARY
+    /*
+     * FormatCode.BINARY
+     */
+
     Object recv(byte[] bytes);
+
     byte[] send(Object value);
 }

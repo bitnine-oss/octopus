@@ -18,8 +18,8 @@ import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 
 import java.util.Set;
 
-public interface MetaSchemaPrivilege
-{
+public interface MetaSchemaPrivilege {
     MetaSchema getSchema();
+
     Set<ObjectPrivilege> getObjectPrivileges();
 }

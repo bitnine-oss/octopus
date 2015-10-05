@@ -14,8 +14,7 @@
 
 package kr.co.bitnine.octopus.postgres.utils;
 
-public enum PostgresSeverity
-{
+public enum PostgresSeverity {
     DEBUG,      // debugging messages
     LOG,        // server operational messages
     INFO,       // messages specifically requested by user

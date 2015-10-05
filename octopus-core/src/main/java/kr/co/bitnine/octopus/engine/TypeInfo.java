@@ -20,55 +20,53 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TypeInfo
-{
-    private static final Map<Integer, PostgresType> jdbcToPostgres = new HashMap<>();
-    private static final Map<PostgresType, Integer> postgresToJdbc = new HashMap<>();
+public final class TypeInfo {
+    private static final Map<Integer, PostgresType> JDBC_TO_POSTGRES = new HashMap<>();
+    private static final Map<PostgresType, Integer> POSTGRES_TO_JDBC = new HashMap<>();
 
-    static
-    {
-        jdbcToPostgres.put(Types.BIGINT, PostgresType.INT8);
-        jdbcToPostgres.put(Types.BINARY, PostgresType.BYTEA);
-        jdbcToPostgres.put(Types.BIT, PostgresType.BIT);
-        jdbcToPostgres.put(Types.BOOLEAN, PostgresType.BOOL);
-        jdbcToPostgres.put(Types.CHAR, PostgresType.CHAR);
-        jdbcToPostgres.put(Types.DATE, PostgresType.DATE);
-        jdbcToPostgres.put(Types.DOUBLE, PostgresType.FLOAT8);
-        jdbcToPostgres.put(Types.FLOAT, PostgresType.FLOAT4);
-        jdbcToPostgres.put(Types.INTEGER, PostgresType.INT4);
-        jdbcToPostgres.put(Types.NUMERIC, PostgresType.NUMERIC);
-        jdbcToPostgres.put(Types.REAL, PostgresType.FLOAT4);
-        jdbcToPostgres.put(Types.SMALLINT, PostgresType.INT2);
-        jdbcToPostgres.put(Types.TIME, PostgresType.TIME);
-        jdbcToPostgres.put(Types.TIMESTAMP, PostgresType.TIMESTAMP);
-        jdbcToPostgres.put(Types.VARCHAR, PostgresType.VARCHAR);
+    static {
+        JDBC_TO_POSTGRES.put(Types.BIGINT, PostgresType.INT8);
+        JDBC_TO_POSTGRES.put(Types.BINARY, PostgresType.BYTEA);
+        JDBC_TO_POSTGRES.put(Types.BIT, PostgresType.BIT);
+        JDBC_TO_POSTGRES.put(Types.BOOLEAN, PostgresType.BOOL);
+        JDBC_TO_POSTGRES.put(Types.CHAR, PostgresType.CHAR);
+        JDBC_TO_POSTGRES.put(Types.DATE, PostgresType.DATE);
+        JDBC_TO_POSTGRES.put(Types.DOUBLE, PostgresType.FLOAT8);
+        JDBC_TO_POSTGRES.put(Types.FLOAT, PostgresType.FLOAT4);
+        JDBC_TO_POSTGRES.put(Types.INTEGER, PostgresType.INT4);
+        JDBC_TO_POSTGRES.put(Types.NUMERIC, PostgresType.NUMERIC);
+        JDBC_TO_POSTGRES.put(Types.REAL, PostgresType.FLOAT4);
+        JDBC_TO_POSTGRES.put(Types.SMALLINT, PostgresType.INT2);
+        JDBC_TO_POSTGRES.put(Types.TIME, PostgresType.TIME);
+        JDBC_TO_POSTGRES.put(Types.TIMESTAMP, PostgresType.TIMESTAMP);
+        JDBC_TO_POSTGRES.put(Types.VARCHAR, PostgresType.VARCHAR);
 
-        postgresToJdbc.put(PostgresType.BIT, Types.BIT);
-        postgresToJdbc.put(PostgresType.BOOL, Types.BOOLEAN);
-        postgresToJdbc.put(PostgresType.BYTEA, Types.BINARY);
-        postgresToJdbc.put(PostgresType.CHAR, Types.CHAR);
-        postgresToJdbc.put(PostgresType.DATE, Types.DATE);
-        postgresToJdbc.put(PostgresType.FLOAT4, Types.FLOAT);
-        postgresToJdbc.put(PostgresType.FLOAT4, Types.REAL);
-        postgresToJdbc.put(PostgresType.FLOAT8, Types.DOUBLE);
-        postgresToJdbc.put(PostgresType.INT2, Types.SMALLINT);
-        postgresToJdbc.put(PostgresType.INT4, Types.INTEGER);
-        postgresToJdbc.put(PostgresType.INT8, Types.BIGINT);
-        postgresToJdbc.put(PostgresType.NUMERIC, Types.NUMERIC);
-        postgresToJdbc.put(PostgresType.TIME, Types.TIME);
-        postgresToJdbc.put(PostgresType.TIMESTAMP, Types.TIMESTAMP);
-        postgresToJdbc.put(PostgresType.VARCHAR, Types.VARCHAR);
+        POSTGRES_TO_JDBC.put(PostgresType.BIT, Types.BIT);
+        POSTGRES_TO_JDBC.put(PostgresType.BOOL, Types.BOOLEAN);
+        POSTGRES_TO_JDBC.put(PostgresType.BYTEA, Types.BINARY);
+        POSTGRES_TO_JDBC.put(PostgresType.CHAR, Types.CHAR);
+        POSTGRES_TO_JDBC.put(PostgresType.DATE, Types.DATE);
+        POSTGRES_TO_JDBC.put(PostgresType.FLOAT4, Types.FLOAT);
+        POSTGRES_TO_JDBC.put(PostgresType.FLOAT4, Types.REAL);
+        POSTGRES_TO_JDBC.put(PostgresType.FLOAT8, Types.DOUBLE);
+        POSTGRES_TO_JDBC.put(PostgresType.INT2, Types.SMALLINT);
+        POSTGRES_TO_JDBC.put(PostgresType.INT4, Types.INTEGER);
+        POSTGRES_TO_JDBC.put(PostgresType.INT8, Types.BIGINT);
+        POSTGRES_TO_JDBC.put(PostgresType.NUMERIC, Types.NUMERIC);
+        POSTGRES_TO_JDBC.put(PostgresType.TIME, Types.TIME);
+        POSTGRES_TO_JDBC.put(PostgresType.TIMESTAMP, Types.TIMESTAMP);
+        POSTGRES_TO_JDBC.put(PostgresType.VARCHAR, Types.VARCHAR);
     }
 
-    public static PostgresType postresTypeOfJdbcType(int jdbcType)
-    {
-        PostgresType type = jdbcToPostgres.get(jdbcType);
+    private TypeInfo() { }
+
+    public static PostgresType postresTypeOfJdbcType(int jdbcType) {
+        PostgresType type = JDBC_TO_POSTGRES.get(jdbcType);
         return type == null ? PostgresType.UNSPECIFIED : type;
     }
 
-    public static int jdbcTypeOfPostgresType(PostgresType postgresType)
-    {
-        Integer type = postgresToJdbc.get(postgresType);
+    public static int jdbcTypeOfPostgresType(PostgresType postgresType) {
+        Integer type = POSTGRES_TO_JDBC.get(postgresType);
         return type == null ? Types.NULL : type;
     }
 }

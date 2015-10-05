@@ -14,26 +14,22 @@
 
 package kr.co.bitnine.octopus.postgres.utils;
 
-public class PostgresException extends Exception
-{
+public final class PostgresException extends Exception {
     private final PostgresErrorData errorData;
 
-    public PostgresException(PostgresErrorData errorData)
-    {
-        super(errorData.message);
+    public PostgresException(PostgresErrorData errorData) {
+        super(errorData.getMessage());
 
         this.errorData = errorData;
     }
 
-    public PostgresException(PostgresErrorData errorData, Throwable cause)
-    {
-        super(errorData.message, cause);
+    public PostgresException(PostgresErrorData errorData, Throwable cause) {
+        super(errorData.getMessage(), cause);
 
         this.errorData = errorData;
     }
 
-    public PostgresErrorData getErrorData()
-    {
+    public PostgresErrorData getErrorData() {
         return errorData;
     }
 }

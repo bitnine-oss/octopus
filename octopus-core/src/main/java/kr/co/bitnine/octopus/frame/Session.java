@@ -46,18 +46,18 @@ import java.nio.channels.SocketChannel;
 import java.util.Properties;
 import java.util.Random;
 
-public class Session implements Runnable
-{
+public final class Session implements Runnable {
     private static final Log LOG = LogFactory.getLog(Session.class);
 
     private final SocketChannel clientChannel;
     private final int sessionId; // secret key
 
-    interface EventHandler
-    {
+    interface EventHandler {
         void onClose(Session session);
+
         void onCancel(int sessionId);
     }
+
     private final EventHandler eventHandler;
 
     private final MessageStream messageStream;
@@ -65,8 +65,7 @@ public class Session implements Runnable
     private final SchemaManager schemaManager;
     private final QueryEngine queryEngine;
 
-    Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager)
-    {
+    Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager) {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
 
@@ -78,26 +77,23 @@ public class Session implements Runnable
         queryEngine = new QueryEngine(metaContext, schemaManager);
     }
 
-    int getId()
-    {
+    int getId() {
         return sessionId;
     }
 
-    private static final ThreadLocal<Session> localSession = new ThreadLocal<>();
+    private static final ThreadLocal<Session> LOCAL_SESSION = new ThreadLocal<>();
 
-    public static Session currentSession()
-    {
-        Session currSess = localSession.get();
+    public static Session currentSession() {
+        Session currSess = LOCAL_SESSION.get();
         if (currSess == null)
             throw new RuntimeException("current session does not exist");
 
-        return localSession.get();
+        return LOCAL_SESSION.get();
     }
 
     @Override
-    public void run()
-    {
-        localSession.set(this);
+    public void run() {
+        LOCAL_SESSION.set(this);
         try {
             boolean proceed = doStartup();
             if (proceed) {
@@ -108,18 +104,16 @@ public class Session implements Runnable
         } catch (Exception e) {
             LOG.fatal(ExceptionUtils.getStackTrace(e));
         }
-        localSession.remove();
+        LOCAL_SESSION.remove();
 
         close();
     }
 
-    void emitErrorReport(PostgresErrorData errorData) throws IOException
-    {
+    void emitErrorReport(PostgresErrorData errorData) throws IOException {
         messageStream.putMessageAndFlush(errorData.toMessage());
     }
 
-    void reject()
-    {
+    void reject() {
         try {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
@@ -140,13 +134,11 @@ public class Session implements Runnable
 
     private Properties clientParams;
 
-    public String getClientParam(String key)
-    {
+    public String getClientParam(String key) {
         return clientParams.getProperty(key);
     }
 
-    private boolean doStartup() throws IOException, OctopusException
-    {
+    private boolean doStartup() throws IOException, OctopusException {
         Message imsg = messageStream.getInitialMessage();
         int i = imsg.peekInt();
 
@@ -164,8 +156,7 @@ public class Session implements Runnable
         return true;
     }
 
-    private void handleCancelRequest(Message imsg)
-    {
+    private void handleCancelRequest(Message imsg) {
         imsg.getInt(); // cancel request code
         imsg.getInt(); // process ID, not used
         int cancelKey = imsg.getInt();
@@ -176,8 +167,7 @@ public class Session implements Runnable
         eventHandler.onCancel(cancelKey);
     }
 
-    private void handleSSLRequest(Message imsg) throws IOException, OctopusException
-    {
+    private void handleSSLRequest(Message imsg) throws IOException, OctopusException {
         LOG.debug("handle SSLRequest message");
 
         // TODO: SSL
@@ -189,12 +179,11 @@ public class Session implements Runnable
         new OctopusException(edata).emitErrorReport();
     }
 
-    private void handleStartupMessage(Message imsg) throws IOException, OctopusException
-    {
+    private void handleStartupMessage(Message imsg) throws IOException, OctopusException {
         LOG.debug("handle StartupMessage message");
 
         int version = imsg.getInt();
-        if (version != ProtocolConstants.PROTOCOL_VERSION(3, 0)) {
+        if (version != ProtocolConstants.protocolVersion(3, 0)) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
@@ -222,8 +211,7 @@ public class Session implements Runnable
     }
 
     // NOTE: Now, cleartext only
-    private void doAuthentication() throws IOException, OctopusException
-    {
+    private void doAuthentication() throws IOException, OctopusException {
         LOG.debug("send AuthenticationCleartextPassword message");
         // AuthenticationCleartextPassword
         Message msg = Message.builder('R')
@@ -300,8 +288,7 @@ public class Session implements Runnable
         messageStream.putMessage(msg);
     }
 
-    private void messageLoop() throws Exception
-    {
+    private void messageLoop() throws Exception {
         boolean doingExtendedQueryMessage = false;
         boolean ignoreTillSync = false;
         boolean sendReadyForQuery = true;
@@ -323,31 +310,31 @@ public class Session implements Runnable
                 char type = msg.getType();
 
                 switch (type) {
-                    case 'Q':
-                        break;
-                    case 'P':
-                    case 'B':
-                    case 'E':
-                    case 'C':
-                    case 'D':
-                    case 'H':
-                        LOG.debug("extended query sub-protocol message");
-                        doingExtendedQueryMessage = true;
-                        break;
-                    case 'S':
-                    case 'X':
-                        ignoreTillSync = false;
-                        break;
-                    case 'd':
-                    case 'c':
-                    case 'f':
-                        break;
-                    default:
-                        PostgresErrorData edata = new PostgresErrorData(
-                                PostgresSeverity.FATAL,
-                                PostgresSQLState.PROTOCOL_VIOLATION,
-                                "invalid frontend message type '" + type + "'");
-                        new OctopusException(edata).emitErrorReport();
+                case 'Q':
+                    break;
+                case 'P':
+                case 'B':
+                case 'E':
+                case 'C':
+                case 'D':
+                case 'H':
+                    LOG.debug("extended query sub-protocol message");
+                    doingExtendedQueryMessage = true;
+                    break;
+                case 'S':
+                case 'X':
+                    ignoreTillSync = false;
+                    break;
+                case 'd':
+                case 'c':
+                case 'f':
+                    break;
+                default:
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.FATAL,
+                            PostgresSQLState.PROTOCOL_VIOLATION,
+                            "invalid frontend message type '" + type + "'");
+                    new OctopusException(edata).emitErrorReport();
                 }
 
                 if (ignoreTillSync) {
@@ -356,54 +343,59 @@ public class Session implements Runnable
                 }
 
                 switch (type) {
-                    case 'Q':
-                        handleQuery(msg);
-                        sendReadyForQuery = true;
-                        break;
-                    case 'P':
-                        handleParse(msg);
-                        break;
-                    case 'B':
-                        handleBind(msg);
-                        break;
-                    case 'E':
-                        handleExecute(msg);
-                        break;
-                    case 'C':
-                        handleClose(msg);
-                        break;
-                    case 'D':
-                        handleDescribe(msg);
-                        break;
-                    case 'H':
-                        LOG.debug("handle Flush message");
-                        messageStream.flush();
-                        break;
-                    case 'S':
-                        LOG.debug("handle Sync message");
-                        sendReadyForQuery = true;
-                        break;
-                    case 'X':
-                        LOG.info("Terminate received");
-                        return;
-                    case 'd':   // copy data
-                    case 'c':   // copy done
-                    case 'f':   // copy fail
-                        break;  // ignore these messages
-                    default:
-                        PostgresErrorData edata = new PostgresErrorData(
-                                PostgresSeverity.FATAL,
-                                PostgresSQLState.PROTOCOL_VIOLATION,
-                                "invalid frontend message type '" + type + "'");
-                        new OctopusException(edata).emitErrorReport();
+                case 'Q':
+                    handleQuery(msg);
+                    sendReadyForQuery = true;
+                    break;
+                case 'P':
+                    handleParse(msg);
+                    break;
+                case 'B':
+                    handleBind(msg);
+                    break;
+                case 'E':
+                    handleExecute(msg);
+                    break;
+                case 'C':
+                    handleClose(msg);
+                    break;
+                case 'D':
+                    handleDescribe(msg);
+                    break;
+                case 'H':
+                    LOG.debug("handle Flush message");
+                    messageStream.flush();
+                    break;
+                case 'S':
+                    LOG.debug("handle Sync message");
+                    sendReadyForQuery = true;
+                    break;
+                case 'X':
+                    LOG.info("Terminate received");
+                    return;
+                case 'd':   // copy data
+                case 'c':   // copy done
+                case 'f':   // copy fail
+                    break;  // ignore these messages
+                default:
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.FATAL,
+                            PostgresSQLState.PROTOCOL_VIOLATION,
+                            "invalid frontend message type '" + type + "'");
+                    new OctopusException(edata).emitErrorReport();
                 }
             } catch (OctopusException oe) {
-                switch (oe.getErrorData().severity) {
-                    case PANIC: // exit Octopus
-                        LOG.fatal(ExceptionUtils.getStackTrace(oe));
-                        System.exit(0);
-                    case FATAL: // exit Session
-                        throw oe;
+                switch (oe.getErrorData().getSeverity()) {
+                case PANIC: // exit Octopus
+                    LOG.fatal(ExceptionUtils.getStackTrace(oe));
+                    System.exit(0);
+                    break;
+                case FATAL: // exit Session
+                    throw oe;
+                case ERROR:
+                    break;
+                default:
+                    throw new RuntimeException("could not reach here");
                 }
 
                 // ERROR
@@ -424,28 +416,26 @@ public class Session implements Runnable
         }
     }
 
-    private void sendEmptyQueryResponse() throws IOException
-    {
+    private void sendEmptyQueryResponse() throws IOException {
         LOG.debug("send EmptyQueryResponse message");
         messageStream.putMessage(Message.builder('I').build());
     }
 
-    private void sendCommandComplete(String tag) throws IOException
-    {
+    private void sendCommandComplete(String tag) throws IOException {
         LOG.debug("send CommandComplete message");
 
         // FIXME: tag format
-        if (tag == null)
-            tag = "SELECT 0";
+        String newTag = tag;
+        if (newTag == null)
+            newTag = "SELECT 0";
 
         Message msg = Message.builder('C')
-                .putCString(tag)
+                .putCString(newTag)
                 .build();
         messageStream.putMessage(msg);
     }
 
-    private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws IOException
-    {
+    private void sendRowDescription(TupleDesc tupDesc, FormatCode[] resultFormats) throws IOException {
         LOG.debug("send RowDescription message");
 
         PostgresAttribute[] attrs = tupDesc.getAttributes();
@@ -453,15 +443,15 @@ public class Session implements Runnable
         // RowDescription
         Message.Builder msgBld = Message.builder('T').putShort((short) attrs.length);
         for (int i = 0; i < attrs.length; i++) {
-            msgBld.putCString(attrs[i].name)
+            msgBld.putCString(attrs[i].getName())
                     .putInt(0)                              // table OID
                     .putShort((short) 0);                   // attribute number
 
-            PostgresType type = attrs[i].type;
+            PostgresType type = attrs[i].getType();
             msgBld.putInt(type.oid())                       // data type OID
                     .putShort((short) type.typeLength());   // data type size
             if (type == PostgresType.VARCHAR)               // type-specific type modifier
-                msgBld.putInt(attrs[i].typeInfo);
+                msgBld.putInt(attrs[i].getTypeInfo());
             else
                 msgBld.putInt(-1);
 
@@ -473,8 +463,7 @@ public class Session implements Runnable
         messageStream.putMessage(msgBld.build());
     }
 
-    private void sendDataRow(TupleSet ts, int numRows) throws IOException, PostgresException
-    {
+    private void sendDataRow(TupleSet ts, int numRows) throws IOException, PostgresException {
         LOG.debug("send DataRow message");
 
         TupleDesc td = ts.getTupleDesc();
@@ -493,7 +482,7 @@ public class Session implements Runnable
             for (int i = 0; i < datums.length; i++) {
                 byte[] bytes;
 
-                IoFunction io = IoFunctions.ofType(attrs[i].type);
+                IoFunction io = IoFunctions.ofType(attrs[i].getType());
                 if (resultFormats[i] == FormatCode.TEXT)
                     bytes = io.out(datums[i]);
                 else
@@ -508,8 +497,7 @@ public class Session implements Runnable
         }
     }
 
-    private void handleQuery(Message msg) throws IOException, OctopusException
-    {
+    private void handleQuery(Message msg) throws IOException, OctopusException {
         String queryString = msg.getCString();
 
         LOG.debug("handle Query message (query={" + queryString + "})");
@@ -546,8 +534,7 @@ public class Session implements Runnable
         }
     }
 
-    private void handleParse(Message msg) throws IOException, OctopusException
-    {
+    private void handleParse(Message msg) throws IOException, OctopusException {
         String stmtName = msg.getCString();
         String queryString = msg.getCString();
         short numParams = msg.getShort();
@@ -571,8 +558,7 @@ public class Session implements Runnable
         messageStream.putMessage(Message.builder('1').build());
     }
 
-    private void handleBind(Message msg) throws IOException, OctopusException
-    {
+    private void handleBind(Message msg) throws IOException, OctopusException {
         String portalName = msg.getCString();
         String stmtName = msg.getCString();
 
@@ -587,7 +573,7 @@ public class Session implements Runnable
         byte[][] paramValues = new byte[numParamValue][];
         for (short i = 0; i < numParamValue; i++) {
             int paramLen = msg.getInt(); // -1 indicates NULL parameter
-            paramValues[i] = (paramLen > -1 ? msg.getBytes(paramLen) : null);
+            paramValues[i] = paramLen > -1 ? msg.getBytes(paramLen) : null;
         }
 
         short numResult = msg.getShort();
@@ -614,8 +600,7 @@ public class Session implements Runnable
         messageStream.putMessage(Message.builder('2').build());
     }
 
-    private void handleExecute(Message msg) throws IOException, OctopusException
-    {
+    private void handleExecute(Message msg) throws IOException, OctopusException {
         String portalName = msg.getCString();
         int numRows = msg.getInt();
 
@@ -659,8 +644,7 @@ public class Session implements Runnable
         }
     }
 
-    private void handleClose(Message msg) throws IOException, OctopusException
-    {
+    private void handleClose(Message msg) throws IOException, OctopusException {
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
@@ -668,18 +652,18 @@ public class Session implements Runnable
 
         try {
             switch (type) {
-                case 'S':
-                    queryEngine.closeCachedQuery(name);
-                    break;
-                case 'P':
-                    queryEngine.closePortal(name);
-                    break;
-                default:
-                    PostgresErrorData edata = new PostgresErrorData(
-                            PostgresSeverity.ERROR,
-                            PostgresSQLState.PROTOCOL_VIOLATION,
-                            "invalid CLOSE message subtype '" + type + "'");
-                    new OctopusException(edata).emitErrorReport();
+            case 'S':
+                queryEngine.closeCachedQuery(name);
+                break;
+            case 'P':
+                queryEngine.closePortal(name);
+                break;
+            default:
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.PROTOCOL_VIOLATION,
+                        "invalid CLOSE message subtype '" + type + "'");
+                new OctopusException(edata).emitErrorReport();
             }
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
@@ -689,8 +673,7 @@ public class Session implements Runnable
         messageStream.putMessage(Message.builder('3').build());
     }
 
-    private void sendParameterDescription(PostgresType[] paramTypes) throws IOException
-    {
+    private void sendParameterDescription(PostgresType[] paramTypes) throws IOException {
         LOG.debug("send ParameterDescription message");
         Message.Builder msgBld = Message.builder('t').putShort((short) paramTypes.length);
         for (PostgresType type : paramTypes)
@@ -698,14 +681,12 @@ public class Session implements Runnable
         messageStream.putMessage(msgBld.build());
     }
 
-    private void sendNoData() throws IOException
-    {
+    private void sendNoData() throws IOException {
         LOG.debug("send NoData message");
         messageStream.putMessage(Message.builder('n').build());
     }
 
-    private void handleDescribe(Message msg) throws IOException, OctopusException
-    {
+    private void handleDescribe(Message msg) throws IOException, OctopusException {
         char type = msg.getChar(); // 'S' for a prepared statement, 'P' for a portal
         String name = msg.getCString();
 
@@ -714,50 +695,49 @@ public class Session implements Runnable
         try {
             TupleDesc tupDesc;
             switch (type) {
-                case 'S':
-/*
-                    PostgresErrorData edata = new PostgresErrorData(
-                            PostgresSeverity.FATAL,
-                            PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                            "unsupported frontend protocol");
-                    new OctopusException(edata).emitErrorReport();
- */
-                    CachedQuery cq = queryEngine.getCachedQuery(name);
-                    sendParameterDescription(cq.getParamTypes());
-                    tupDesc = cq.describe();
+            case 'S':
+                /*
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.FATAL,
+                        PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                        "unsupported frontend protocol");
+                new OctopusException(edata).emitErrorReport();
+                 */
+                CachedQuery cq = queryEngine.getCachedQuery(name);
+                sendParameterDescription(cq.getParamTypes());
+                tupDesc = cq.describe();
+                if (tupDesc == null)
+                    sendNoData();
+                else
+                    sendRowDescription(tupDesc, new FormatCode[0]);
+                break;
+            case 'P':
+                Portal p = queryEngine.getPortal(name);
+                // FIXME: See {PortalState}
+                try {
+                    tupDesc = p.describe();
                     if (tupDesc == null)
                         sendNoData();
                     else
-                        sendRowDescription(tupDesc, new FormatCode[0]);
-                    break;
-                case 'P':
-                    Portal p = queryEngine.getPortal(name);
-                    // FIXME: See {PortalState}
-                    try {
-                        tupDesc = p.describe();
-                        if (tupDesc == null)
-                            sendNoData();
-                        else
-                            sendRowDescription(tupDesc, tupDesc.getResultFormats());
-                    } catch (Exception e) {
-                        p.setState(Portal.State.FAILED);
-                        throw e;
-                    }
-                    break;
-                default:
-                    PostgresErrorData edata = new PostgresErrorData(
-                            PostgresSeverity.ERROR,
-                            PostgresSQLState.PROTOCOL_VIOLATION,
-                            "invalid DESCRIBE message subtype '" + type + "'");
-                    new OctopusException(edata).emitErrorReport();
+                        sendRowDescription(tupDesc, tupDesc.getResultFormats());
+                } catch (Exception e) {
+                    p.setState(Portal.State.FAILED);
+                    throw e;
+                }
+                break;
+            default:
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.PROTOCOL_VIOLATION,
+                        "invalid DESCRIBE message subtype '" + type + "'");
+                new OctopusException(edata).emitErrorReport();
             }
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
         }
     }
 
-    void close()
-    {
+    void close() {
         try {
             clientChannel.close();
         } catch (IOException e) {
@@ -769,8 +749,7 @@ public class Session implements Runnable
         eventHandler.onClose(this);
     }
 
-    void cancel()
-    {
+    void cancel() {
         // TODO
     }
 }

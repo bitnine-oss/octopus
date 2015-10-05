@@ -16,29 +16,24 @@ package kr.co.bitnine.octopus.postgres.utils.adt;
 
 import java.nio.charset.StandardCharsets;
 
-public class IoVarchar implements IoFunction
-{
+public final class IoVarchar implements IoFunction {
     @Override
-    public Object in(byte[] bytes)
-    {
+    public Object in(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override
-    public byte[] out(Object value)
-    {
+    public byte[] out(Object value) {
         return value == null ? null : ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
-    public Object recv(byte[] bytes)
-    {
+    public Object recv(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override
-    public byte[] send(Object value)
-    {
+    public byte[] send(Object value) {
         return value == null ? null : ((String) value).getBytes(StandardCharsets.UTF_8);
     }
 }

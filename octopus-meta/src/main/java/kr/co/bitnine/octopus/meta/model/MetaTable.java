@@ -16,11 +16,14 @@ package kr.co.bitnine.octopus.meta.model;
 
 import java.util.Collection;
 
-public interface MetaTable
-{
+public interface MetaTable {
     String getName();
+
     String getType();
+
     MetaSchema getSchema();
+
     String getComment();
+
     Collection<MetaColumn> getColumns();
 }

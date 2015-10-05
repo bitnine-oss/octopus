@@ -22,14 +22,12 @@ import org.apache.calcite.schema.impl.AbstractSchema;
 
 import java.util.Map;
 
-public class OctopusSchema extends AbstractSchema
-{
+public final class OctopusSchema extends AbstractSchema {
     private final String name;
     private final ImmutableMap<String, Table> tableMap;
     private final OctopusDataSource dataSource;
 
-    public OctopusSchema(MetaSchema metaSchema, OctopusDataSource dataSource)
-    {
+    public OctopusSchema(MetaSchema metaSchema, OctopusDataSource dataSource) {
         name = metaSchema.getName();
 
         ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
@@ -40,25 +38,21 @@ public class OctopusSchema extends AbstractSchema
         this.dataSource = dataSource;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public boolean isMutable()
-    {
+    public boolean isMutable() {
         return false;
     }
 
     @Override
-    protected Map<String, Table> getTableMap()
-    {
+    protected Map<String, Table> getTableMap() {
         return tableMap;
     }
 
-    public OctopusDataSource getDataSource()
-    {
+    public OctopusDataSource getDataSource() {
         return dataSource;
     }
 }

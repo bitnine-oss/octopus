@@ -26,26 +26,22 @@ import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
 import kr.co.bitnine.octopus.sql.TupleSetSql;
 
-public class CursorDdl extends Portal
-{
+public final class CursorDdl extends Portal {
     private final OctopusSqlRunner sqlRunner;
 
-    CursorDdl(CachedStatement cachedStatement, OctopusSqlRunner sqlRunner)
-    {
+    CursorDdl(CachedStatement cachedStatement, OctopusSqlRunner sqlRunner) {
         super(cachedStatement, new FormatCode[0], new byte[0][], new FormatCode[0]);
 
         this.sqlRunner = sqlRunner;
     }
 
     @Override
-    public TupleDesc describe() throws PostgresException
-    {
+    public TupleDesc describe() throws PostgresException {
         return getCachedQuery().describe();
     }
 
     @Override
-    public TupleSet run(int numRows) throws PostgresException
-    {
+    public TupleSet run(int numRows) throws PostgresException {
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         OctopusSqlCommand c = cStmt.getDdlCommands().get(0);
         try {
@@ -64,8 +60,7 @@ public class CursorDdl extends Portal
     }
 
     @Override
-    public String generateCompletionTag(String commandTag)
-    {
+    public String generateCompletionTag(String commandTag) {
         return commandTag;
     }
 

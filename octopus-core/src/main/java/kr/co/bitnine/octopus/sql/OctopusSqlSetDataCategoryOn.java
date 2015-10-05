@@ -14,30 +14,25 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand
-{
+class OctopusSqlSetDataCategoryOn extends OctopusSqlCommand {
     private final OctopusSqlObjectTarget target;
     private final String category;
 
-    OctopusSqlSetDataCategoryOn(OctopusSqlObjectTarget target, String category)
-    {
+    OctopusSqlSetDataCategoryOn(OctopusSqlObjectTarget target, String category) {
         this.target = target;
         this.category = category;
     }
 
-    public OctopusSqlObjectTarget getTarget()
-    {
+    public OctopusSqlObjectTarget getTarget() {
         return target;
     }
 
-    public String getCategory()
-    {
+    public String getCategory() {
         return category;
     }
 
     @Override
-    public OctopusSqlCommand.Type getType()
-    {
+    public OctopusSqlCommand.Type getType() {
         return Type.SET_DATACATEGORY_ON;
     }
 }

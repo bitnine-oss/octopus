@@ -15,19 +15,23 @@
 package kr.co.bitnine.octopus.meta.jdo.model;
 
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
+import kr.co.bitnine.octopus.meta.model.MetaConstants;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 
 @PersistenceCapable
-public class MColumn implements MetaColumn
-{
+public final class MColumn implements MetaColumn {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.INCREMENT)
-    private long ID;
+    private long id;
 
     @Persistent
-    @Column(length = 128)
+    @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
     private int type;
@@ -35,15 +39,14 @@ public class MColumn implements MetaColumn
     private MTable table;
 
     @Persistent
-    @Column(length = 1024)
+    @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
     @Persistent
-    @Column(length = 64)
+    @Column(length = MetaConstants.DATACATEGORY_MAX)
     private String dataCategory;
 
-    public MColumn(String name, int type, int typeInfo, MTable table)
-    {
+    public MColumn(String name, int type, int typeInfo, MTable table) {
         this.name = name;
         this.type = type;
         this.typeInfo = typeInfo;
@@ -53,48 +56,40 @@ public class MColumn implements MetaColumn
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public int getType()
-    {
+    public int getType() {
         return type;
     }
 
     @Override
-    public int getTypeInfo()
-    {
+    public int getTypeInfo() {
         return typeInfo;
     }
 
     @Override
-    public MetaTable getTable()
-    {
+    public MetaTable getTable() {
         return table;
     }
 
     @Override
-    public String getComment()
-    {
+    public String getComment() {
         return comment;
     }
 
-    public void setComment(String comment)
-    {
+    public void setComment(String comment) {
         this.comment = comment;
     }
 
     @Override
-    public String getDataCategory()
-    {
+    public String getDataCategory() {
         return dataCategory;
     }
 
-    public void setDataCategory(String dataCategory)
-    {
+    public void setDataCategory(String dataCategory) {
         this.dataCategory = dataCategory;
     }
 }

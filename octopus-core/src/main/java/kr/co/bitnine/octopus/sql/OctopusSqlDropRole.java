@@ -14,23 +14,19 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlDropRole extends OctopusSqlCommand
-{
+class OctopusSqlDropRole extends OctopusSqlCommand {
     private final String role;
 
-    OctopusSqlDropRole(String role)
-    {
+    OctopusSqlDropRole(String role) {
         this.role = role;
     }
 
-    String getName()
-    {
+    String getName() {
         return this.role;
     }
 
     @Override
-    public Type getType()
-    {
+    public Type getType() {
         return Type.DROP_ROLE;
     }
 }

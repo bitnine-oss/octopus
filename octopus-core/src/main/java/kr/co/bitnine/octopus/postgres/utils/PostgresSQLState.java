@@ -14,8 +14,7 @@
 
 package kr.co.bitnine.octopus.postgres.utils;
 
-public enum PostgresSQLState
-{
+public enum PostgresSQLState {
     SUCCESSFUL_COMPLETION   ("00000"),
     WARNING                 ("01000"),
     PROTOCOL_VIOLATION      ("08P01"),
@@ -36,35 +35,31 @@ public enum PostgresSQLState
     TOO_MANY_CONNECTIONS    ("53300"),
     INTERNAL_ERROR          ("XX000");
 
-
     private final String state;
 
-    PostgresSQLState(String state)
-    {
+    PostgresSQLState(String state) {
         this.state = state;
     }
 
-    public String getState()
-    {
+    public String getState() {
         return this.state;
     }
 
-    public static PostgresSQLState defaultOf(PostgresSeverity severity)
-    {
+    public static PostgresSQLState defaultOf(PostgresSeverity severity) {
         switch (severity) {
-            case PANIC:
-            case FATAL:
-            case ERROR:
-                return INTERNAL_ERROR;
-            case WARNING:
-                return WARNING;
-            case NOTICE:
-            case INFO:
-            case LOG:
-            case DEBUG:
-                return SUCCESSFUL_COMPLETION;
-            default:
-                throw new RuntimeException("invalid severity");
+        case PANIC:
+        case FATAL:
+        case ERROR:
+            return INTERNAL_ERROR;
+        case WARNING:
+            return WARNING;
+        case NOTICE:
+        case INFO:
+        case LOG:
+        case DEBUG:
+            return SUCCESSFUL_COMPLETION;
+        default:
+            throw new RuntimeException("invalid severity");
         }
     }
 }

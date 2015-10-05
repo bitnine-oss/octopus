@@ -14,42 +14,36 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlUpdateDataSource extends OctopusSqlCommand
-{
+class OctopusSqlUpdateDataSource extends OctopusSqlCommand {
     private final OctopusSqlObjectTarget target;
 
-    OctopusSqlUpdateDataSource(String dataSourceName)
-    {
+    OctopusSqlUpdateDataSource(String dataSourceName) {
         target = new OctopusSqlObjectTarget();
-        target.type = OctopusSqlObjectTarget.Type.DATASOURCE;
-        target.dataSource = dataSourceName;
+        target.setType(OctopusSqlObjectTarget.Type.DATASOURCE);
+        target.setDataSource(dataSourceName);
     }
 
-    OctopusSqlUpdateDataSource(String dataSourceName, String schemaPattern)
-    {
+    OctopusSqlUpdateDataSource(String dataSourceName, String schemaPattern) {
         target = new OctopusSqlObjectTarget();
-        target.type = OctopusSqlObjectTarget.Type.SCHEMA;
-        target.dataSource = dataSourceName;
-        target.schema = schemaPattern;
+        target.setType(OctopusSqlObjectTarget.Type.SCHEMA);
+        target.setDataSource(dataSourceName);
+        target.setSchema(schemaPattern);
     }
 
-    OctopusSqlUpdateDataSource(String dataSourceName, String schemaName, String tablePattern)
-    {
+    OctopusSqlUpdateDataSource(String dataSourceName, String schemaName, String tablePattern) {
         target = new OctopusSqlObjectTarget();
-        target.type = OctopusSqlObjectTarget.Type.TABLE;
-        target.dataSource = dataSourceName;
-        target.schema = schemaName;
-        target.table = tablePattern;
+        target.setType(OctopusSqlObjectTarget.Type.TABLE);
+        target.setDataSource(dataSourceName);
+        target.setSchema(schemaName);
+        target.setTable(tablePattern);
     }
 
-    OctopusSqlObjectTarget getTarget()
-    {
+    OctopusSqlObjectTarget getTarget() {
         return this.target;
     }
 
     @Override
-    public Type getType()
-    {
+    public Type getType() {
         return Type.UPDATE_DATASOURCE;
     }
 }

@@ -18,11 +18,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class IoFunctionTest
-{
+public class IoFunctionTest {
     @Test
-    public void testInt() throws Exception
-    {
+    public void testInt() throws Exception {
         IoInt4 ioInt4 = new IoInt4();
 
         Integer i = Integer.valueOf(7);
@@ -35,8 +33,7 @@ public class IoFunctionTest
     }
 
     @Test
-    public void testVarchar() throws Exception
-    {
+    public void testVarchar() throws Exception {
         IoVarchar ioVarchar = new IoVarchar();
 
         String s = "octopus";

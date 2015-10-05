@@ -14,16 +14,14 @@
 
 package kr.co.bitnine.octopus.sql;
 
-class OctopusSqlShow extends OctopusSqlCommand
-{
-    protected String dataSourceName;
-    protected String schemaPattern;
-    protected String tablePattern;
-    protected String columnPattern;
-    protected String userName;
+abstract class OctopusSqlShow extends OctopusSqlCommand {
+    private String dataSourceName;
+    private String schemaPattern;
+    private String tablePattern;
+    private String columnPattern;
+    private String userName;
 
-    protected OctopusSqlShow(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern, String userName)
-    {
+    protected OctopusSqlShow(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern, String userName) {
         this.dataSourceName = dataSourceName;
         this.schemaPattern = schemaPattern;
         this.tablePattern = tablePattern;
@@ -31,133 +29,106 @@ class OctopusSqlShow extends OctopusSqlCommand
         this.userName = userName;
     }
 
-    String getDataSourceName()
-    {
+    String getDataSourceName() {
         return dataSourceName;
     }
 
-    String getSchemaPattern()
-    {
+    String getSchemaPattern() {
         return schemaPattern;
     }
 
-    String getTablePattern()
-    {
+    String getTablePattern() {
         return tablePattern;
     }
 
-    String getcolumnPattern()
-    {
+    String getcolumnPattern() {
         return columnPattern;
     }
 
-    String getUserName()
-    {
+    String getUserName() {
         return userName;
     }
 
-    static class DataSources extends OctopusSqlShow
-    {
-        DataSources()
-        {
+    static class DataSources extends OctopusSqlShow {
+        DataSources() {
             super(null, null, null, null, null);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_DATASOURCES;
         }
     }
 
-    static class Schemas extends OctopusSqlShow
-    {
-        Schemas(String dataSourceName, String schemaPattern)
-        {
+    static class Schemas extends OctopusSqlShow {
+        Schemas(String dataSourceName, String schemaPattern) {
             super(dataSourceName, schemaPattern, null, null, null);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_SCHEMAS;
         }
     }
 
-    static class Tables extends OctopusSqlShow
-    {
-        Tables(String dataSourceName, String schemaPattern, String tablePattern)
-        {
+    static class Tables extends OctopusSqlShow {
+        Tables(String dataSourceName, String schemaPattern, String tablePattern) {
             super(dataSourceName, schemaPattern, tablePattern, null, null);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_TABLES;
         }
     }
 
-    static class Columns extends OctopusSqlShow
-    {
-        Columns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern)
-        {
+    static class Columns extends OctopusSqlShow {
+        Columns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) {
             super(dataSourceName, schemaPattern, tablePattern, columnPattern, null);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_COLUMNS;
         }
     }
 
-    static class AllUsers extends OctopusSqlShow
-    {
-        AllUsers()
-        {
+    static class AllUsers extends OctopusSqlShow {
+        AllUsers() {
             super(null, null, null, null, null);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_ALL_USERS;
         }
     }
 
-    static class ObjPrivsFor extends OctopusSqlShow
-    {
-        ObjPrivsFor(String userName)
-        {
+    static class ObjPrivsFor extends OctopusSqlShow {
+        ObjPrivsFor(String userName) {
             super(null, null, null, null, userName);
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_OBJ_PRIVS_FOR;
         }
     }
 
-    static class Comments extends OctopusSqlShow
-    {
+    static class Comments extends OctopusSqlShow {
         private String commentPattern;
 
-        Comments(String commentPattern, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern)
-        {
+        Comments(String commentPattern, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern) {
             super(dataSourcePattern, schemaPattern, tablePattern, columnPattern, null);
             this.commentPattern = commentPattern;
         }
 
-        public String getCommentPattern()
-        {
+        public String getCommentPattern() {
             return commentPattern;
         }
 
         @Override
-        public Type getType()
-        {
+        public Type getType() {
             return Type.SHOW_COMMENTS;
         }
     }

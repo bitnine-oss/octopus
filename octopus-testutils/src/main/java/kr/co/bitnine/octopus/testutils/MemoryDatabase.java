@@ -19,48 +19,45 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.InputStreamReader;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-public class MemoryDatabase
-{
+public final class MemoryDatabase {
     public static final String DRIVER_NAME = "org.sqlite.JDBC";
 
-    public final String CONNECTION_STRING;
-    public final String NAME;
+    public final String connectionString;
+    public final String name;
 
     private Connection initialConnection;
 
-    public MemoryDatabase(String name) throws ClassNotFoundException
-    {
+    public MemoryDatabase(String name) throws ClassNotFoundException {
         Class.forName(DRIVER_NAME);
 
-        CONNECTION_STRING = "jdbc:sqlite:file:" + name + "?mode=memory&cache=shared";
-        NAME = name;
+        connectionString = "jdbc:sqlite:file:" + name + "?mode=memory&cache=shared";
+        this.name = name;
 
         initialConnection = null;
     }
 
-    public synchronized void start() throws SQLException
-    {
+    public synchronized void start() throws SQLException {
         if (initialConnection == null)
-            initialConnection = DriverManager.getConnection(CONNECTION_STRING);
+            initialConnection = DriverManager.getConnection(connectionString);
     }
 
-    public synchronized void stop() throws SQLException
-    {
+    public synchronized void stop() throws SQLException {
         if (initialConnection != null) {
             initialConnection.close();
             initialConnection = null;
         }
     }
 
-    public Connection getConnection() throws Exception
-    {
-        return DriverManager.getConnection(CONNECTION_STRING);
+    public Connection getConnection() throws Exception {
+        return DriverManager.getConnection(connectionString);
     }
 
-    public void importJSON(Class<?> clazz, String resourceName) throws Exception
-    {
+    public void importJSON(Class<?> clazz, String resourceName) throws Exception {
         Connection conn = getConnection();
         conn.setAutoCommit(false);
         Statement stmt = conn.createStatement();
@@ -88,7 +85,7 @@ public class MemoryDatabase
 
                 queryBuilder.setLength(0);
                 queryBuilder.append("INSERT INTO ").append(tableName).append(" VALUES(");
-                for (Object columnObj: row)
+                for (Object columnObj : row)
                     queryBuilder.append(jsonValueToSqlValue(columnObj)).append(',');
                 queryBuilder.setCharAt(queryBuilder.length() - 1, ')');
                 stmt.executeUpdate(queryBuilder.toString());
@@ -100,8 +97,7 @@ public class MemoryDatabase
         conn.close();
     }
 
-    private String jsonValueToSqlIdent(Object jsonValue)
-    {
+    private String jsonValueToSqlIdent(Object jsonValue) {
         if (jsonValue instanceof String)
             return '"' + jsonValue.toString() + '"';
 
@@ -109,8 +105,7 @@ public class MemoryDatabase
         throw new IllegalArgumentException("type '" + typeName + "' of JSON value is invalid for identifier");
     }
 
-    private String jsonValueToSqlValue(Object jsonValue)
-    {
+    private String jsonValueToSqlValue(Object jsonValue) {
         if (jsonValue == null)
             return "NULL";
 
@@ -127,8 +122,7 @@ public class MemoryDatabase
         throw new IllegalArgumentException("type '" + typeName + "' of JSON value is not supported");
     }
 
-    public void runExecuteUpdate(String sqlStmt) throws SQLException
-    {
+    public void runExecuteUpdate(String sqlStmt) throws SQLException {
         Statement stmt = initialConnection.createStatement();
         stmt.executeUpdate(sqlStmt);
         stmt.close();
