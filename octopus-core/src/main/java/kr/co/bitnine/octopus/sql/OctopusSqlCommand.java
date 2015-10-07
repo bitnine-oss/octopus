@@ -16,6 +16,7 @@ package kr.co.bitnine.octopus.sql;
 
 public abstract class OctopusSqlCommand {
     public enum Type {
+        SET,
         ADD_DATASOURCE,
         UPDATE_DATASOURCE,
         DROP_DATASOURCE,

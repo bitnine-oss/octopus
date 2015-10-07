@@ -37,7 +37,7 @@ public final class OctopusSql {
     private OctopusSql() { }
 
     private static class Listener extends OctopusSqlBaseListener {
-        private List<OctopusSqlCommand> commands;
+        private final List<OctopusSqlCommand> commands;
 
         private Set<SystemPrivilege> sysPrivs;
         private Set<ObjectPrivilege> objPrivs;
@@ -45,16 +45,20 @@ public final class OctopusSql {
 
         Listener() {
             commands = new ArrayList<>();
-
-            sysPrivs = null;
-            objPrivs = null;
-            commentTarget = null;
         }
 
         @Override
         public void exitDdl(OctopusSqlParser.DdlContext ctx) {
             if (ctx.exception != null)
                 throw ctx.exception;
+        }
+
+        @Override
+        public void exitParameterSet(OctopusSqlParser.ParameterSetContext ctx) {
+            String confParam = ctx.parameterName().getText();
+            String confValue = ctx.parameterValue().getText();
+
+            commands.add(new OctopusSqlSet(confParam, confValue));
         }
 
         @Override
@@ -436,6 +440,10 @@ public final class OctopusSql {
 
     public static TupleSet run(OctopusSqlCommand command, OctopusSqlRunner runner) throws Exception {
         switch (command.getType()) {
+        case SET:
+            OctopusSqlSet set = (OctopusSqlSet) command;
+            runner.set(set.getConfParam(), set.getConfValue());
+            break;
         case ADD_DATASOURCE:
             OctopusSqlAddDataSource addDataSource = (OctopusSqlAddDataSource) command;
             runner.addDataSource(addDataSource.getDataSourceName(),

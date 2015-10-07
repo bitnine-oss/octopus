@@ -26,15 +26,16 @@ import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import kr.co.bitnine.octopus.postgres.libpq.Message;
 import kr.co.bitnine.octopus.postgres.libpq.MessageStream;
 import kr.co.bitnine.octopus.postgres.libpq.ProtocolConstants;
+import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
-import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
-import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
+import kr.co.bitnine.octopus.postgres.utils.adt.IoFunction;
 import kr.co.bitnine.octopus.postgres.utils.adt.IoFunctions;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import kr.co.bitnine.octopus.postgres.utils.misc.PostgresConfiguration;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -43,7 +44,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Random;
 
 public final class Session implements Runnable {
@@ -62,8 +63,9 @@ public final class Session implements Runnable {
 
     private final MessageStream messageStream;
     private final MetaContext metaContext;
-    private final SchemaManager schemaManager;
     private final QueryEngine queryEngine;
+
+    private final PostgresConfiguration postgresConf;
 
     Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager) {
         this.clientChannel = clientChannel;
@@ -73,8 +75,9 @@ public final class Session implements Runnable {
 
         messageStream = new MessageStream(clientChannel);
         this.metaContext = metaContext;
-        this.schemaManager = schemaManager;
         queryEngine = new QueryEngine(metaContext, schemaManager);
+
+        postgresConf = new PostgresConfiguration();
     }
 
     int getId() {
@@ -127,15 +130,12 @@ public final class Session implements Runnable {
         close();
     }
 
-    public static final String CLIENT_PARAM_DATABASE = "database";
-    public static final String CLIENT_PARAM_DATESTYLE = "DateStyle";
-    public static final String CLIENT_PARAM_ENCODING = "client_encoding";
-    public static final String CLIENT_PARAM_USER = "user";
-
-    private Properties clientParams;
-
     public String getClientParam(String key) {
-        return clientParams.getProperty(key);
+        return postgresConf.get(key);
+    }
+
+    public String setClientParam(String key, String value) {
+        return postgresConf.put(key, value);
     }
 
     private boolean doStartup() throws IOException, OctopusException {
@@ -183,7 +183,8 @@ public final class Session implements Runnable {
         LOG.debug("handle StartupMessage message");
 
         int version = imsg.getInt();
-        if (version != ProtocolConstants.protocolVersion(3, 0)) {
+        if (ProtocolConstants.protocolMajor(version) != ProtocolConstants.protocolMajor(ProtocolConstants.PROTOCOL_LATEST)
+                || ProtocolConstants.protocolMinor(version) > ProtocolConstants.protocolMinor(ProtocolConstants.PROTOCOL_LATEST)) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.FATAL,
                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
@@ -191,23 +192,18 @@ public final class Session implements Runnable {
             new OctopusException(edata).emitErrorReport();
         }
 
-        Properties params = new Properties();
         while (true) {
             String paramName = imsg.getCString();
             if (paramName.length() == 0)
                 break;
             String paramValue = imsg.getCString();
-            params.setProperty(paramName, paramValue);
+            postgresConf.put(paramName, paramValue);
         }
 
         if (LOG.isDebugEnabled()) {
-            for (String key : params.stringPropertyNames()) {
-                String val = params.getProperty(key);
-                LOG.debug(key + "=" + val);
-            }
+            for (Map.Entry<String, String> e : postgresConf.entrySet())
+                LOG.debug(e.getKey() + "=" + e.getValue());
         }
-
-        clientParams = params;
     }
 
     // NOTE: Now, cleartext only
@@ -230,7 +226,7 @@ public final class Session implements Runnable {
         }
 
         // verify password
-        String username = clientParams.getProperty(CLIENT_PARAM_USER);
+        String username = postgresConf.get(PostgresConfiguration.PARAM_USER);
         try {
             String password = msg.getCString();
             String currentPassword = metaContext.getUser(username).getPassword();
@@ -258,26 +254,20 @@ public final class Session implements Runnable {
 
         LOG.debug("send ParameterStatus message");
         // ParameterStatus
-        msg = Message.builder('S')
-                .putCString("integer_datetimes")
-                .putCString("on")
-                .build();
-        messageStream.putMessage(msg);
-        msg = Message.builder('S')
-                .putCString(CLIENT_PARAM_DATESTYLE)
-                .putCString(clientParams.getProperty(CLIENT_PARAM_DATESTYLE))
-                .build();
-        messageStream.putMessage(msg);
-        msg = Message.builder('S')
-                .putCString(CLIENT_PARAM_ENCODING)
-                .putCString(clientParams.getProperty(CLIENT_PARAM_ENCODING))
-                .build();
-        messageStream.putMessage(msg);
-        msg = Message.builder('S')
-                .putCString("server_encoding")
-                .putCString("UTF8")
-                .build();
-        messageStream.putMessage(msg);
+        String[] reportedParams = {
+            PostgresConfiguration.PARAM_INTEGER_DATETIMES,
+            PostgresConfiguration.PARAM_DATESTYLE,
+            PostgresConfiguration.PARAM_CLIENT_ENCODING,
+            PostgresConfiguration.PARAM_SERVER_ENCODING,
+            PostgresConfiguration.PARAM_SERVER_VERSION
+        };
+        for (String param : reportedParams) {
+            msg = Message.builder('S')
+                    .putCString(param)
+                    .putCString(postgresConf.get(param))
+                    .build();
+            messageStream.putMessage(msg);
+        }
 
         LOG.debug("send BackendKeyData message");
         // BackendKeyData

@@ -38,6 +38,7 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import kr.co.bitnine.octopus.postgres.utils.misc.PostgresConfiguration;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -332,7 +333,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
         Set<SystemPrivilege> userSysPrivs;
 
         try {
-            String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
+            String userName = Session.currentSession().getClientParam(PostgresConfiguration.PARAM_USER);
             userSysPrivs = metaContext.getUser(userName).getSystemPrivileges();
         } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
@@ -360,7 +361,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
     private PostgresException checkObjectPrivilegeInternal(ObjectPrivilege objPriv, String[] schemaName) {
         Set<ObjectPrivilege> schemaObjPrivs;
-        String userName = Session.currentSession().getClientParam(Session.CLIENT_PARAM_USER);
+        String userName = Session.currentSession().getClientParam(PostgresConfiguration.PARAM_USER);
 
         try {
             MetaSchemaPrivilege schemaPriv = metaContext.getSchemaPrivilege(schemaName, userName);
@@ -384,6 +385,11 @@ public final class QueryEngine extends AbstractQueryProcessor {
     }
 
     private OctopusSqlRunner ddlRunner = new OctopusSqlRunner() {
+        @Override
+        public void set(String confParam, String confValue) throws Exception {
+            Session.currentSession().setClientParam(confParam, confValue);
+        }
+
         @Override
         public void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);

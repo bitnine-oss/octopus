@@ -21,6 +21,8 @@ import kr.co.bitnine.octopus.postgres.executor.TupleSet;
 import java.util.List;
 
 public interface OctopusSqlRunner {
+    void set(String confParam, String confValue) throws Exception;
+
     void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception;
 
     void updateDataSource(OctopusSqlObjectTarget target) throws Exception;

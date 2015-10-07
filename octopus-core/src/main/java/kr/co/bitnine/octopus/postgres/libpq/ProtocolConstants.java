@@ -18,7 +18,19 @@ public final class ProtocolConstants {
     public static final int CANCEL_REQUEST_CODE = (1234 << 16) | 5678;
     public static final int SSL_REQUEST_CODE = (1234 << 16) | 5679;
 
+    public static final int PROTOCOL_LATEST = protocolVersion(3, 0);
+
+    public static final String POSTGRES_VERSION = "9.4.4";
+
     private ProtocolConstants() { }
+
+    public static int protocolMajor(int version) {
+        return version >> 16;
+    }
+
+    public static int protocolMinor(int version) {
+        return version & 0x0000ffff;
+    }
 
     public static int protocolVersion(int major, int minor) {
         return (major << 16) | minor;
