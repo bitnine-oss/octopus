@@ -23,7 +23,8 @@ ddlStmts
     ;
 
 ddlStmt
-    : alterSystem
+    : parameterSet
+    | alterSystem
     | createUser
     | alterUser
     | dropUser
@@ -34,6 +35,22 @@ ddlStmt
     | show
     | commentOn
     | setDataCategoryOn
+    ;
+
+parameterSet
+    : K_SET ( K_SESSION ) ? parameterName ( K_TO | '=' ) ( parameterValue | K_DEFAULT )
+    ;
+
+parameterName
+    : IDENTIFIER
+    ;
+
+parameterValue
+    : booleanValue | NUMERIC_LITERAL | STRING_LITERAL
+    ;
+
+booleanValue
+    : K_TRUE | K_FALSE | K_ON | K_OFF
     ;
 
 alterSystem
@@ -277,10 +294,12 @@ K_COMMENT : C O M M E N T ;
 K_COMMENTS : C O M M E N T S ;
 K_CONNECT : C O N N E C T ;
 K_CREATE : C R E A T E ;
+K_DEFAULT : D E F A U L T ;
 K_DATACATEGORY : D A T A C A T E G O R Y ;
 K_DATASOURCE : D A T A S O U R C E ;
 K_DATASOURCES : D A T A S O U R C E S ;
 K_DROP : D R O P ;
+K_FALSE : F A L S E ;
 K_FOR : F O R ;
 K_FROM : F R O M ;
 K_GRANT : G R A N T ;
@@ -288,6 +307,7 @@ K_IDENTIFIED : I D E N T I F I E D ;
 K_IS : I S ;
 K_OBJECT : O B J E C T ;
 K_ON : O N ;
+K_OFF : O F F ;
 K_PRIVILEGE : P R I V I L E G E ;
 K_PRIVILEGES : P R I V I L E G E S ;
 K_REPLACE : R E P L A C E ;
@@ -296,12 +316,14 @@ K_ROLE : R O L E ;
 K_SCHEMA : S C H E M A ;
 K_SCHEMAS : S C H E M A S ;
 K_SELECT : S E L E C T ;
+K_SESSION : S E S S I O N ;
 K_SET : S E T ;
 K_SHOW : S H O W ;
 K_SYSTEM : S Y S T E M ;
 K_TABLE : T A B L E ;
 K_TABLES : T A B L E S ;
 K_TO : T O ;
+K_TRUE : T R U E ;
 K_UPDATE : U P D A T E ;
 K_USER : U S E R ;
 K_USERS : U S E R S ;
@@ -324,6 +346,11 @@ IDENTIFIER
         {
             setText(getText().toUpperCase());
         }
+    ;
+
+NUMERIC_LITERAL
+    : DIGIT+ ( '.' DIGIT* )? ( E [-+]? DIGIT+ )?
+    | '.' DIGIT+ ( E [-+]? DIGIT+ )?
     ;
 
 STRING_LITERAL

@@ -40,6 +40,37 @@ public class OctopusSqlTest {
     }
 
     @Test
+    public void testSet() throws Exception {
+        final String confParam = "param_name";
+
+        parseAndRun("SET \"" + confParam + "\" = TRUE");
+        parseAndRun("SET \"" + confParam + "\" = false");
+        parseAndRun("SET \"" + confParam + "\" = ON");
+        parseAndRun("SET \"" + confParam + "\" = off");
+        parseAndRun("SET \"" + confParam + "\" = .7");
+        parseAndRun("SET \"" + confParam + "\" = 7");
+        parseAndRun("SET \"" + confParam + "\" = 7.");
+        parseAndRun("SET \"" + confParam + "\" = 7.7");
+        parseAndRun("SET \"" + confParam + "\" = 7E+3");
+        parseAndRun("SET \"" + confParam + "\" = .7e-1");
+        parseAndRun("SET \"" + confParam + "\" = 'octaline'");
+
+        new VerificationsInOrder() {{
+            anyRunner.set(confParam, "TRUE");
+            anyRunner.set(confParam, "false");
+            anyRunner.set(confParam, "ON");
+            anyRunner.set(confParam, "off");
+            anyRunner.set(confParam, ".7");
+            anyRunner.set(confParam, "7");
+            anyRunner.set(confParam, "7.");
+            anyRunner.set(confParam, "7.7");
+            anyRunner.set(confParam, "7E+3");
+            anyRunner.set(confParam, ".7e-1");
+            anyRunner.set(confParam, "octaline");
+        }};
+    }
+
+    @Test
     public void testAddDataSource() throws Exception {
         final String dataSourceName = "bitnine";
         final String connectionString = "jdbc:sqlite:file::memory:?cache=shared";
