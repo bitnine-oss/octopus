@@ -141,7 +141,7 @@ limitations under the License.
     </module-->
     <module name="CommentsIndentation"/>
     <module name="UncommentedMain">
-      <property name="excludedClasses" value="OctopusMaster|VersionInfo"/>
+      <property name="excludedClasses" value="MetaShell|OctopusMaster|VersionInfo"/>
     </module>
     <module name="UpperEll"/>
     <module name="ArrayTypeStyle"/>

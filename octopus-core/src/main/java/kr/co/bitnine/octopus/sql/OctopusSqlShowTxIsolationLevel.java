@@ -12,18 +12,11 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta;
+package kr.co.bitnine.octopus.sql;
 
-import java.lang.reflect.Constructor;
-
-public final class MetaStores {
-    private MetaStores() { }
-
-    public static MetaStore newInstance(String className) throws ReflectiveOperationException {
-        Class<?> clazz = Class.forName(className);
-        Constructor<?> ctor = clazz.getConstructor();
-        return (MetaStore) ctor.newInstance();
+class OctopusSqlShowTxIsolationLevel extends OctopusSqlCommand {
+    @Override
+    public Type getType() {
+        return Type.SHOW_TX_ISOLATION_LEVEL;
     }
-
-    public static void initialize(MetaStore metaStore) throws MetaException { }
 }

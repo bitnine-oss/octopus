@@ -64,7 +64,7 @@ public final class PostgresConfiguration extends TreeMap<String, String> {
     }
 
     private static boolean isValidParam(String key) {
-        return PARAMS.contains(key);
+        return key != null && PARAMS.contains(key);
     }
 
     @Override

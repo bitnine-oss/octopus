@@ -54,11 +54,16 @@ public final class OctopusSql {
         }
 
         @Override
-        public void exitParameterSet(OctopusSqlParser.ParameterSetContext ctx) {
+        public void exitParamSetNormal(OctopusSqlParser.ParamSetNormalContext ctx) {
             String confParam = ctx.parameterName().getText();
             String confValue = ctx.parameterValue().getText();
 
             commands.add(new OctopusSqlSet(confParam, confValue));
+        }
+
+        @Override
+        public void exitParamSetTx(OctopusSqlParser.ParamSetTxContext ctx) {
+            commands.add(new OctopusSqlSet(null, null));
         }
 
         @Override
@@ -287,15 +292,20 @@ public final class OctopusSql {
         }
 
         @Override
+        public void exitShowTxIsolationLevel(OctopusSqlParser.ShowTxIsolationLevelContext ctx) {
+            commands.add(new OctopusSqlShowTxIsolationLevel());
+        }
+
+        @Override
         public void exitShowDataSources(OctopusSqlParser.ShowDataSourcesContext ctx) {
-            commands.add(new OctopusSqlShow.DataSources());
+            commands.add(new OctopusSqlShowMeta.DataSources());
         }
 
         @Override
         public void exitShowSchemas(OctopusSqlParser.ShowSchemasContext ctx) {
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
-            commands.add(new OctopusSqlShow.Schemas(dataSourceName, schemaPattern));
+            commands.add(new OctopusSqlShowMeta.Schemas(dataSourceName, schemaPattern));
         }
 
         @Override
@@ -303,7 +313,7 @@ public final class OctopusSql {
             String dataSourceName = ctx.dataSourceName() == null ? null : ctx.dataSourceName().getText();
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
-            commands.add(new OctopusSqlShow.Tables(dataSourceName, schemaPattern, tablePattern));
+            commands.add(new OctopusSqlShowMeta.Tables(dataSourceName, schemaPattern, tablePattern));
         }
 
         @Override
@@ -312,18 +322,18 @@ public final class OctopusSql {
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
             String columnPattern = ctx.columnPattern() == null ? null : ctx.columnPattern().getText();
-            commands.add(new OctopusSqlShow.Columns(dataSourceName, schemaPattern, tablePattern, columnPattern));
+            commands.add(new OctopusSqlShowMeta.Columns(dataSourceName, schemaPattern, tablePattern, columnPattern));
         }
 
         @Override
         public void exitShowAllUsers(OctopusSqlParser.ShowAllUsersContext ctx) {
-            commands.add(new OctopusSqlShow.AllUsers());
+            commands.add(new OctopusSqlShowMeta.AllUsers());
         }
 
         @Override
         public void exitShowObjPrivsFor(OctopusSqlParser.ShowObjPrivsForContext ctx) {
             String userName = ctx.user().getText();
-            commands.add(new OctopusSqlShow.ObjPrivsFor(userName));
+            commands.add(new OctopusSqlShowMeta.ObjPrivsFor(userName));
         }
 
         @Override
@@ -341,7 +351,7 @@ public final class OctopusSql {
             String schemaPattern = ctx.schemaPattern() == null ? null : ctx.schemaPattern().getText();
             String tablePattern = ctx.tablePattern() == null ? null : ctx.tablePattern().getText();
             String columnPattern = ctx.columnPattern() == null ? null : ctx.columnPattern().getText();
-            commands.add(new OctopusSqlShow.Comments(commentPattern, dataSourcePattern, schemaPattern, tablePattern, columnPattern));
+            commands.add(new OctopusSqlShowMeta.Comments(commentPattern, dataSourcePattern, schemaPattern, tablePattern, columnPattern));
         }
 
         @Override
@@ -493,24 +503,26 @@ public final class OctopusSql {
             OctopusSqlRevokeObjPrivs revokeObj = (OctopusSqlRevokeObjPrivs) command;
             runner.revokeObjectPrivileges(revokeObj.getObjPrivs(), revokeObj.getObjName(), revokeObj.getGrantees());
             break;
+        case SHOW_TX_ISOLATION_LEVEL:
+            return runner.showTxIsolationLevel();
         case SHOW_DATASOURCES:
             return runner.showDataSources();
         case SHOW_SCHEMAS:
-            OctopusSqlShow.Schemas showSchemas = (OctopusSqlShow.Schemas) command;
+            OctopusSqlShowMeta.Schemas showSchemas = (OctopusSqlShowMeta.Schemas) command;
             return runner.showSchemas(showSchemas.getDataSourceName(), showSchemas.getSchemaPattern());
         case SHOW_TABLES:
-            OctopusSqlShow.Tables showTables = (OctopusSqlShow.Tables) command;
+            OctopusSqlShowMeta.Tables showTables = (OctopusSqlShowMeta.Tables) command;
             return runner.showTables(showTables.getDataSourceName(), showTables.getSchemaPattern(), showTables.getTablePattern());
         case SHOW_COLUMNS:
-            OctopusSqlShow.Columns showColumns = (OctopusSqlShow.Columns) command;
+            OctopusSqlShowMeta.Columns showColumns = (OctopusSqlShowMeta.Columns) command;
             return runner.showColumns(showColumns.getDataSourceName(), showColumns.getSchemaPattern(), showColumns.getTablePattern(), showColumns.getcolumnPattern());
         case SHOW_ALL_USERS:
             return runner.showAllUsers();
         case SHOW_OBJ_PRIVS_FOR:
-            OctopusSqlShow.ObjPrivsFor showObjPrivsFor = (OctopusSqlShow.ObjPrivsFor) command;
+            OctopusSqlShowMeta.ObjPrivsFor showObjPrivsFor = (OctopusSqlShowMeta.ObjPrivsFor) command;
             return runner.showObjPrivsFor(showObjPrivsFor.getUserName());
         case SHOW_COMMENTS:
-            OctopusSqlShow.Comments showComments = (OctopusSqlShow.Comments) command;
+            OctopusSqlShowMeta.Comments showComments = (OctopusSqlShowMeta.Comments) command;
             return runner.showComments(showComments.getCommentPattern(), showComments.getDataSourceName(),
                     showComments.getSchemaPattern(), showComments.getTablePattern(),
                     showComments.getcolumnPattern());

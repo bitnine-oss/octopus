@@ -47,6 +47,8 @@ public interface OctopusSqlRunner {
 
     void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception;
 
+    TupleSet showTxIsolationLevel() throws Exception;
+
     TupleSet showDataSources() throws Exception;
 
     TupleSet showSchemas(String dataSourceName, String schemaPattern) throws Exception;

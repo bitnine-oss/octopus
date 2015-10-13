@@ -26,6 +26,7 @@ where COMMAND is one of:
   classpath     print the class path needed to get the Octopus jar
                 and the required libraries
   master        run a Octopus master
+  meta          run a user client for Octopus MetaStore
   octaline      run a Octopus interactive terminal
 Most commands print help when invoked without parameters.
 EOF

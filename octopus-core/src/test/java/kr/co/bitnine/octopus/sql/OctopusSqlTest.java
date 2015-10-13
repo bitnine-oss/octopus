@@ -27,7 +27,9 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 @RunWith(JMockit.class)
 public class OctopusSqlTest {
@@ -68,6 +70,21 @@ public class OctopusSqlTest {
             anyRunner.set(confParam, ".7e-1");
             anyRunner.set(confParam, "octaline");
         }};
+    }
+
+    @Test
+    public void testSetTransaction() throws Exception {
+        final String common = "SET SESSION CHARACTERISTICS AS TRANSACTION ";
+
+        parseAndRun(common + "ISOLATION LEVEL SERIALIZABLE");
+        parseAndRun(common + "ISOLATION LEVEL REPEATABLE READ");
+        parseAndRun(common + "ISOLATION LEVEL READ COMMITTED");
+        parseAndRun(common + "ISOLATION LEVEL READ UNCOMMITTED");
+        parseAndRun(common + "READ WRITE");
+        parseAndRun(common + "READ ONLY");
+        parseAndRun(common + "NOT DEFERRABLE");
+        parseAndRun(common + "DEFERRABLE");
+
     }
 
     @Test

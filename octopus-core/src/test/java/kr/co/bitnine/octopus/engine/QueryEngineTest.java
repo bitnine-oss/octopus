@@ -23,7 +23,8 @@ import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class QueryEngineTest {
     private static MemoryDatabase metaMemDb;

@@ -15,23 +15,36 @@
 package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.model.MetaUser;
+import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.*;
-
-import java.net.InetSocketAddress;
-import java.sql.*;
-import java.util.Properties;
-
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.junit.Assert.*;
+import java.net.InetSocketAddress;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SessionServerTest {
     private static MemoryDatabase metaMemDb;
@@ -64,6 +77,10 @@ public class SessionServerTest {
         metaStoreService = new MetaStoreService(metaStore);
         metaStoreService.init(conf);
         metaStoreService.start();
+
+        MetaContext metaContext = metaStore.getMetaContext();
+        MetaUser user = metaContext.createUser("octopus", "bitnine");
+        metaContext.addSystemPrivileges(Arrays.asList(SystemPrivilege.values()), Arrays.asList(user.getName()));
 
         schemaManager = new SchemaManager(metaStore);
         schemaManager.init(conf);
@@ -645,9 +662,16 @@ public class SessionServerTest {
     public void testShow() throws Exception {
         Connection conn = getConnection("octopus", "bitnine");
 
+        System.out.println("* Transaction isolation level");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SHOW TRANSACTION ISOLATION LEVEL");
+        while (rs.next())
+            System.out.println("  " + rs.getString("transaction_isolation"));
+        rs.close();
+
         System.out.println("* DataSources");
         DatabaseMetaData metaData = conn.getMetaData();
-        ResultSet rs = metaData.getCatalogs();
+        rs = metaData.getCatalogs();
         while (rs.next()) {
             System.out.println("  " + rs.getString("TABLE_CAT") + ", "
                     + rs.getString("REMARKS"));
@@ -691,7 +715,6 @@ public class SessionServerTest {
         rs.close();
 
         System.out.println("* Users");
-        Statement stmt = conn.createStatement();
 
         rs = stmt.executeQuery("SHOW ALL USERS");
         while (rs.next()) {

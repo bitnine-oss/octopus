@@ -29,6 +29,7 @@ public abstract class OctopusSqlCommand {
         REVOKE_SYS_PRIVS,
         GRANT_OBJ_PRIVS,
         REVOKE_OBJ_PRIVS,
+        SHOW_TX_ISOLATION_LEVEL,
         SHOW_DATASOURCES,
         SHOW_SCHEMAS,
         SHOW_TABLES,
