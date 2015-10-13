@@ -52,6 +52,10 @@ public final class TupleSetSql implements TupleSet {
     @Override
     public void close() throws PostgresException { }
 
+    public void addTuple(Tuple t) {
+        tuples.add(t);
+    }
+
     public void addTuples(List<Tuple> ts) {
         tuples.addAll(ts);
     }

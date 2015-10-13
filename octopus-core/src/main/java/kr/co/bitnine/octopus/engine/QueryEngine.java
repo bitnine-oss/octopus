@@ -100,12 +100,20 @@ public final class QueryEngine extends AbstractQueryProcessor {
         if (commands != null && commands.size() > 0) {
             TupleDesc tupDesc;
             switch (commands.get(0).getType()) {
-            case SHOW_DATASOURCES:
+            case SHOW_TX_ISOLATION_LEVEL:
                 PostgresAttribute[] attrs  = new PostgresAttribute[] {
+                    new PostgresAttribute("transaction_isolation", PostgresType.VARCHAR, 32),
+                };
+                FormatCode[] resultFormats = new FormatCode[attrs.length];
+                Arrays.fill(resultFormats, FormatCode.TEXT);
+                tupDesc = new TupleDesc(attrs, resultFormats);
+                break;
+            case SHOW_DATASOURCES:
+                attrs  = new PostgresAttribute[] {
                     new PostgresAttribute("TABLE_CAT", PostgresType.VARCHAR, 128),
                     new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
                 };
-                FormatCode[] resultFormats = new FormatCode[attrs.length];
+                resultFormats = new FormatCode[attrs.length];
                 Arrays.fill(resultFormats, FormatCode.TEXT);
                 tupDesc = new TupleDesc(attrs, resultFormats);
                 break;
@@ -467,6 +475,16 @@ public final class QueryEngine extends AbstractQueryProcessor {
         public void revokeObjectPrivileges(List<ObjectPrivilege> objPrivs, String[] objName, List<String> revokees) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.GRANT_ANY_OBJECT_PRIVILEGE);
             metaContext.removeObjectPrivileges(objPrivs, objName, revokees);
+        }
+
+        @Override
+        public TupleSet showTxIsolationLevel() throws Exception {
+            Tuple t = new Tuple(1);
+            t.setDatum(0, "read committed");
+
+            TupleSetSql ts = new TupleSetSql();
+            ts.addTuple(t);
+            return ts;
         }
 
         @Override

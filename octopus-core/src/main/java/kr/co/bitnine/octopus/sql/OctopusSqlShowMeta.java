@@ -14,14 +14,14 @@
 
 package kr.co.bitnine.octopus.sql;
 
-abstract class OctopusSqlShow extends OctopusSqlCommand {
+abstract class OctopusSqlShowMeta extends OctopusSqlCommand {
     private String dataSourceName;
     private String schemaPattern;
     private String tablePattern;
     private String columnPattern;
     private String userName;
 
-    protected OctopusSqlShow(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern, String userName) {
+    protected OctopusSqlShowMeta(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern, String userName) {
         this.dataSourceName = dataSourceName;
         this.schemaPattern = schemaPattern;
         this.tablePattern = tablePattern;
@@ -49,7 +49,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         return userName;
     }
 
-    static class DataSources extends OctopusSqlShow {
+    static class DataSources extends OctopusSqlShowMeta {
         DataSources() {
             super(null, null, null, null, null);
         }
@@ -60,7 +60,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class Schemas extends OctopusSqlShow {
+    static class Schemas extends OctopusSqlShowMeta {
         Schemas(String dataSourceName, String schemaPattern) {
             super(dataSourceName, schemaPattern, null, null, null);
         }
@@ -71,7 +71,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class Tables extends OctopusSqlShow {
+    static class Tables extends OctopusSqlShowMeta {
         Tables(String dataSourceName, String schemaPattern, String tablePattern) {
             super(dataSourceName, schemaPattern, tablePattern, null, null);
         }
@@ -82,7 +82,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class Columns extends OctopusSqlShow {
+    static class Columns extends OctopusSqlShowMeta {
         Columns(String dataSourceName, String schemaPattern, String tablePattern, String columnPattern) {
             super(dataSourceName, schemaPattern, tablePattern, columnPattern, null);
         }
@@ -93,7 +93,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class AllUsers extends OctopusSqlShow {
+    static class AllUsers extends OctopusSqlShowMeta {
         AllUsers() {
             super(null, null, null, null, null);
         }
@@ -104,7 +104,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class ObjPrivsFor extends OctopusSqlShow {
+    static class ObjPrivsFor extends OctopusSqlShowMeta {
         ObjPrivsFor(String userName) {
             super(null, null, null, null, userName);
         }
@@ -115,7 +115,7 @@ abstract class OctopusSqlShow extends OctopusSqlCommand {
         }
     }
 
-    static class Comments extends OctopusSqlShow {
+    static class Comments extends OctopusSqlShowMeta {
         private String commentPattern;
 
         Comments(String commentPattern, String dataSourcePattern, String schemaPattern, String tablePattern, String columnPattern) {

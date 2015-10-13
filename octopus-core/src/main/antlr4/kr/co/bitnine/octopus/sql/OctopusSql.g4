@@ -38,7 +38,8 @@ ddlStmt
     ;
 
 parameterSet
-    : K_SET ( K_SESSION ) ? parameterName ( K_TO | '=' ) ( parameterValue | K_DEFAULT )
+    : K_SET ( K_SESSION )? parameterName ( K_TO | '=' ) ( parameterValue | K_DEFAULT )  # ParamSetNormal
+    | K_SET K_SESSION K_CHARACTERISTICS K_AS K_TRANSACTION transactionModeList          # ParamSetTx
     ;
 
 parameterName
@@ -53,8 +54,20 @@ booleanValue
     : K_TRUE | K_FALSE | K_ON | K_OFF
     ;
 
+transactionModeList
+    : transactionMode ( transactionModeList )*
+    | transactionMode ( ',' transactionModeList )*
+    ;
+
+transactionMode
+    : K_ISOLATION K_LEVEL ( K_SERIALIZABLE | K_REPEATABLE K_READ | K_READ K_COMMITTED | K_READ K_UNCOMMITTED )
+    | K_READ K_WRITE
+    | K_READ K_ONLY
+    | ( K_NOT )? K_DEFERRABLE
+    ;
+
 alterSystem
-    : K_ALTER K_SYSTEM ( addDataSourceClause | updateDataSourceClause | dropDataSourceClause)
+    : K_ALTER K_SYSTEM ( addDataSourceClause | updateDataSourceClause | dropDataSourceClause )
     ;
 
 addDataSourceClause
@@ -194,7 +207,8 @@ show
     ;
 
 showTargets
-    : K_DATASOURCES                                             # ShowDataSources
+    : K_TRANSACTION K_ISOLATION K_LEVEL                         # ShowTxIsolationLevel
+    | K_DATASOURCES                                             # ShowDataSources
     | K_SCHEMAS ( K_DATASOURCE dataSourceName )?
                 ( K_SCHEMA schemaPattern )?                     # ShowSchemas
     | K_TABLES ( K_DATASOURCE dataSourceName )?
@@ -287,14 +301,18 @@ K_ADD : A D D ;
 K_ALL : A L L ;
 K_ALTER : A L T E R ;
 K_ANY : A N Y ;
+K_AS : A S ;
 K_BY : B Y ;
+K_CHARACTERISTICS : C H A R A C T E R I S T I C S ;
 K_COLUMN : C O L U M N ;
 K_COLUMNS : C O L U M N S ;
 K_COMMENT : C O M M E N T ;
 K_COMMENTS : C O M M E N T S ;
 K_CONNECT : C O N N E C T ;
+K_COMMITTED : C O M M I T T E D ;
 K_CREATE : C R E A T E ;
 K_DEFAULT : D E F A U L T ;
+K_DEFERRABLE : D E F E R R A B L E ;
 K_DATACATEGORY : D A T A C A T E G O R Y ;
 K_DATASOURCE : D A T A S O U R C E ;
 K_DATASOURCES : D A T A S O U R C E S ;
@@ -305,17 +323,24 @@ K_FROM : F R O M ;
 K_GRANT : G R A N T ;
 K_IDENTIFIED : I D E N T I F I E D ;
 K_IS : I S ;
+K_ISOLATION : I S O L A T I O N ;
+K_LEVEL : L E V E L ;
+K_NOT : N O T ;
 K_OBJECT : O B J E C T ;
-K_ON : O N ;
 K_OFF : O F F ;
+K_ON : O N ;
+K_ONLY : O N L Y ;
 K_PRIVILEGE : P R I V I L E G E ;
 K_PRIVILEGES : P R I V I L E G E S ;
+K_READ : R E A D ;
+K_REPEATABLE : R E P E A T A B L E ;
 K_REPLACE : R E P L A C E ;
 K_REVOKE : R E V O K E ;
 K_ROLE : R O L E ;
 K_SCHEMA : S C H E M A ;
 K_SCHEMAS : S C H E M A S ;
 K_SELECT : S E L E C T ;
+K_SERIALIZABLE : S E R I A L I Z A B L E ;
 K_SESSION : S E S S I O N ;
 K_SET : S E T ;
 K_SHOW : S H O W ;
@@ -323,11 +348,14 @@ K_SYSTEM : S Y S T E M ;
 K_TABLE : T A B L E ;
 K_TABLES : T A B L E S ;
 K_TO : T O ;
+K_TRANSACTION : T R A N S A C T I O N ;
 K_TRUE : T R U E ;
+K_UNCOMMITTED : U N C O M M I T T E D ;
 K_UPDATE : U P D A T E ;
 K_USER : U S E R ;
 K_USERS : U S E R S ;
 K_USING : U S I N G ;
+K_WRITE : W R I T E ;
 
 IDENTIFIER
     : '"' ( ~["\r\n] | '""' )* '"'
