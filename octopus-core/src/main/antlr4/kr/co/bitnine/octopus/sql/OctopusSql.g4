@@ -372,7 +372,7 @@ IDENTIFIER
         }
     | LETTER ( LETTER | DIGIT )*
         {
-            setText(getText().toUpperCase());
+            setText(getText().toLowerCase());
         }
     ;
 

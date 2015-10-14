@@ -46,10 +46,12 @@ import kr.co.bitnine.octopus.sql.OctopusSqlObjectTarget;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
 import kr.co.bitnine.octopus.sql.TupleSetSql;
 import org.antlr.v4.runtime.RecognitionException;
+import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -227,8 +229,12 @@ public final class QueryEngine extends AbstractQueryProcessor {
         try {
             SchemaPlus rootSchema = schemaManager.getCurrentSchema();
 
+            SqlParser.Config parserConf = SqlParser.configBuilder()
+                    .setUnquotedCasing(Casing.TO_LOWER)
+                    .build();
             FrameworkConfig config = Frameworks.newConfigBuilder()
                     .defaultSchema(rootSchema)
+                    .parserConfig(parserConf)
                     .build();
             Planner planner = Frameworks.getPlanner(config);
 

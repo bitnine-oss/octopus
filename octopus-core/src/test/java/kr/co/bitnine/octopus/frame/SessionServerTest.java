@@ -177,12 +177,12 @@ public class SessionServerTest {
         newMemDb.start();
 
         final String tblName = "TMP";
-        newMemDb.runExecuteUpdate("CREATE TABLE " + tblName + " (ID INTEGER, NAME STRING)");
+        newMemDb.runExecuteUpdate("CREATE TABLE \"" + tblName + "\" (ID INTEGER, NAME STRING)");
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.name
-                + " CONNECT TO '" + newMemDb.connectionString
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + newMemDb.name
+                + "\" CONNECT TO '" + newMemDb.connectionString
                 + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         DatabaseMetaData metaData = conn.getMetaData();
@@ -190,7 +190,7 @@ public class SessionServerTest {
         assertTrue(existDataSource(metaData, newMemDb.name));
         assertTrue(existTable(metaData, newMemDb.name, tblName));
 
-        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.name);
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE \"" + newMemDb.name + '"');
 
         assertFalse(existDataSource(metaData, newMemDb.name));
         assertFalse(existTable(metaData, newMemDb.name, tblName));
@@ -206,16 +206,16 @@ public class SessionServerTest {
         MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
         newMemDb.start();
 
-        newMemDb.runExecuteUpdate("CREATE TABLE TMP (ID INTEGER, NAME STRING)");
+        newMemDb.runExecuteUpdate("CREATE TABLE \"TMP\" (\"ID\" INTEGER, \"NAME\" STRING)");
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
-        stmt.execute("ALTER SYSTEM ADD DATASOURCE " + newMemDb.name
-                + " CONNECT TO '" + newMemDb.connectionString
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + newMemDb.name
+                + "\" CONNECT TO '" + newMemDb.connectionString
                 + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
 
         stmt.execute("CREATE USER \"yjchoi\" IDENTIFIED BY 'piggy'");
-        stmt.execute("GRANT SELECT ON " + newMemDb.name + ".__DEFAULT TO \"yjchoi\"");
+        stmt.execute("GRANT SELECT ON \"" + newMemDb.name + "\".\"__DEFAULT\" TO \"yjchoi\"");
 
         ResultSet rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"yjchoi\"");
         int numRows = 0;
@@ -228,7 +228,7 @@ public class SessionServerTest {
         rs.close();
         assertEquals(numRows, 1);
 
-        stmt.execute("ALTER SYSTEM DROP DATASOURCE " + newMemDb.name);
+        stmt.execute("ALTER SYSTEM DROP DATASOURCE \"" + newMemDb.name + '"');
 
         rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"yjchoi\"");
         numRows = 0;
@@ -254,8 +254,8 @@ public class SessionServerTest {
         Statement stmt = conn.createStatement();
 
         final String tblName = "TMP";
-        dataMemDb.runExecuteUpdate("CREATE TABLE " + tblName + " (ID INTEGER, NAME STRING)");
-        dataMemDb.runExecuteUpdate("INSERT INTO " + tblName + " VALUES (1, 'yjchoi')");
+        dataMemDb.runExecuteUpdate("CREATE TABLE \"" + tblName + "\" (\"ID\" INTEGER, \"NAME\" STRING)");
+        dataMemDb.runExecuteUpdate("INSERT INTO \"" + tblName + "\" VALUES (1, 'yjchoi')");
 
         boolean exceptionCaught = false;
         try {
@@ -283,7 +283,7 @@ public class SessionServerTest {
         rows = checkNumRows(stmt, tblName);
         assertEquals(rows, 1);
 
-        dataMemDb.runExecuteUpdate("DROP TABLE " + tblName);
+        dataMemDb.runExecuteUpdate("DROP TABLE \"" + tblName + '"');
 
         stmt.close();
         conn.close();
@@ -295,7 +295,7 @@ public class SessionServerTest {
         Statement stmt = conn.createStatement();
 
         stmt.execute("CREATE USER \"yjchoi\" IDENTIFIED BY 'piggy'");
-        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"yjchoi\"");
+        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".\"__DEFAULT\" TO \"yjchoi\"");
 
         Connection conn2 = getConnection("yjchoi", "piggy");
         Statement stmt2 = conn.createStatement();
@@ -348,7 +348,7 @@ public class SessionServerTest {
         final String comment = "commentOnTable";
         final String tblName = "employee";
 
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"" + tblName + "\" IS '" + comment + "'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".\"" + tblName + "\" IS '" + comment + "'");
         DatabaseMetaData metaData = conn.getMetaData();
 
         ResultSet rs = metaData.getTables(dataMemDb.name, "%DEFAULT", tblName, null);
@@ -397,7 +397,7 @@ public class SessionServerTest {
         }
         assertTrue(exceptionCaught);
 
-        stmt.execute("ALTER SYSTEM UPDATE TABLE \"" + dataMemDb.name + "\".__DEFAULT.'AA%'");
+        stmt.execute("ALTER SYSTEM UPDATE TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".'AA%'");
 
         int rows = checkNumRows(stmt, "AA1");
         assertEquals(1, rows);
@@ -555,13 +555,13 @@ public class SessionServerTest {
         }
 
         try {
-            stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'test'");
+            stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\" IS 'test'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
 
         try {
-            stmt.execute("SET DATACATEGORY ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'category'");
+            stmt.execute("SET DATACATEGORY ON COLUMN \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\".\"name\" IS 'category'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -641,7 +641,7 @@ public class SessionServerTest {
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT SELECT ON \"" + dataMemDb.name + "\".\"__DEFAULT\" TO \"jsyang\"");
         stmt.close();
         conn.close();
 
@@ -724,7 +724,7 @@ public class SessionServerTest {
         rs.close();
 
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009'");
-        stmt.execute("GRANT ALL ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT ALL ON \"" + dataMemDb.name + "\".\"__DEFAULT\" TO \"jsyang\"");
         rs = stmt.executeQuery("SHOW OBJECT PRIVILEGES FOR \"jsyang\"");
         while (rs.next()) {
             System.out.println("  " + rs.getString("TABLE_CAT") + ", "
@@ -747,9 +747,9 @@ public class SessionServerTest {
         Statement stmt = conn.createStatement();
 
         stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.name + "\" IS 'DS_COMMENT'");
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'SCHEMA_COMMENT'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'TABLE_COMMENT'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'COLUMN_COMMENT_EXTRA'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".\"__DEFAULT\" IS 'SCHEMA_COMMENT'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\" IS 'TABLE_COMMENT'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\".\"name\" IS 'COLUMN_COMMENT_EXTRA'");
 
         ResultSet rs = stmt.executeQuery("SHOW COMMENTS '%COMMENT' TABLE 'emp%' ");
         int rowCnt = 0;
@@ -775,9 +775,9 @@ public class SessionServerTest {
         Statement stmt = conn.createStatement();
 
         stmt.execute("COMMENT ON DATASOURCE \"" + dataMemDb.name + "\" IS 'dataSource'");
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'table'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".\"__DEFAULT\" IS 'schema'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\".\"name\" IS 'column'");
         stmt.execute("COMMENT ON USER \"octopus\" IS 'superuser'");
 
         stmt.execute("CREATE USER \"jsyang\" IDENTIFIED BY '0009';");
@@ -801,7 +801,7 @@ public class SessionServerTest {
         }
 
         try {
-            stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
+            stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".\"__DEFAULT\" IS 'schema'");
         } catch (SQLException e) {
             System.out.println("expected exception - " + e.getMessage());
         }
@@ -811,15 +811,15 @@ public class SessionServerTest {
 
         conn = getConnection("octopus", "bitnine");
         stmt = conn.createStatement();
-        stmt.execute("GRANT COMMENT ON \"" + dataMemDb.name + "\".__DEFAULT TO \"jsyang\"");
+        stmt.execute("GRANT COMMENT ON \"" + dataMemDb.name + "\".\"__DEFAULT\" TO \"jsyang\"");
         stmt.close();
         conn.close();
 
         conn = getConnection("jsyang", "0009");
         stmt = conn.createStatement();
-        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".__DEFAULT IS 'schema'");
-        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".__DEFAULT.\"employee\" IS 'table'");
-        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".__DEFAULT.\"employee\".\"name\" IS 'column'");
+        stmt.execute("COMMENT ON SCHEMA \"" + dataMemDb.name + "\".\"__DEFAULT\" IS 'schema'");
+        stmt.execute("COMMENT ON TABLE \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\" IS 'table'");
+        stmt.execute("COMMENT ON COLUMN \"" + dataMemDb.name + "\".\"__DEFAULT\".\"employee\".\"name\" IS 'column'");
         stmt.close();
         conn.close();
 

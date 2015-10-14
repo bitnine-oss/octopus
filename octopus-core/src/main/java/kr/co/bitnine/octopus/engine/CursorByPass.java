@@ -74,7 +74,7 @@ public final class CursorByPass extends Portal {
             }
         });
         TableNameTranslator.toDSN(cloned);
-        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.ORACLE;
+        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
         if (jdbcConnectionString.startsWith("jdbc:hive2:"))
             dp = SqlDialect.DatabaseProduct.HIVE;
         queryString = cloned.toSqlString(dp.getDialect()).getSql();
