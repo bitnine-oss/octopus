@@ -66,7 +66,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public final class QueryEngine extends AbstractQueryProcessor {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
@@ -721,31 +723,84 @@ public final class QueryEngine extends AbstractQueryProcessor {
             return ts;
         }
 
+        class IdsComparator implements Comparator<String[]> {
+            @Override
+            public int compare(String[] idsL, String[] idsR) {
+                assert idsL.length == 2 && idsR.length == 2;
+                int r = idsL[0].compareTo(idsR[0]);
+                if (r != 0)
+                    return r;
+                return idsL[1].compareTo(idsR[1]);
+            }
+        }
+
         @Override
         public TupleSet showObjPrivsFor(String userName) throws Exception {
+            Map<String[], Set<ObjectPrivilege>> objPrivsMap = new TreeMap<>(new IdsComparator());
+            for (MetaSchemaPrivilege schemaPriv : metaContext.getSchemaPrivilegesByUser(userName)) {
+                MetaSchema schema = schemaPriv.getSchema();
+                String[] ids = {schema.getDataSource().getName(), schema.getName()};
+                objPrivsMap.put(ids, schemaPriv.getObjectPrivileges());
+            }
+
             TupleSetSql ts = new TupleSetSql();
 
-            List<Tuple> tuples = new ArrayList<>();
-            for (MetaSchemaPrivilege mSchemaPriv : metaContext.getSchemaPrivilegesByUser(userName)) {
+            MetaUser user = metaContext.getUser(userName);
+            Set<SystemPrivilege> userSysPrivs = user.getSystemPrivileges();
+            boolean hasSelectAny = userSysPrivs.contains(SystemPrivilege.SELECT_ANY_TABLE);
+            boolean hasCommentAny = userSysPrivs.contains(SystemPrivilege.COMMENT_ANY);
+            if (hasSelectAny || hasCommentAny) {
+                String selectPrivStr = ObjectPrivilege.SELECT.name();
+                String commentPrivStr = ObjectPrivilege.COMMENT.name();
+                for (MetaDataSource ds : metaContext.getDataSources()) {
+                    for (MetaSchema schema : ds.getSchemas()) {
+                        String[] ids = {ds.getName(), schema.getName()};
+                        Set<ObjectPrivilege> objPrivs = objPrivsMap.get(ids);
+                        if (objPrivs == null) {
+                            Tuple t = new Tuple(3);
+                            t.setDatum(0, ds.getName());
+                            t.setDatum(1, schema.getName());
+
+                            String objPrivStr;
+                            if (hasSelectAny && hasCommentAny)
+                                objPrivStr = selectPrivStr + ',' + commentPrivStr;
+                            else if (hasSelectAny)
+                                objPrivStr = selectPrivStr;
+                            else
+                                objPrivStr = commentPrivStr;
+                            t.setDatum(2, objPrivStr);
+
+                            ts.addTuple(t);
+                        } else {
+                            if (hasSelectAny)
+                                objPrivs.add(ObjectPrivilege.SELECT);
+                            if (hasCommentAny)
+                                objPrivs.add(ObjectPrivilege.COMMENT);
+                        }
+                    }
+                }
+            }
+
+            for (Map.Entry<String[], Set<ObjectPrivilege>> e : objPrivsMap.entrySet()) {
+                String[] ids = e.getKey();
+                assert ids.length == 2;
+
                 Tuple t = new Tuple(3);
+                t.setDatum(0, ids[0]);
+                t.setDatum(1, ids[1]);
 
-                MetaSchema mSchema = mSchemaPriv.getSchema();
-                t.setDatum(0, mSchema.getDataSource().getName());
-                t.setDatum(1, mSchema.getName());
-
-                Set<ObjectPrivilege> objPrivs = mSchemaPriv.getObjectPrivileges();
+                Set<ObjectPrivilege> objPrivs = e.getValue();
                 assert objPrivs.size() > 0;
                 Iterator<ObjectPrivilege> iter = objPrivs.iterator();
                 StringBuilder builder = new StringBuilder();
                 builder.append(iter.next().name());
                 while (iter.hasNext())
-                    builder.append(",").append(iter.next().name());
+                    builder.append(',').append(iter.next().name());
                 t.setDatum(2, builder.toString());
 
-                tuples.add(t);
+                ts.addTuple(t);
             }
 
-            ts.addTuples(tuples);
             return ts;
         }
 

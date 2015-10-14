@@ -54,7 +54,7 @@ public final class CursorDdl extends Portal {
         } catch (Exception e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    "failed to run DDL");
+                    "failed to run DDL - " + e.getMessage());
             throw new PostgresException(edata, e);
         }
     }

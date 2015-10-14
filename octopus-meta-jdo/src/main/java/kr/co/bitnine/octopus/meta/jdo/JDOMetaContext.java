@@ -659,7 +659,7 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to add object privileges on " + schemaName[0] + "." + schemaName[1] + "to users", e);
+            throw new MetaException("failed to add object privileges on " + schemaName[0] + "." + schemaName[1] + " to users", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
