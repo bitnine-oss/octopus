@@ -212,7 +212,10 @@ public final class QueryEngine extends AbstractQueryProcessor {
                     new PostgresAttribute("TABLE_SCHEM", PostgresType.VARCHAR, 128),
                     new PostgresAttribute("TABLE_NAME", PostgresType.VARCHAR, 128),
                     new PostgresAttribute("COLUMN_NAME", PostgresType.VARCHAR, 128),
-                    new PostgresAttribute("REMARKS", PostgresType.VARCHAR, 1024)
+                    new PostgresAttribute("TABLE_CAT_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_SCHEM_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("TABLE_NAME_REMARKS", PostgresType.VARCHAR, 1024),
+                    new PostgresAttribute("COLUMN_NAME_REMARKS", PostgresType.VARCHAR, 1024)
                 };
                 resultFormats = new FormatCode[attrs.length];
                 Arrays.fill(resultFormats, FormatCode.TEXT);
@@ -810,14 +813,18 @@ public final class QueryEngine extends AbstractQueryProcessor {
             return ts;
         }
 
-        private Tuple makeTupleForShowcomments(String type, String dataSource, String schema, String table, String column, String comment) {
-            Tuple t = new Tuple(6);
+        private Tuple makeTupleForShowcomments(String type, String dataSource, String schema, String table, String column,
+                                               String dsComment, String schemComment, String tblComment, String colComment) {
+            Tuple t = new Tuple(9);
             t.setDatum(0, type);
             t.setDatum(1, dataSource == null ? "NULL" : dataSource);
             t.setDatum(2, schema == null ? "NULL" : schema);
             t.setDatum(3, table == null ? "NULL" : table);
             t.setDatum(4, column == null ? "NULL" : column);
-            t.setDatum(5, comment == null ? "NULL" : comment);
+            t.setDatum(5, dsComment == null ? "NULL" : dsComment);
+            t.setDatum(6, schemComment == null ? "NULL" : schemComment);
+            t.setDatum(7, tblComment == null ? "NULL" : tblComment);
+            t.setDatum(8, colComment == null ? "NULL" : colComment);
             return t;
         }
 
@@ -843,7 +850,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                     continue;
 
                 if (mDs.getComment().matches(commentRegex))
-                    tuples.add(makeTupleForShowcomments(dsType, dsName, null, null, null, mDs.getComment()));
+                    tuples.add(makeTupleForShowcomments(dsType, dsName, null, null, null, mDs.getComment(), null, null, null));
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
@@ -851,7 +858,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                         continue;
 
                     if (mSchema.getComment().matches(commentRegex))
-                        tuples.add(makeTupleForShowcomments(schemaType, dsName, schemaName, null, null, mSchema.getComment()));
+                        tuples.add(makeTupleForShowcomments(schemaType, dsName, schemaName, null, null, mDs.getComment(), mSchema.getComment(), null, null));
 
                     for (MetaTable mTable : mSchema.getTables()) {
                         String tableName = mTable.getName();
@@ -859,7 +866,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                             continue;
 
                         if (mTable.getComment().matches(commentRegex))
-                            tuples.add(makeTupleForShowcomments(tableType, dsName, schemaName, tableName, null, mTable.getComment()));
+                            tuples.add(makeTupleForShowcomments(tableType, dsName, schemaName, tableName, null, mDs.getComment(), mSchema.getComment(), mTable.getComment(), null));
 
                         for (MetaColumn mColumn : mTable.getColumns()) {
                             String colName = mColumn.getName();
@@ -867,7 +874,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                                 continue;
 
                             if (mColumn.getComment().matches(commentRegex))
-                                tuples.add(makeTupleForShowcomments(columnType, dsName, schemaName, tableName, colName, mColumn.getComment()));
+                                tuples.add(makeTupleForShowcomments(columnType, dsName, schemaName, tableName, colName, mDs.getComment(), mSchema.getComment(), mTable.getComment(), mColumn.getComment()));
                         }
                     }
                 }
