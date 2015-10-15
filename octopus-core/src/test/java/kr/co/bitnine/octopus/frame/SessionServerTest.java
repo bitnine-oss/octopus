@@ -760,7 +760,10 @@ public class SessionServerTest {
                     + rs.getString("TABLE_SCHEM") + ", "
                     + rs.getString("TABLE_NAME") + ", "
                     + rs.getString("COLUMN_NAME") + ", "
-                    + rs.getString("REMARKS"));
+                    + rs.getString("TABLE_CAT_REMARKS") + ", "
+                    + rs.getString("TABLE_SCHEM_REMARKS") + ", "
+                    + rs.getString("TABLE_NAME_REMARKS") + ", "
+                    + rs.getString("COLUMN_NAME_REMARKS"));
         }
         rs.close();
         assertEquals(rowCnt, 3);
