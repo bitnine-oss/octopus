@@ -32,6 +32,7 @@ import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
@@ -204,7 +205,7 @@ public final class JDOMetaContext implements MetaContext {
             LOG.debug("complete addJdbcDataSource");
             return mDataSource;
         } catch (Exception e) {
-            throw new MetaException("failed to add data source", e);
+            throw new MetaException("failed to add data source '" + name + "' - " + e.getMessage(), e);
         } finally {
             if (conn != null) {
                 try {
@@ -229,7 +230,7 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.commit();
         } catch (RuntimeException e) {
-            throw new MetaException("failed to drop dataSource '" + name + "'", e);
+            throw new MetaException("failed to drop dataSource '" + name + "' - " + e.getMessage(), e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
@@ -338,8 +339,10 @@ public final class JDOMetaContext implements MetaContext {
         // remove old tables
         if (tableRegex == null) {
             oldTableNames.removeAll(newTableNames);
-            for (String name : oldTableNames)
+            for (String name : oldTableNames) {
+                LOG.debug("delete table. tableName=" + mSchema.getName() + '.' + name);
                 pm.deletePersistent(oldTables.get(name));
+            }
         }
     }
 
@@ -361,7 +364,7 @@ public final class JDOMetaContext implements MetaContext {
             if (schemaRegex != null && !schemaName.matches(schemaRegex))
                 continue;
 
-            LOG.debug("updateSchema. schemaName=" + schemaName);
+            LOG.debug("update schema. schemaName=" + schemaName);
             newSchemaNames.add(schemaName);
             if (oldSchemas.containsKey(schemaName)) {
                 // update schema
@@ -379,6 +382,7 @@ public final class JDOMetaContext implements MetaContext {
         if (schemaRegex == null) {
             oldSchemaNames.removeAll(newSchemaNames);
             for (String name : oldSchemaNames) {
+                LOG.debug("delete schema. schemaName=" + name);
                 deleteSchemaPrivilegeBySchema(mDataSource.getName(), name);
                 pm.deletePersistent(oldSchemas.get(name));
             }
@@ -397,11 +401,13 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.begin();
 
+            LOG.debug("update data source. dataSourceName=" + dataSourceName);
             updateJdbcDataSourceInternal(dc, mDataSource, schemaRegex, tableRegex);
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to update data source '" + dataSourceName + "'", e);
+            LOG.debug(ExceptionUtils.getStackTrace(e));
+            throw new MetaException("failed to update data source '" + dataSourceName + "' - " + e.getMessage(), e);
         } finally {
             if (tx.isActive())
                 tx.rollback();
@@ -659,7 +665,7 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.commit();
         } catch (Exception e) {
-            throw new MetaException("failed to add object privileges on " + schemaName[0] + "." + schemaName[1] + " to users", e);
+            throw new MetaException("failed to add object privileges on " + schemaName[0] + "." + schemaName[1] + "to users", e);
         } finally {
             if (tx.isActive())
                 tx.rollback();

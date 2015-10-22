@@ -46,7 +46,7 @@ public final class SchemaManager extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SchemaManager.class);
 
     private final MetaStore metaStore;
-    private final SchemaPlus rootSchema;
+    private SchemaPlus rootSchema;
 
     private final Map<String, List<OctopusDataSource>> dataSourceMap;
     private final Map<String, List<OctopusSchema>> schemaMap;
@@ -106,6 +106,13 @@ public final class SchemaManager extends AbstractService {
     public void dropDataSource(String dataSourceName) {
         writeLock.lock();
 
+        SchemaPlus newRootSchema = Frameworks.createRootSchema(false);
+        for (String schemaName : rootSchema.getSubSchemaNames()) {
+            if (!schemaName.equals(dataSourceName))
+                newRootSchema.add(schemaName, rootSchema.getSubSchema(schemaName));
+        }
+        rootSchema = newRootSchema;
+
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
         while (ti.hasNext()) {
             Map.Entry<String, List<OctopusTable>> entry = ti.next();
@@ -148,6 +155,8 @@ public final class SchemaManager extends AbstractService {
     public void dropSchema(String dataSourceName, String schemaName) {
         writeLock.lock();
 
+        // TODO: drop schema in the rootSchema
+
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
         while (ti.hasNext()) {
             Map.Entry<String, List<OctopusTable>> entry = ti.next();
@@ -179,6 +188,8 @@ public final class SchemaManager extends AbstractService {
 
     public void dropTable(String dataSourceName, String schemaName, String tableName) {
         writeLock.lock();
+
+        // TODO: drop table in the rootSchema
 
         Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
         while (ti.hasNext()) {

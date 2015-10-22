@@ -37,6 +37,7 @@ public final class JDOMetaStore implements MetaStore {
         props.setProperty("datanucleus.ConnectionURL", conf.getProperty("metastore.jdo.connection.URL"));
         props.setProperty("datanucleus.ConnectionUserName", conf.getProperty("metastore.jdo.connection.username"));
         props.setProperty("datanucleus.ConnectionPassword", conf.getProperty("metastore.jdo.connection.password"));
+        props.setProperty("datanucleus.connectionPoolingType", "DBCP");
         props.setProperty("datanucleus.schema.autoCreateAll", "true");
 
         if (conf.getProperty("metastore.jdo.connection.drivername").equals("org.sqlite.JDBC")) {
