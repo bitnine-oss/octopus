@@ -22,6 +22,7 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
@@ -85,127 +86,88 @@ public final class SchemaManager extends AbstractService {
     }
 
     public void addDataSource(MetaDataSource metaDataSource) {
-        writeLock.lock();
-
-        // FIXME: all or nothing
-        OctopusDataSource dataSource = new OctopusDataSource(metaDataSource);
-        addToListMap(dataSourceMap, dataSource.getName(), dataSource);
-        for (Schema cSchema : dataSource.getSubSchemaMap().values()) {
-            OctopusSchema schema = (OctopusSchema) cSchema;
-            addToListMap(schemaMap, schema.getName(), schema);
-            for (Table cTable : schema.getTableMap().values()) {
-                OctopusTable table = (OctopusTable) cTable;
-                addToListMap(tableMap, table.getName(), table);
-            }
-        }
-        rootSchema.add(metaDataSource.getName(), dataSource);
-
-        writeLock.unlock();
+        OctopusDataSource octopusDataSource = new OctopusDataSource(metaDataSource);
+        addDataSource(octopusDataSource);
     }
 
-    public void dropDataSource(String dataSourceName) {
+    public void addDataSource(OctopusDataSource octopusDataSource) {
         writeLock.lock();
-
-        SchemaPlus newRootSchema = Frameworks.createRootSchema(false);
-        for (String schemaName : rootSchema.getSubSchemaNames()) {
-            if (!schemaName.equals(dataSourceName))
-                newRootSchema.add(schemaName, rootSchema.getSubSchema(schemaName));
-        }
-        rootSchema = newRootSchema;
-
-        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
-        while (ti.hasNext()) {
-            Map.Entry<String, List<OctopusTable>> entry = ti.next();
-            List<OctopusTable> tables = entry.getValue();
-            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
-                if (tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
-                    tj.remove();
+        try {
+            // FIXME: all or nothing
+            addToListMap(dataSourceMap, octopusDataSource.getName(), octopusDataSource);
+            for (Schema cSchema : octopusDataSource.getSubSchemaMap().values()) {
+                OctopusSchema schema = (OctopusSchema) cSchema;
+                addToListMap(schemaMap, schema.getName(), schema);
+                for (Table cTable : schema.getTableMap().values()) {
+                    OctopusTable table = (OctopusTable) cTable;
+                    addToListMap(tableMap, table.getName(), table);
+                }
             }
-            if (tables.isEmpty())
-                ti.remove();
+            rootSchema.add(octopusDataSource.getName(), octopusDataSource);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            writeLock.unlock();
         }
-
-        Iterator<Map.Entry<String, List<OctopusSchema>>> si = schemaMap.entrySet().iterator();
-        while (si.hasNext()) {
-            Map.Entry<String, List<OctopusSchema>> entry = si.next();
-            List<OctopusSchema> schemas = entry.getValue();
-            for (Iterator<OctopusSchema> sj = schemas.iterator(); sj.hasNext(); ) {
-                if (sj.next().getDataSource().getName().equals(dataSourceName))
-                    sj.remove();
-            }
-            if (schemas.isEmpty())
-                si.remove();
-        }
-
-        Iterator<Map.Entry<String, List<OctopusDataSource>>> di = dataSourceMap.entrySet().iterator();
-        while (di.hasNext()) {
-            Map.Entry<String, List<OctopusDataSource>> entry = di.next();
-            List<OctopusDataSource> dataSources = entry.getValue();
-            for (Iterator<OctopusDataSource> dj = dataSources.iterator(); dj.hasNext(); ) {
-                if (dj.next().getName().equals(dataSourceName))
-                    dj.remove();
-            }
-            if (dataSources.isEmpty())
-                di.remove();
-        }
-
-        writeLock.unlock();
     }
 
-    public void dropSchema(String dataSourceName, String schemaName) {
+    public OctopusDataSource dropDataSource(String dataSourceName) {
+        OctopusDataSource octopusDataSource = null;
+
         writeLock.lock();
-
-        // TODO: drop schema in the rootSchema
-
-        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
-        while (ti.hasNext()) {
-            Map.Entry<String, List<OctopusTable>> entry = ti.next();
-            List<OctopusTable> tables = entry.getValue();
-            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
-                if (tj.next().getSchema().getName().equals(schemaName)
-                        && tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
-                    tj.remove();
+        try {
+            SchemaPlus newRootSchema = Frameworks.createRootSchema(false);
+            for (String schemaName : rootSchema.getSubSchemaNames()) {
+                OctopusDataSource tmp = (OctopusDataSource) CalciteSchema.from(rootSchema.getSubSchema(schemaName)).schema;
+                if (schemaName.equals(dataSourceName))
+                    octopusDataSource = tmp;
+                else
+                    newRootSchema.add(schemaName, tmp);
             }
-            if (tables.isEmpty())
-                ti.remove();
+            rootSchema = newRootSchema;
+
+            Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
+            while (ti.hasNext()) {
+                Map.Entry<String, List<OctopusTable>> entry = ti.next();
+                List<OctopusTable> tables = entry.getValue();
+                for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
+                    if (tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
+                        tj.remove();
+                }
+                if (tables.isEmpty())
+                    ti.remove();
+            }
+
+            Iterator<Map.Entry<String, List<OctopusSchema>>> si = schemaMap.entrySet().iterator();
+            while (si.hasNext()) {
+                Map.Entry<String, List<OctopusSchema>> entry = si.next();
+                List<OctopusSchema> schemas = entry.getValue();
+                for (Iterator<OctopusSchema> sj = schemas.iterator(); sj.hasNext(); ) {
+                    if (sj.next().getDataSource().getName().equals(dataSourceName))
+                        sj.remove();
+                }
+                if (schemas.isEmpty())
+                    si.remove();
+            }
+
+            Iterator<Map.Entry<String, List<OctopusDataSource>>> di = dataSourceMap.entrySet().iterator();
+            while (di.hasNext()) {
+                Map.Entry<String, List<OctopusDataSource>> entry = di.next();
+                List<OctopusDataSource> dataSources = entry.getValue();
+                for (Iterator<OctopusDataSource> dj = dataSources.iterator(); dj.hasNext(); ) {
+                    if (dj.next().getName().equals(dataSourceName))
+                        dj.remove();
+                }
+                if (dataSources.isEmpty())
+                    di.remove();
+            }
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            writeLock.unlock();
         }
 
-        Iterator<Map.Entry<String, List<OctopusSchema>>> si = schemaMap.entrySet().iterator();
-        while (si.hasNext()) {
-            Map.Entry<String, List<OctopusSchema>> entry = si.next();
-            List<OctopusSchema> schemas = entry.getValue();
-            for (Iterator<OctopusSchema> sj = schemas.iterator(); sj.hasNext(); ) {
-                if (sj.next().getName().equals(dataSourceName)
-                        && sj.next().getDataSource().getName().equals(dataSourceName))
-                    sj.remove();
-            }
-            if (schemas.isEmpty())
-                si.remove();
-        }
-
-        writeLock.unlock();
-    }
-
-    public void dropTable(String dataSourceName, String schemaName, String tableName) {
-        writeLock.lock();
-
-        // TODO: drop table in the rootSchema
-
-        Iterator<Map.Entry<String, List<OctopusTable>>> ti = tableMap.entrySet().iterator();
-        while (ti.hasNext()) {
-            Map.Entry<String, List<OctopusTable>> entry = ti.next();
-            List<OctopusTable> tables = entry.getValue();
-            for (Iterator<OctopusTable> tj = tables.iterator(); tj.hasNext(); ) {
-                if (tj.next().getName().equals(tableName)
-                        && tj.next().getSchema().getName().equals(schemaName)
-                        && tj.next().getSchema().getDataSource().getName().equals(dataSourceName))
-                    tj.remove();
-            }
-            if (tables.isEmpty())
-                ti.remove();
-        }
-
-        writeLock.unlock();
+        return octopusDataSource;
     }
 
     private <T> void addToListMap(Map<String, List<T>> map, String key, T value) {
