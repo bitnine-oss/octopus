@@ -86,7 +86,9 @@ public class SessionServerTest {
         schemaManager.init(conf);
         schemaManager.start();
 
-        sessionServer = new SessionServer(metaStore, schemaManager);
+        SessionFactory sessFactory = new SessionFactoryImpl(
+                metaStore, schemaManager);
+        sessionServer = new SessionServer(sessFactory);
         sessionServer.init(conf);
         sessionServer.start();
 

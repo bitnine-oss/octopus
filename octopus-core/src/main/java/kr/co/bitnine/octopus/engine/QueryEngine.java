@@ -251,8 +251,6 @@ public final class QueryEngine extends AbstractQueryProcessor {
             try {
                 SqlNode validated = planner.validate(parse);
                 return new CachedStatement(validated, refinedQuery, paramTypes);
-            } catch (Exception e) {
-                throw e;
             } finally {
                 schemaManager.unlockRead();
             }
@@ -344,7 +342,12 @@ public final class QueryEngine extends AbstractQueryProcessor {
     }
 
     private boolean checkSystemPrivilege(SystemPrivilege sysPriv) {
-        return checkSystemPrivilegeInternal(sysPriv) == null;
+        PostgresException e = checkSystemPrivilegeInternal(sysPriv);
+        if (e == null)
+            return true;
+
+        LOG.error(ExceptionUtils.getStackTrace(e));
+        return false;
     }
 
     private void checkSystemPrivilegeThrow(SystemPrivilege sysPriv) throws PostgresException {

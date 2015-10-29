@@ -15,6 +15,8 @@
 package kr.co.bitnine.octopus.master;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.frame.SessionFactory;
+import kr.co.bitnine.octopus.frame.SessionFactoryImpl;
 import kr.co.bitnine.octopus.frame.SessionServer;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
@@ -39,14 +41,17 @@ public final class OctopusMaster extends CompositeService {
 
     @Override
     protected void serviceInit(Configuration conf) throws Exception {
-        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStore metaStore = MetaStores.newInstance(
+                conf.get(OctopusConfiguration.METASTORE_CLASS));
         MetaStoreService metaStoreService = new MetaStoreService(metaStore);
         addService(metaStoreService);
 
         SchemaManager schemaManager = new SchemaManager(metaStore);
         addService(schemaManager);
 
-        SessionServer sessServer = new SessionServer(metaStore, schemaManager);
+        SessionFactory sessFactory = new SessionFactoryImpl(
+                metaStore, schemaManager);
+        SessionServer sessServer = new SessionServer(sessFactory);
         addService(sessServer);
 
         super.serviceInit(conf);
@@ -58,7 +63,8 @@ public final class OctopusMaster extends CompositeService {
     }
 
     private void initAndStart(Configuration conf) {
-        CompositeServiceShutdownHook hook = new CompositeServiceShutdownHook(this);
+        CompositeServiceShutdownHook hook =
+                new CompositeServiceShutdownHook(this);
         ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
         init(conf);

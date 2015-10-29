@@ -14,8 +14,7 @@
 
 package kr.co.bitnine.octopus.frame;
 
-import kr.co.bitnine.octopus.meta.MetaStore;
-import kr.co.bitnine.octopus.schema.SchemaManager;
+import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.util.NetUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -41,41 +40,44 @@ public final class SessionServer extends AbstractService {
     private static final long EXECUTOR_KEEPALIVE_DEFAULT = 60;
     private static final long EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT = 5;
 
-    private final MetaStore metaStore;
-    private final SchemaManager schemaManager;
+    private final SessionFactory sessionFactory;
 
     private Map<Integer, Session> sessions;
     private ThreadPoolExecutor executor;
     private Listener listener;
     private volatile boolean running;
 
-    public SessionServer(MetaStore metaStore, SchemaManager schemaManager) {
+    public SessionServer(SessionFactory sessionFactory) {
         super(SessionServer.class.getSimpleName());
 
-        this.metaStore = metaStore;
-        this.schemaManager = schemaManager;
+        this.sessionFactory = sessionFactory;
     }
 
     @Override
     protected void serviceInit(Configuration conf) throws Exception {
         super.serviceInit(conf);
 
+        LOG.info("initialize service - " + getName());
+
         sessions = new ConcurrentHashMap<>();
 
-        executor = new ThreadPoolExecutor(
-                0,
-                conf.getInt("master.session.max", EXECUTOR_MAX_DEFAULT),
-                EXECUTOR_KEEPALIVE_DEFAULT,
-                TimeUnit.SECONDS,
+        int sessMax = conf.getInt(OctopusConfiguration.MASTER_SESSION_MAX,
+                EXECUTOR_MAX_DEFAULT);
+        LOG.debug("create ThreadPoolExecutor for sessions (" + OctopusConfiguration.MASTER_SERVER_ADDRESS + '=' + sessMax + ')');
+        executor = new ThreadPoolExecutor(0, sessMax,
+                EXECUTOR_KEEPALIVE_DEFAULT, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>());
 
         listener = new Listener();
+        LOG.debug("thread " + listener.getName() + " is created");
     }
 
     @Override
     protected void serviceStart() throws Exception {
-        running = true;
+        LOG.info("start service - " + getName());
 
+        running = true;
+        LOG.debug("start " + listener.getName());
         listener.start();
 
         super.serviceStart();
@@ -83,30 +85,39 @@ public final class SessionServer extends AbstractService {
 
     @Override
     protected void serviceStop() throws Exception {
-        running = false;
+        LOG.info("stop service - " + getName());
 
+        LOG.debug("interrupt " + listener.getName());
+        running = false;
         listener.interrupt();
         listener.join();
         listener = null;
 
+        LOG.debug("shutdown ThreadPoolExecutor of sessions");
         executor.shutdownNow();
-        boolean terminated = executor.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);
+        boolean terminated = executor.awaitTermination(
+                EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT, TimeUnit.SECONDS);
         if (!terminated)
-            LOG.warn("there are remaining sessions still running");
+            LOG.warn("there was remaining sessions still running, killed forcibly");
         executor = null;
 
         super.serviceStop();
     }
 
     private class Listener extends Thread {
+        private final InetSocketAddress bindAddress;
         private final ServerSocketChannel acceptChannel;
 
         Listener() throws IOException {
             setName("SessionServer Listener");
 
+            String addr = getConfig().get(
+                    OctopusConfiguration.MASTER_SERVER_ADDRESS);
+            bindAddress = NetUtils.createSocketAddr(addr);
+
             acceptChannel = ServerSocketChannel.open();
-            InetSocketAddress bindAddr = NetUtils.createSocketAddr(getConfig().get("master.server.address"));
-            acceptChannel.bind(bindAddr);
+            acceptChannel.bind(bindAddress);
+            LOG.debug("server socket is bound to " + bindAddress);
         }
 
         @Override
@@ -123,13 +134,14 @@ public final class SessionServer extends AbstractService {
                 }
             };
 
+            LOG.info("start listening on " + bindAddress);
             while (running) {
                 SocketChannel clientChannel = null;
                 try {
                     clientChannel = acceptChannel.accept();
                 } catch (IOException e) {
                     if (running)
-                        LOG.warn("accept failed: " + ExceptionUtils.getStackTrace(e));
+                        LOG.error("accept failed\n" + ExceptionUtils.getStackTrace(e));
                 }
                 if (clientChannel == null)
                     continue;
@@ -138,18 +150,21 @@ public final class SessionServer extends AbstractService {
                 try {
                     clientAddress = clientChannel.getRemoteAddress().toString();
                 } catch (IOException ignore) { }
-                LOG.debug("connection from " + clientAddress + " is accepted");
+                LOG.info("connection from " + clientAddress + " is accepted");
 
-                Session sess = new Session(clientChannel, sessEvtHandler, metaStore.getMetaContext(), schemaManager);
+                Session sess = sessionFactory.createSession(
+                        clientChannel, sessEvtHandler);
                 registerSession(sess);
                 try {
                     executor.execute(sess);
                 } catch (RejectedExecutionException e) {
-                    LOG.warn("session full: connection from " + clientAddress + " is rejected");
                     sess.reject();
+                    LOG.error("session full: connection from " + clientAddress + " is rejected");
                 }
             }
+            LOG.info("stop listening from " + bindAddress);
 
+            LOG.debug("close server socket bound to " + bindAddress);
             try {
                 acceptChannel.close();
             } catch (IOException ignore) { }

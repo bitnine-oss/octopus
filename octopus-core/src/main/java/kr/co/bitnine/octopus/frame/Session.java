@@ -383,6 +383,7 @@ public final class Session implements Runnable {
                 case FATAL: // exit Session
                     throw oe;
                 case ERROR:
+                    LOG.error(ExceptionUtils.getStackTrace(oe));
                     break;
                 default:
                     throw new RuntimeException("could not reach here");
@@ -490,6 +491,7 @@ public final class Session implements Runnable {
     private void handleQuery(Message msg) throws IOException, OctopusException {
         String queryString = msg.getCString();
 
+        LOG.info("query {" + queryString + "}");
         LOG.debug("handle Query message (query={" + queryString + "})");
 
         // TODO: support multiple queries in a single queryString
@@ -532,6 +534,7 @@ public final class Session implements Runnable {
         for (short i = 0; i < numParams; i++)
             paramTypes[i] = PostgresType.ofOid(msg.getInt());
 
+        LOG.info("query {" + queryString + "}");
         LOG.debug("handle Parse message (stmt=" + stmtName + ", query={" + queryString + "})");
         if (LOG.isDebugEnabled()) {
             for (short i = 0; i < paramTypes.length; i++)

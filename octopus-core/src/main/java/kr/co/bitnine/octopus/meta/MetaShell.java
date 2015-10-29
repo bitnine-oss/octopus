@@ -19,6 +19,7 @@ import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
@@ -28,7 +29,8 @@ public final class MetaShell {
     private MetaShell() throws MetaException, ReflectiveOperationException {
         OctopusConfiguration conf = new OctopusConfiguration();
 
-        metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        metaStore = MetaStores.newInstance(
+                conf.get(OctopusConfiguration.METASTORE_CLASS));
 
         Properties props = new Properties();
         for (Map.Entry e : conf)
@@ -36,19 +38,24 @@ public final class MetaShell {
         metaStore.start(props);
     }
 
-    private void process(String[] args) {
-        if (args.length < 1)
-            throw new IllegalArgumentException("invalid number(" + args.length + ") of arguments");
+    private void process(String[] args) throws MetaException {
+        if (args.length < 1) {
+            throw new IllegalArgumentException(
+                    "invalid number(" + args.length + ") of arguments");
+        }
 
         Command cmd;
 
         String opt = args[0];
         switch (opt) {
         case "-superuser":
-            if (args.length < 3)
-                throw new IllegalArgumentException('"' + opt + "\" requires <username>, <password> arguments");
+            if (args.length < 3) {
+                throw new IllegalArgumentException('"' + opt
+                        + "\" requires <username>, <password> arguments");
+            }
             String username = args[1];
             String password = args[2];
+            // TODO: validate username and password
             cmd = new CommandCreateSuperUser(username, password);
             break;
         default:
@@ -63,7 +70,7 @@ public final class MetaShell {
     }
 
     private interface Command {
-        void execute();
+        void execute() throws MetaException;
     }
 
     private class CommandCreateSuperUser implements Command {
@@ -76,22 +83,20 @@ public final class MetaShell {
         }
 
         @Override
-        public void execute() {
-            try {
-                MetaContext mc = metaStore.getMetaContext();
+        public void execute() throws MetaException {
+            MetaContext mc = metaStore.getMetaContext();
 
-                if (mc.userExists(username)) {
-                    System.out.println("User \"" + username + "\" already exists!");
-                    return;
-                }
-
-                MetaUser user = mc.createUser(username, password);
-                mc.addSystemPrivileges(Arrays.asList(SystemPrivilege.values()), Arrays.asList(user.getName()));
-
-                mc.close();
-            } catch (MetaException e) {
-                System.err.println(e.getMessage());
+            if (mc.userExists(username)) {
+                System.out.println(
+                        "User \"" + username + "\" already exists!");
+                return;
             }
+
+            MetaUser user = mc.createUser(username, password);
+            mc.addSystemPrivileges(Arrays.asList(SystemPrivilege.values()),
+                    Collections.singletonList(user.getName()));
+
+            mc.close();
         }
     }
 
@@ -100,8 +105,8 @@ public final class MetaShell {
             MetaShell metaShell = new MetaShell();
             metaShell.process(args);
             metaShell.stop();
-        } catch (ReflectiveOperationException | MetaException | IllegalArgumentException e) {
-            System.err.println(e.getMessage());
+        } catch (IllegalArgumentException | MetaException e) {
+            e.printStackTrace(System.err);
         }
     }
 }

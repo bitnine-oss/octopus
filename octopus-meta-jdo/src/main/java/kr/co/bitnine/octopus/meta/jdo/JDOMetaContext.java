@@ -406,7 +406,6 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.commit();
         } catch (Exception e) {
-            LOG.debug(ExceptionUtils.getStackTrace(e));
             throw new MetaException("failed to update data source '" + dataSourceName + "' - " + e.getMessage(), e);
         } finally {
             if (tx.isActive())
@@ -431,8 +430,7 @@ public final class JDOMetaContext implements MetaContext {
     public Collection<MetaDataSource> getDataSources() throws MetaException {
         try {
             Query query = pm.newQuery(MDataSource.class);
-            List<MetaDataSource> dataSources = (List<MetaDataSource>) query.execute();
-            return dataSources;
+            return (List<MetaDataSource>) query.execute();
         } catch (RuntimeException e) {
             throw new MetaException("failed to get data sources", e);
         }

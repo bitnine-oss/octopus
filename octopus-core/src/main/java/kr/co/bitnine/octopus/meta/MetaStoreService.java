@@ -14,6 +14,8 @@
 
 package kr.co.bitnine.octopus.meta;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.Properties;
 
 public class MetaStoreService extends AbstractService {
+    private static final Log LOG = LogFactory.getLog(MetaStoreService.class);
+
     private final Properties props = new Properties();
     private final MetaStore metaStore;
 
@@ -32,13 +36,20 @@ public class MetaStoreService extends AbstractService {
 
     @Override
     protected final void serviceInit(Configuration conf) {
+        LOG.info("initialize service - " + getName());
+
         props.clear();
-        for (Map.Entry e : conf)
-            props.put(e.getKey(), e.getValue());
+        for (Map.Entry<String, String> e : conf) {
+            String key = e.getKey();
+            if (key.startsWith("metastore."))
+                props.put(key, e.getValue());
+        }
     }
 
     @Override
     protected final void serviceStart() throws Exception {
+        LOG.info("start service - " + getName());
+
         metaStore.start(props);
         MetaStores.initialize(metaStore);
 
@@ -47,6 +58,8 @@ public class MetaStoreService extends AbstractService {
 
     @Override
     protected final void serviceStop() throws Exception {
+        LOG.info("stop service - " + getName());
+
         metaStore.stop();
 
         super.serviceStop();

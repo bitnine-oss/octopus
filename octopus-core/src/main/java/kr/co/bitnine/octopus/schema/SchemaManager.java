@@ -104,8 +104,6 @@ public final class SchemaManager extends AbstractService {
                 }
             }
             rootSchema.add(octopusDataSource.getName(), octopusDataSource);
-        } catch (Exception e) {
-            throw e;
         } finally {
             writeLock.unlock();
         }
@@ -161,8 +159,6 @@ public final class SchemaManager extends AbstractService {
                 if (dataSources.isEmpty())
                     di.remove();
             }
-        } catch (Exception e) {
-            throw e;
         } finally {
             writeLock.unlock();
         }
