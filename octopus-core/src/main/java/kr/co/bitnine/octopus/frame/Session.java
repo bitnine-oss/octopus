@@ -67,7 +67,9 @@ public final class Session implements Runnable {
 
     private final PostgresConfiguration postgresConf;
 
-    Session(SocketChannel clientChannel, EventHandler eventHandler, MetaContext metaContext, SchemaManager schemaManager) {
+    Session(SocketChannel clientChannel, EventHandler eventHandler,
+            MetaContext metaContext, ConnectionManager connectionManager,
+            SchemaManager schemaManager) {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
 
@@ -75,7 +77,7 @@ public final class Session implements Runnable {
 
         messageStream = new MessageStream(clientChannel);
         this.metaContext = metaContext;
-        queryEngine = new QueryEngine(metaContext, schemaManager);
+        queryEngine = new QueryEngine(metaContext, connectionManager, schemaManager);
 
         postgresConf = new PostgresConfiguration();
     }

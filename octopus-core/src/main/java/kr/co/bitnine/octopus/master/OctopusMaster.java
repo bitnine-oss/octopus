@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.master;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.SessionFactory;
 import kr.co.bitnine.octopus.frame.SessionFactoryImpl;
 import kr.co.bitnine.octopus.frame.SessionServer;
@@ -46,11 +47,14 @@ public final class OctopusMaster extends CompositeService {
         MetaStoreService metaStoreService = new MetaStoreService(metaStore);
         addService(metaStoreService);
 
+        ConnectionManager connectionManager = new ConnectionManager(metaStore);
+        addService(connectionManager);
+
         SchemaManager schemaManager = new SchemaManager(metaStore);
         addService(schemaManager);
 
         SessionFactory sessFactory = new SessionFactoryImpl(
-                metaStore, schemaManager);
+                metaStore, connectionManager, schemaManager);
         SessionServer sessServer = new SessionServer(sessFactory);
         addService(sessServer);
 

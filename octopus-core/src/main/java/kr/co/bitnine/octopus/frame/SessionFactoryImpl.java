@@ -21,11 +21,14 @@ import java.nio.channels.SocketChannel;
 
 public final class SessionFactoryImpl implements SessionFactory {
     private final MetaStore metaStore;
+    private final ConnectionManager connectionManager;
     private final SchemaManager schemaManager;
 
     public SessionFactoryImpl(MetaStore metaStore,
+                              ConnectionManager connectionManager,
                               SchemaManager schemaManager) {
         this.metaStore = metaStore;
+        this.connectionManager = connectionManager;
         this.schemaManager = schemaManager;
     }
 
@@ -33,6 +36,6 @@ public final class SessionFactoryImpl implements SessionFactory {
     public Session createSession(SocketChannel clientChannel,
                                  Session.EventHandler sessEvtHandler) {
         return new Session(clientChannel, sessEvtHandler,
-                metaStore.getMetaContext(), schemaManager);
+                metaStore.getMetaContext(), connectionManager, schemaManager);
     }
 }

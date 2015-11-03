@@ -169,13 +169,18 @@ public final class JDOMetaContext implements MetaContext {
     }
 
     @Override
+    public boolean dataSourceExists(String name) throws MetaException {
+        return getMDataSource(name, true) != null;
+    }
+
+    @Override
     public MetaDataSource getDataSource(String name) throws MetaException {
         return getMDataSource(name, false);
     }
 
     @Override
     public MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException {
-        if (getMDataSource(name, true) != null)
+        if (dataSourceExists(name))
             throw new MetaException("data source '" + name + "' already exists");
 
         // TODO: use another ClassLoader to load JDBC drivers
@@ -218,8 +223,10 @@ public final class JDOMetaContext implements MetaContext {
 
     @Override
     public void dropJdbcDataSource(String name) throws MetaException {
-        Transaction tx = pm.currentTransaction();
+        if (!dataSourceExists(name))
+            throw new MetaException("data source '" + name + "' does not exist");
 
+        Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
 

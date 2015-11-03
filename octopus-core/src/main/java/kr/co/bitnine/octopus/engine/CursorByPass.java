@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
@@ -34,7 +35,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -43,8 +43,7 @@ import java.sql.SQLException;
 public final class CursorByPass extends Portal {
     private static final Log LOG = LogFactory.getLog(CursorByPass.class);
 
-    private final String jdbcDriver;
-    private final String jdbcConnectionString;
+    private final String dataSourceName;
 
     private final String queryString;
 
@@ -52,11 +51,14 @@ public final class CursorByPass extends Portal {
     private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
 
-    public CursorByPass(CachedStatement cachedStatement, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats, String jdbcDriver, String jdbcConnectionString) throws PostgresException {
+    public CursorByPass(CachedStatement cachedStatement,
+                        FormatCode[] paramFormats, byte[][] paramValues,
+                        FormatCode[] resultFormats,
+                        String dataSourceName, String connectionString)
+            throws PostgresException {
         super(cachedStatement, paramFormats, paramValues, resultFormats);
 
-        this.jdbcDriver = jdbcDriver;
-        this.jdbcConnectionString = jdbcConnectionString;
+        this.dataSourceName = dataSourceName;
 
         /*
          * NOTE: Deep-copy validatedQuery because TableNameTranslator.toDSN()
@@ -75,7 +77,7 @@ public final class CursorByPass extends Portal {
         });
         TableNameTranslator.toDSN(cloned);
         SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-        if (jdbcConnectionString.startsWith("jdbc:hive2:"))
+        if (connectionString.startsWith("jdbc:hive2:"))
             dp = SqlDialect.DatabaseProduct.HIVE;
         queryString = cloned.toSqlString(dp.getDialect()).getSql();
 
@@ -94,11 +96,9 @@ public final class CursorByPass extends Portal {
         byte[][] values = getParamValues();
 
         try {
-            Class.forName(jdbcDriver);
-            Connection conn = DriverManager.getConnection(jdbcConnectionString);
+            Connection conn = ConnectionManager.getConnection(dataSourceName);
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
-
                 for (int i = 0; i < types.length; i++) {
                     if (values[i] == null) {
                         switch (types[i]) {
@@ -164,7 +164,7 @@ public final class CursorByPass extends Portal {
             }
 
             setState(State.READY);
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             /*
              * NOTE: setting state to State.FAILED is meaningless here
              *       because this cursor will not be cached

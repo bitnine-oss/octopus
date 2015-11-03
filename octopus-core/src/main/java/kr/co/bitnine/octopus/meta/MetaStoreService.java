@@ -35,7 +35,7 @@ public class MetaStoreService extends AbstractService {
     }
 
     @Override
-    protected final void serviceInit(Configuration conf) {
+    protected final void serviceInit(Configuration conf) throws Exception {
         LOG.info("initialize service - " + getName());
 
         props.clear();
@@ -44,6 +44,8 @@ public class MetaStoreService extends AbstractService {
             if (key.startsWith("metastore."))
                 props.put(key, e.getValue());
         }
+
+        super.serviceInit(conf);
     }
 
     @Override

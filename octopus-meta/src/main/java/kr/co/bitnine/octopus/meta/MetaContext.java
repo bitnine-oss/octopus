@@ -47,6 +47,8 @@ public interface MetaContext {
      * DataSource
      */
 
+    boolean dataSourceExists(String name) throws MetaException;
+
     MetaDataSource getDataSource(String name) throws MetaException;
 
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;

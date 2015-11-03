@@ -50,6 +50,7 @@ public class SessionServerTest {
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
     private static MetaStoreService metaStoreService;
+    private static ConnectionManager connectionManager;
     private static SchemaManager schemaManager;
     private static SessionServer sessionServer;
 
@@ -82,12 +83,16 @@ public class SessionServerTest {
         MetaUser user = metaContext.createUser("octopus", "bitnine");
         metaContext.addSystemPrivileges(Arrays.asList(SystemPrivilege.values()), Arrays.asList(user.getName()));
 
+        connectionManager = new ConnectionManager(metaStore);
+        connectionManager.init(conf);
+        connectionManager.start();
+
         schemaManager = new SchemaManager(metaStore);
         schemaManager.init(conf);
         schemaManager.start();
 
         SessionFactory sessFactory = new SessionFactoryImpl(
-                metaStore, schemaManager);
+                metaStore, connectionManager, schemaManager);
         sessionServer = new SessionServer(sessFactory);
         sessionServer.init(conf);
         sessionServer.start();

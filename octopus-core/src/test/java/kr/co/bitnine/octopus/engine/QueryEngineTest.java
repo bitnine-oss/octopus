@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
@@ -29,8 +30,8 @@ import org.junit.BeforeClass;
 public class QueryEngineTest {
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
-    private static MetaStore metaStore;
     private static MetaStoreService metaStoreService;
+    private static ConnectionManager connectionManager;
     private static SchemaManager schemaManager;
     private static MetaContext metaContext;
     private static QueryEngine queryEngine;
@@ -50,10 +51,14 @@ public class QueryEngineTest {
         conf.set("metastore.jdo.connection.username", "");
         conf.set("metastore.jdo.connection.password", "");
 
-        metaStore = MetaStores.newInstance(conf.get("metastore.class"));
+        MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
         metaStoreService = new MetaStoreService(metaStore);
         metaStoreService.init(conf);
         metaStoreService.start();
+
+        connectionManager = new ConnectionManager(metaStore);
+        connectionManager.init(conf);
+        connectionManager.start();
 
         schemaManager = new SchemaManager(metaStore);
         schemaManager.init(conf);
@@ -64,7 +69,7 @@ public class QueryEngineTest {
         MetaDataSource metaDataSource = metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, dataMemDb.connectionString, dataMemDb.name);
         schemaManager.addDataSource(metaDataSource);
 
-        queryEngine = new QueryEngine(metaContext, schemaManager);
+        queryEngine = new QueryEngine(metaContext, connectionManager, schemaManager);
     }
 
     @AfterClass
@@ -72,6 +77,7 @@ public class QueryEngineTest {
         metaContext.close();
 
         schemaManager.stop();
+        connectionManager.stop();
         metaStoreService.stop();
 
         dataMemDb.stop();

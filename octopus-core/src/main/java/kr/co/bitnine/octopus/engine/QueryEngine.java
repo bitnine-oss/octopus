@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
@@ -39,7 +40,6 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
 import kr.co.bitnine.octopus.postgres.utils.misc.PostgresConfiguration;
-import kr.co.bitnine.octopus.schema.OctopusDataSource;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
@@ -77,10 +77,14 @@ public final class QueryEngine extends AbstractQueryProcessor {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
 
     private final MetaContext metaContext;
+    private final ConnectionManager connectionManager;
     private final SchemaManager schemaManager;
 
-    public QueryEngine(MetaContext metaContext, SchemaManager schemaManager) {
+    public QueryEngine(MetaContext metaContext,
+                       ConnectionManager connectionManager,
+                       SchemaManager schemaManager) {
         this.metaContext = metaContext;
+        this.connectionManager = connectionManager;
         this.schemaManager = schemaManager;
     }
 
@@ -291,12 +295,11 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
         LOG.debug("by-pass query: " + validatedQuery.toString());
 
-        String jdbcDriver;
-        String jdbcConnectionString;
+        String dataSourceName = dsNames.get(0);
+        String connectionString;
         try {
-            MetaDataSource dataSource = metaContext.getDataSource(dsNames.get(0));
-            jdbcDriver = dataSource.getDriverName();
-            jdbcConnectionString = dataSource.getConnectionString();
+            MetaDataSource dataSource = metaContext.getDataSource(dataSourceName);
+            connectionString = dataSource.getConnectionString();
         } catch (MetaException e) {
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
@@ -304,7 +307,8 @@ public final class QueryEngine extends AbstractQueryProcessor {
             throw new PostgresException(edata, e);
         }
 
-        return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats, jdbcDriver, jdbcConnectionString);
+        return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats,
+                dataSourceName, connectionString);
     }
 
     private List<String> getDatasourceNames(SqlNode query) {
@@ -423,6 +427,8 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
             // FIXME: all or nothing
             MetaDataSource dataSource = metaContext.addJdbcDataSource(jdbcDriverName, jdbcConnectionString, dataSourceName);
+            connectionManager.registerPool(dataSourceName,
+                    jdbcDriverName, jdbcConnectionString);
             schemaManager.addDataSource(dataSource);
         }
 
@@ -431,29 +437,22 @@ public final class QueryEngine extends AbstractQueryProcessor {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
             /* TODO: reloading schemaManager could be inefficient! */
-            OctopusDataSource octopusDataSource = schemaManager.dropDataSource(target.getDataSource());
 
-            try {
-                final String schemaRegex = target.getSchema() == null ? null : convertPattern(target.getSchema());
-                final String tableRegex = target.getTable() == null ? null : convertPattern(target.getTable());
-                MetaDataSource dataSource = metaContext.updateJdbcDataSource(target.getDataSource(), schemaRegex, tableRegex);
-                schemaManager.addDataSource(dataSource);
-            } catch (Exception e) {
-                schemaManager.addDataSource(octopusDataSource);
-                throw e;
-            }
+            String dataSourceName = target.getDataSource();
+            final String schemaRegex = target.getSchema() == null ? null : convertPattern(target.getSchema());
+            final String tableRegex = target.getTable() == null ? null : convertPattern(target.getTable());
+            MetaDataSource dataSource = metaContext.updateJdbcDataSource(dataSourceName, schemaRegex, tableRegex);
+            schemaManager.dropDataSource(dataSourceName);
+            schemaManager.addDataSource(dataSource);
         }
 
         @Override
         public void dropDataSource(String dataSourceName) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
-            OctopusDataSource octopusDataSource = schemaManager.dropDataSource(dataSourceName);
-            try {
-                metaContext.dropJdbcDataSource(dataSourceName);
-            } catch (Exception e) {
-                schemaManager.addDataSource(octopusDataSource);
-                throw e;
-            }
+
+            metaContext.dropJdbcDataSource(dataSourceName);
+            schemaManager.dropDataSource(dataSourceName);
+            connectionManager.closePool(dataSourceName);
         }
 
         @Override
