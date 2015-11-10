@@ -24,6 +24,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 import javax.jdo.annotations.Unique;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,6 +48,9 @@ public final class MUser implements MetaUser {
     @Persistent
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
+
+    @Persistent(mappedBy = "user", dependentElement = "true")
+    private Collection<MSchemaPrivilege> schemaPrivileges;
 
     public MUser(String name, String password) {
         this.name = name;

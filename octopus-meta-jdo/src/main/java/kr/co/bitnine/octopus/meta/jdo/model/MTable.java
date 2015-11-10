@@ -38,13 +38,15 @@ public final class MTable implements MetaTable {
     private String name;
 
     private String type;
+
+    @Persistent(dependent = "false")
     private MSchema schema;
 
     @Persistent
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
-    @Persistent(mappedBy = "table")
+    @Persistent(mappedBy = "table", dependentElement = "true")
     private Collection<MColumn> columns;
 
     public MTable(String name, String type, MSchema schema) {
