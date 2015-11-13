@@ -29,7 +29,7 @@ import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
-import kr.co.bitnine.octopus.meta.ResultOfGetColumns;
+import kr.co.bitnine.octopus.meta.result.ResultOfGetColumns;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
@@ -546,7 +546,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String regex = convertPattern(schemaPattern);
+            final String regex = schemaPattern == null ? null : convertPattern(schemaPattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -554,7 +554,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
-                    if (!schemaName.matches(regex))
+                    if (regex != null && !schemaName.matches(regex))
                         continue;
 
                     Tuple t = new Tuple(4);
@@ -587,8 +587,8 @@ public final class QueryEngine extends AbstractQueryProcessor {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
-            final String schemaRegex = convertPattern(schemaPattern);
-            final String tableRegex = convertPattern(tablePattern);
+            final String schemaRegex = schemaPattern == null ? null : convertPattern(schemaPattern);
+            final String tableRegex = tablePattern == null ? null : convertPattern(tablePattern);
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -596,12 +596,12 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
                 for (MetaSchema mSchema : mDs.getSchemas()) {
                     String schemaName = mSchema.getName();
-                    if (!schemaName.matches(schemaRegex))
+                    if (schemaRegex != null && !schemaName.matches(schemaRegex))
                         continue;
 
                     for (MetaTable mTable : mSchema.getTables()) {
                         String tableName = mTable.getName();
-                        if (!tableName.matches(tableRegex))
+                        if (tableRegex != null && !tableName.matches(tableRegex))
                             continue;
 
                         Tuple t = new Tuple(12);
@@ -647,19 +647,19 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
             List<Tuple> tuples = new ArrayList<>();
             /* TODO: convert '%' to null to avoid performing useless matching */
-            final String schemaRegex = convertPattern(schemaPattern);
-            final String tableRegex = convertPattern(tablePattern);
-            final String columnRegex = convertPattern(columnPattern);
+            final String schemaRegex = schemaPattern == null || "%".equals(schemaPattern) ? null : convertPattern(schemaPattern);
+            final String tableRegex = tablePattern == null || "%".equals(tablePattern) ? null : convertPattern(tablePattern);
+            final String columnRegex = columnPattern == null || "%".equals(columnPattern) ? null : convertPattern(columnPattern);
 
             Collection<ResultOfGetColumns> results = metaContext.getColumns(dataSourceName, schemaRegex, tableRegex, columnRegex);
             for (ResultOfGetColumns result : results) {
                 Tuple t = new Tuple(28);
-                t.setDatum(0, result.getColName());
+                t.setDatum(0, result.getDataSourceName());
                 t.setDatum(1, result.getSchemaName());
                 t.setDatum(2, result.getTableName());
-                t.setDatum(3, result.getColName());
-                t.setDatum(4, String.valueOf(result.getColType()));
-                t.setDatum(5, TypeInfo.postresTypeOfJdbcType(result.getColType()).typeName());
+                t.setDatum(3, result.getColumnName());
+                t.setDatum(4, String.valueOf(result.getColumnType()));
+                t.setDatum(5, TypeInfo.postresTypeOfJdbcType(result.getColumnType()).typeName());
                 t.setDatum(6, "NULL");
                 t.setDatum(7, "NULL");
                 t.setDatum(8, "NULL");
@@ -679,83 +679,11 @@ public final class QueryEngine extends AbstractQueryProcessor {
                 t.setDatum(22, "NULL");
                 t.setDatum(23, "NULL");
                 t.setDatum(24, result.getDataCategory());
-                t.setDatum(25, result.getDsComment());
+                t.setDatum(25, result.getDataSourceComment());
                 t.setDatum(26, result.getSchemaComment());
                 t.setDatum(27, result.getTableComment());
                 tuples.add(t);
             }
-            /*
-            for (MetaDataSource mDs : metaContext.getDataSources()) {
-                String dsName = mDs.getName();
-                if (dataSourceName != null && !dataSourceName.equals(dsName))
-                    continue;
-
-                for (MetaSchema mSchema : mDs.getSchemas()) {
-                    String schemaName = mSchema.getName();
-                    if (!schemaName.matches(schemaRegex))
-                        continue;
-
-                    for (MetaTable mTable : mSchema.getTables()) {
-                        String tableName = mTable.getName();
-                        if (!tableName.matches(tableRegex))
-                            continue;
-
-                        for (MetaColumn mColumn : mTable.getColumns()) {
-                            String colName = mColumn.getName();
-
-                            if (!colName.matches(columnRegex))
-                                continue;
-
-                            Tuple t = new Tuple(28);
-                            t.setDatum(0, dsName);
-                            t.setDatum(1, schemaName);
-                            t.setDatum(2, tableName);
-                            t.setDatum(3, colName);
-                            t.setDatum(4, String.valueOf(mColumn.getType()));
-                            t.setDatum(5, TypeInfo.postresTypeOfJdbcType(mColumn.getType()).typeName());
-                            t.setDatum(6, "NULL");
-                            t.setDatum(7, "NULL");
-                            t.setDatum(8, "NULL");
-                            t.setDatum(9, "NULL");
-                            t.setDatum(10, "NULL");
-                            t.setDatum(11, mColumn.getComment());
-                            t.setDatum(12, "NULL");
-                            t.setDatum(13, "NULL");
-                            t.setDatum(14, "NULL");
-                            t.setDatum(15, "NULL");
-                            t.setDatum(16, "NULL");
-                            t.setDatum(17, "NULL");
-                            t.setDatum(18, "NULL");
-                            t.setDatum(19, "NULL");
-                            t.setDatum(20, "NULL");
-                            t.setDatum(21, "NULL");
-                            t.setDatum(22, "NULL");
-                            t.setDatum(23, "NULL");
-                            t.setDatum(24, mColumn.getDataCategory());
-                            t.setDatum(25, mDs.getComment());
-                            t.setDatum(26, mSchema.getComment());
-                            t.setDatum(27, mTable.getComment());
-
-                            tuples.add(t);
-                        }
-                    }
-                }
-            }
-            */
-            // ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
-            Collections.sort(tuples, new Comparator<Tuple>() {
-                @Override
-                public int compare(Tuple tl, Tuple tr) {
-                    int r = ((String) tl.getDatum(0)).compareTo((String) tr.getDatum(0));
-                    if (r == 0)
-                        r = ((String) tl.getDatum(1)).compareTo((String) tr.getDatum(1));
-                    if (r == 0)
-                        r = ((String) tl.getDatum(2)).compareTo((String) tr.getDatum(2));
-                    if (r == 0)
-                        r = ((String) tl.getDatum(16)).compareTo((String) tr.getDatum(16));
-                    return r;
-                }
-            });
 
             ts.addTuples(tuples);
             return ts;
@@ -1015,7 +943,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
      * <p/>
      * Borrowed from Tajo
      */
-    public static String convertPattern(final String pattern) {
+    private static String convertPattern(final String pattern) {
         final char searchStringEscape = '\\';
 
         if (pattern == null) {

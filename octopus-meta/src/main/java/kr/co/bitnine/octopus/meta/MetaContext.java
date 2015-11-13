@@ -20,6 +20,7 @@ import kr.co.bitnine.octopus.meta.model.MetaSchemaPrivilege;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
+import kr.co.bitnine.octopus.meta.result.ResultOfGetColumns;
 
 import java.util.Collection;
 import java.util.List;

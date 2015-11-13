@@ -12,26 +12,28 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta;
+package kr.co.bitnine.octopus.meta.result;
 
 public final class ResultOfGetColumns {
-    private String dsName;
+    private String dataSourceName;
     private String schemaName;
     private String tableName;
-    private String colName;
-    private int colType;
+    private String columnName;
+    private int columnType;
     private String comment;
     private String dataCategory;
-    private String dsComment;
+    private String dataSourceComment;
     private String schemaComment;
     private String tableComment;
 
-    public ResultOfGetColumns() {
-        // this constructor with no args. is required for Datanuclues to return this-typed results
-    }
+    /*
+     * This constructor with no args. is required for DataNucleus
+     * to return this-typed results
+     */
+    public ResultOfGetColumns() { }
 
-    public String getDsName() {
-        return dsName;
+    public String getDataSourceName() {
+        return dataSourceName;
     }
 
     public String getSchemaName() {
@@ -42,12 +44,12 @@ public final class ResultOfGetColumns {
         return tableName;
     }
 
-    public String getColName() {
-        return colName;
+    public String getColumnName() {
+        return columnName;
     }
 
-    public int getColType() {
-        return colType;
+    public int getColumnType() {
+        return columnType;
     }
 
     public String getComment() {
@@ -58,8 +60,8 @@ public final class ResultOfGetColumns {
         return dataCategory;
     }
 
-    public String getDsComment() {
-        return dsComment;
+    public String getDataSourceComment() {
+        return dataSourceComment;
     }
 
     public String getSchemaComment() {
@@ -70,8 +72,8 @@ public final class ResultOfGetColumns {
         return tableComment;
     }
 
-    public void setDsName(String dsName) {
-        this.dsName = dsName;
+    public void setDataSourceName(String dataSourceName) {
+        this.dataSourceName = dataSourceName;
     }
 
     public void setSchemaName(String schemaName) {
@@ -82,12 +84,12 @@ public final class ResultOfGetColumns {
         this.tableName = tableName;
     }
 
-    public void setColName(String colName) {
-        this.colName = colName;
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
     }
 
-    public void setColType(int colType) {
-        this.colType = colType;
+    public void setColumnType(int columnType) {
+        this.columnType = columnType;
     }
 
     public void setComment(String comment) {
@@ -98,8 +100,8 @@ public final class ResultOfGetColumns {
         this.dataCategory = dataCategory;
     }
 
-    public void setDsComment(String dsComment) {
-        this.dsComment = dsComment;
+    public void setDataSourceComment(String dataSourceComment) {
+        this.dataSourceComment = dataSourceComment;
     }
 
     public void setSchemaComment(String schemaComment) {
@@ -110,4 +112,3 @@ public final class ResultOfGetColumns {
         this.tableComment = tableComment;
     }
 }
-

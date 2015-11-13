@@ -17,7 +17,7 @@ package kr.co.bitnine.octopus.meta.jdo;
 import java.util.ArrayList;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
-import kr.co.bitnine.octopus.meta.ResultOfGetColumns;
+import kr.co.bitnine.octopus.meta.result.ResultOfGetColumns;
 import kr.co.bitnine.octopus.meta.jdo.model.MColumn;
 import kr.co.bitnine.octopus.meta.jdo.model.MDataSource;
 import kr.co.bitnine.octopus.meta.jdo.model.MRole;
@@ -34,7 +34,7 @@ import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
@@ -459,7 +459,16 @@ public final class JDOMetaContext implements MetaContext {
         try {
             Query query = pm.newQuery(MColumn.class);
             query.setResultClass(ResultOfGetColumns.class);
-            query.setResult("this.table.schema.dataSource.name dsName, this.table.schema.name schemaName, this.table.name tableName, this.name colName, this.type colType, this.comment comment, this.dataCategory dataCategory, this.table.schema.dataSource.comment dsComment, this.table.schema.comment schemaComment, this.table.comment tableComment");
+            query.setResult("this.table.schema.dataSource.name dataSourceName, "
+                    + "this.table.schema.name schemaName, "
+                    + "this.table.name tableName, "
+                    + "this.name columnName, "
+                    + "this.type columnType, "
+                    + "this.comment comment, "
+                    + "this.dataCategory dataCategory, "
+                    + "this.table.schema.dataSource.comment dataSourceComment, "
+                    + "this.table.schema.comment schemaComment, "
+                    + "this.table.comment tableComment");
             ArrayList<String> filters = new ArrayList<>();
             ArrayList<String> parameters = new ArrayList<>();
             Map<String, String> paramValues = new HashMap<>();
@@ -488,8 +497,10 @@ public final class JDOMetaContext implements MetaContext {
                 String parameter = StringUtils.join(parameters, ", ");
                 query.setFilter(filter);
                 query.declareParameters(parameter);
-                System.out.println("filter: " + filter + " " + "parameter: " + parameter);
             }
+            query.setOrdering("this.table.schema.dataSource.name ASC, "
+                    + "this.table.schema.name ASC, "
+                    + "this.table.name ASC");
             return  (Collection<ResultOfGetColumns>) query.executeWithMap(paramValues);
         } catch (RuntimeException e) {
             throw new MetaException("failed to get columns", e);
