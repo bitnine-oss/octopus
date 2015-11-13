@@ -14,10 +14,22 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
+import kr.co.bitnine.octopus.meta.ResultOfGetColumns;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
@@ -62,16 +74,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
 public final class QueryEngine extends AbstractQueryProcessor {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
@@ -644,9 +646,45 @@ public final class QueryEngine extends AbstractQueryProcessor {
             TupleSetSql ts = new TupleSetSql();
 
             List<Tuple> tuples = new ArrayList<>();
+            /* TODO: convert '%' to null to avoid performing useless matching */
             final String schemaRegex = convertPattern(schemaPattern);
             final String tableRegex = convertPattern(tablePattern);
             final String columnRegex = convertPattern(columnPattern);
+
+            Collection<ResultOfGetColumns> results = metaContext.getColumns(dataSourceName, schemaRegex, tableRegex, columnRegex);
+            for (ResultOfGetColumns result : results) {
+                Tuple t = new Tuple(28);
+                t.setDatum(0, result.getColName());
+                t.setDatum(1, result.getSchemaName());
+                t.setDatum(2, result.getTableName());
+                t.setDatum(3, result.getColName());
+                t.setDatum(4, String.valueOf(result.getColType()));
+                t.setDatum(5, TypeInfo.postresTypeOfJdbcType(result.getColType()).typeName());
+                t.setDatum(6, "NULL");
+                t.setDatum(7, "NULL");
+                t.setDatum(8, "NULL");
+                t.setDatum(9, "NULL");
+                t.setDatum(10, "NULL");
+                t.setDatum(11, result.getComment());
+                t.setDatum(12, "NULL");
+                t.setDatum(13, "NULL");
+                t.setDatum(14, "NULL");
+                t.setDatum(15, "NULL");
+                t.setDatum(16, "NULL");
+                t.setDatum(17, "NULL");
+                t.setDatum(18, "NULL");
+                t.setDatum(19, "NULL");
+                t.setDatum(20, "NULL");
+                t.setDatum(21, "NULL");
+                t.setDatum(22, "NULL");
+                t.setDatum(23, "NULL");
+                t.setDatum(24, result.getDataCategory());
+                t.setDatum(25, result.getDsComment());
+                t.setDatum(26, result.getSchemaComment());
+                t.setDatum(27, result.getTableComment());
+                tuples.add(t);
+            }
+            /*
             for (MetaDataSource mDs : metaContext.getDataSources()) {
                 String dsName = mDs.getName();
                 if (dataSourceName != null && !dataSourceName.equals(dsName))
@@ -703,6 +741,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                     }
                 }
             }
+            */
             // ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION
             Collections.sort(tuples, new Comparator<Tuple>() {
                 @Override
