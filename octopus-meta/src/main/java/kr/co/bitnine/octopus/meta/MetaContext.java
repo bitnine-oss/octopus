@@ -61,6 +61,7 @@ public interface MetaContext {
 
     Collection<MetaDataSource> getDataSources() throws MetaException;
 
+    Collection<ResultOfGetColumns> getColumns(String datasourceName, final String schemaRegex, final String tableRegex, final String columnRegex) throws MetaException;
     /*
      * Schema
      */
