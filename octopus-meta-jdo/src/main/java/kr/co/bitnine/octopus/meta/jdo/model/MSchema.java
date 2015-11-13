@@ -37,14 +37,18 @@ public final class MSchema implements MetaSchema {
     @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
+    @Persistent(dependent = "false")
     private MDataSource dataSource;
 
     @Persistent
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
-    @Persistent(mappedBy = "schema")
+    @Persistent(mappedBy = "schema", dependentElement = "true")
     private Collection<MTable> tables;
+
+    @Persistent(mappedBy = "schema", dependentElement = "true")
+    private Collection<MSchemaPrivilege> schemaPrivileges;
 
     public MSchema(String name, MDataSource dataSource) {
         this.name = name;

@@ -50,7 +50,7 @@ public final class MDataSource implements MetaDataSource {
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
-    @Persistent(mappedBy = "dataSource")
+    @Persistent(mappedBy = "dataSource", dependentElement = "true")
     private Collection<MSchema> schemas;
 
     public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString) {
@@ -88,9 +88,5 @@ public final class MDataSource implements MetaDataSource {
     @Override
     public Collection<MetaSchema> getSchemas() {
         return new ArrayList<MetaSchema>(schemas);
-    }
-
-    public void setSchemas(Collection<MSchema> newSchemas) {
-        schemas = newSchemas;
     }
 }

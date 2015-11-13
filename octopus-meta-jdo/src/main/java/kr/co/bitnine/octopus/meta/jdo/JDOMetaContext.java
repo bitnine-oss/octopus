@@ -106,12 +106,20 @@ public final class JDOMetaContext implements MetaContext {
 
     @Override
     public void alterUser(String name, String newPassword) throws MetaException {
-        MUser mUser = (MUser) getUser(name);
-        mUser.setPassword(newPassword);
+        Transaction tx = pm.currentTransaction();
         try {
+            tx.begin();
+
+            MUser mUser = (MUser) getUser(name);
+            mUser.setPassword(newPassword);
             pm.makePersistent(mUser);
+
+            tx.commit();
         } catch (RuntimeException e) {
             throw new MetaException("failed to alter user '" + name + "'", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
     }
 
@@ -121,7 +129,6 @@ public final class JDOMetaContext implements MetaContext {
         try {
             tx.begin();
 
-            deleteSchemaPrivilegesByUser(name);
             pm.deletePersistent(getUser(name));
 
             tx.commit();
@@ -135,12 +142,20 @@ public final class JDOMetaContext implements MetaContext {
 
     @Override
     public void commentOnUser(String comment, String name) throws MetaException {
-        MUser mUser = (MUser) getUser(name);
-        mUser.setComment(comment);
+        Transaction tx = pm.currentTransaction();
         try {
+            tx.begin();
+
+            MUser mUser = (MUser) getUser(name);
+            mUser.setComment(comment);
             pm.makePersistent(mUser);
+
+            tx.commit();
         } catch (RuntimeException e) {
             throw new MetaException("failed to comment on user '" + name + "'", e);
+        } finally {
+            if (tx.isActive())
+                tx.rollback();
         }
     }
 
@@ -226,15 +241,10 @@ public final class JDOMetaContext implements MetaContext {
 
     @Override
     public void dropJdbcDataSource(String name) throws MetaException {
-        if (!dataSourceExists(name))
-            throw new MetaException("data source '" + name + "' does not exist");
-
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
 
-            // remove all object privileges related to this datasource
-            deleteSchemaPrivilegesByDataSource(name);
             pm.deletePersistent(getDataSource(name));
 
             tx.commit();
@@ -392,7 +402,6 @@ public final class JDOMetaContext implements MetaContext {
             oldSchemaNames.removeAll(newSchemaNames);
             for (String name : oldSchemaNames) {
                 LOG.debug("delete schema. schemaName=" + name);
-                deleteSchemaPrivilegeBySchema(mDataSource.getName(), name);
                 pm.deletePersistent(oldSchemas.get(name));
             }
         }
@@ -749,40 +758,6 @@ public final class JDOMetaContext implements MetaContext {
         } finally {
             if (tx.isActive())
                 tx.rollback();
-        }
-    }
-
-    private void deleteSchemaPrivilegesByUser(String userName) throws MetaException {
-        try {
-            Query query = pm.newQuery(MSchemaPrivilege.class);
-            query.setFilter("user.name == userName");
-            query.declareParameters("String userName");
-            query.deletePersistentAll(userName);
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to delete schema privileges of userName=" + userName, e);
-        }
-    }
-
-    private void deleteSchemaPrivilegesByDataSource(String dataSourceName) throws MetaException {
-        try {
-            Query query = pm.newQuery(MSchemaPrivilege.class);
-            query.setFilter("schema.dataSource.name == dataSourceName");
-            query.declareParameters("String dataSourceName");
-            query.deletePersistentAll(dataSourceName);
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to delete schema privileges of dataSourceName=" + dataSourceName, e);
-        }
-    }
-
-    private void deleteSchemaPrivilegeBySchema(String dataSourceName, String schemaName) throws MetaException {
-        try {
-            Query query = pm.newQuery(MSchemaPrivilege.class);
-            query.setFilter("schema.dataSource.name == dataSourceName && "
-                    + "schema.name == schemaName");
-            query.declareParameters("String dataSourceName, String schemaName");
-            query.deletePersistentAll(dataSourceName, schemaName);
-        } catch (RuntimeException e) {
-            throw new MetaException("failed to delete schema privileges", e);
         }
     }
 

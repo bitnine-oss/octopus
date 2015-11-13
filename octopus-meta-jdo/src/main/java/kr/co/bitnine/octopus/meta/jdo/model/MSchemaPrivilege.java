@@ -36,9 +36,11 @@ public final class MSchemaPrivilege implements MetaSchemaPrivilege {
 
     private Set<ObjectPrivilege> objPrivs;
 
+    @Persistent(dependent = "false")
     @Column(name = "MSCHEMA_ID")
     private MSchema schema;
 
+    @Persistent(dependent = "false")
     @Column(name = "MUSER_ID")
     private MUser user;
 

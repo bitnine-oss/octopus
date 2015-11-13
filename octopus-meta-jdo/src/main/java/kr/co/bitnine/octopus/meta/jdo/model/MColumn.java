@@ -36,6 +36,8 @@ public final class MColumn implements MetaColumn {
 
     private int type;
     private int typeInfo;
+
+    @Persistent(dependent = "false")
     private MTable table;
 
     @Persistent
