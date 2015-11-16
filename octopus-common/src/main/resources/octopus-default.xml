@@ -29,8 +29,14 @@ does not already exist, create it.
 
   <property>
     <name>master.session.max</name>
-    <value>7</value>
+    <value>8</value>
     <description>The maximum number of client sessions.</description>
+  </property>
+
+  <property>
+    <name>master.connection.pool.max</name>
+    <value>8</value>
+    <description>The maximum number of JDBC connections per data source.</description>
   </property>
 
   <property>

@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public final class SessionServer extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SessionServer.class);
 
-    private static final int EXECUTOR_MAX_DEFAULT = 5;
+    private static final int EXECUTOR_MAX_DEFAULT = 8;
     private static final long EXECUTOR_KEEPALIVE_DEFAULT = 60;
     private static final long EXECUTOR_SHUTDOWN_TIMEOUT_DEFAULT = 5;
 

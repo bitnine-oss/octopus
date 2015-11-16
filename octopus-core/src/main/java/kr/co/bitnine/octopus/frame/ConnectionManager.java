@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.frame;
 
+import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
@@ -107,7 +108,9 @@ public final class ConnectionManager extends AbstractService {
         // Actual pool of connections.
         GenericObjectPool<PoolableConnection> connectionPool =
                 new GenericObjectPool<>(poolableConnectionFactory);
-        connectionPool.setMaxTotal(16);
+        int connMax = getConfig()
+                .getInt(OctopusConfiguration.MASTER_CONNECTION_POOL_MAX, 8);
+        connectionPool.setMaxTotal(connMax);
         connectionPool.setTestOnBorrow(true);
         // Set the factory's pool property to the owning pool.
         poolableConnectionFactory.setPool(connectionPool);

@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 public class OctopusConfiguration extends Configuration {
     public static final String MASTER_SERVER_ADDRESS = "master.server.address";
     public static final String MASTER_SESSION_MAX = "master.session.max";
+    public static final String MASTER_CONNECTION_POOL_MAX = "master.connection.pool.max";
     public static final String METASTORE_CLASS = "metastore.class";
 
     static {
