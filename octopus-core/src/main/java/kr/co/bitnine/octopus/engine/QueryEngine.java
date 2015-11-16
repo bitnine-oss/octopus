@@ -275,11 +275,15 @@ public final class QueryEngine extends AbstractQueryProcessor {
     }
 
     @Override
-    protected Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException {
+    protected Portal processBind(CachedQuery cachedQuery, String portalName,
+                                 FormatCode[] paramFormats,
+                                 byte[][] paramValues,
+                                 FormatCode[] resultFormats)
+            throws PostgresException {
         CachedStatement cStmt = (CachedStatement) cachedQuery;
 
         if (cStmt.isDdl())
-            return new CursorDdl(cStmt, ddlRunner);
+            return new CursorDdl(cStmt, portalName, ddlRunner);
 
         // TODO: query on multiple data sources
         SqlNode validatedQuery = cStmt.getValidatedQuery();
@@ -309,8 +313,9 @@ public final class QueryEngine extends AbstractQueryProcessor {
             throw new PostgresException(edata, e);
         }
 
-        return new CursorByPass(cStmt, paramFormats, paramValues, resultFormats,
-                dataSourceName, connectionString);
+        LOG.info("create portal '" + portalName + "' for by-pass (session=" + Session.currentSession().getId() + ')');
+        return new CursorByPass(cStmt, portalName, paramFormats, paramValues,
+                resultFormats, dataSourceName, connectionString);
     }
 
     private List<String> getDatasourceNames(SqlNode query) {

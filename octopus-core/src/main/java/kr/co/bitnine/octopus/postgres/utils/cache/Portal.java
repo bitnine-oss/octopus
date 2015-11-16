@@ -21,6 +21,7 @@ import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 
 public abstract class Portal {
     private final CachedQuery cachedQuery;
+    private final String name;
     private final FormatCode[] paramFormats;
     private final byte[][] paramValues;
     private final FormatCode[] resultFormats;
@@ -35,8 +36,11 @@ public abstract class Portal {
 
     private State state;
 
-    public Portal(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) {
+    public Portal(CachedQuery cachedQuery, String name,
+                  FormatCode[] paramFormats, byte[][] paramValues,
+                  FormatCode[] resultFormats) {
         this.cachedQuery = cachedQuery;
+        this.name = name;
         this.paramFormats = paramFormats;
         this.paramValues = paramValues;
 
@@ -48,6 +52,10 @@ public abstract class Portal {
 
     public final CachedQuery getCachedQuery() {
         return cachedQuery;
+    }
+
+    public final String getName() {
+        return name;
     }
 
     public final FormatCode[] getParamFormats() {

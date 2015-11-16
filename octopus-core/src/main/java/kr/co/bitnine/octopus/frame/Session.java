@@ -82,7 +82,7 @@ public final class Session implements Runnable {
         postgresConf = new PostgresConfiguration();
     }
 
-    int getId() {
+    public int getId() {
         return sessionId;
     }
 
@@ -278,6 +278,8 @@ public final class Session implements Runnable {
                 .putInt(sessionId)
                 .build();
         messageStream.putMessage(msg);
+
+        LOG.info("authentication success for \"" + username + "\" (session=" + getId() + ')');
     }
 
     private void messageLoop() throws Exception {
@@ -506,6 +508,7 @@ public final class Session implements Runnable {
             }
 
             // FIXME: See {PortalState}
+            LOG.error("run portal '" + p.getName() + "'");
             try {
                 TupleSet ts = p.run(0);
                 if (ts != null) {   // ts == null if DDL
@@ -514,6 +517,7 @@ public final class Session implements Runnable {
                     ts.close();
                 }
             } catch (Exception e) {
+                LOG.error("failed to run portal '" + p.getName() + "'");
                 p.setState(Portal.State.FAILED);
                 p.close();
                 throw e;
@@ -615,11 +619,13 @@ public final class Session implements Runnable {
              * If extended query protocol is ended abnormally, the state
              * of the portal must be set with FAILED.
              */
+            LOG.error("run portal '" + p.getName() + "'");
             try {
                 TupleSet ts = p.run(numRows);
                 if (ts != null) // ts == null if DDL
                     sendDataRow(ts, numRows);
             } catch (Exception e) {
+                LOG.error("failed to run portal '" + p.getName() + "'");
                 p.setState(Portal.State.FAILED);
                 p.close();
                 throw e;

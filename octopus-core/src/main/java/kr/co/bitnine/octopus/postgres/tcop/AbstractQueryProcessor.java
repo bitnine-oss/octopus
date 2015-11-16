@@ -22,11 +22,15 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.postgres.utils.adt.FormatCode;
 import kr.co.bitnine.octopus.postgres.utils.cache.CachedQuery;
 import kr.co.bitnine.octopus.postgres.utils.cache.Portal;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractQueryProcessor implements QueryProcessor {
+    private static final Log LOG = LogFactory.getLog(AbstractQueryProcessor.class);
+
     private final Map<String, CachedQuery> cachedQueries = new HashMap<>();
     private final Map<String, Portal> portals = new HashMap<>();
 
@@ -53,6 +57,8 @@ public abstract class AbstractQueryProcessor implements QueryProcessor {
             }
         }
 
+        if (!stmtName.isEmpty())
+            LOG.info("cache query '" + stmtName + "'");
         cachedQueries.put(stmtName, cq);
         return cq;
     }
@@ -89,7 +95,10 @@ public abstract class AbstractQueryProcessor implements QueryProcessor {
             }
         }
 
-        Portal p = processBind(cq, paramFormats, paramValues, resultFormats);
+        Portal p = processBind(cq, portalName, paramFormats, paramValues,
+                resultFormats);
+        if (!portalName.isEmpty())
+            LOG.info("cache portal '" + portalName + "' for query '" + stmtName + "'");
         portals.put(portalName, p);
         return p;
     }
@@ -130,6 +139,8 @@ public abstract class AbstractQueryProcessor implements QueryProcessor {
     @Override
     public final void closeCachedQuery(String stmtName) throws PostgresException {
         CachedQuery cq = getCachedQuery(stmtName);
+        if (!stmtName.isEmpty())
+            LOG.info("remove query '" + stmtName + "'");
         cachedQueries.remove(stmtName);
         cq.close();
     }
@@ -137,11 +148,18 @@ public abstract class AbstractQueryProcessor implements QueryProcessor {
     @Override
     public final void closePortal(String portalName) throws PostgresException {
         Portal p = getPortal(portalName);
+        if (!portalName.isEmpty())
+            LOG.info("remove portal '" + portalName + "'");
         portals.remove(portalName);
         p.close();
     }
 
     protected abstract CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException;
 
-    protected abstract Portal processBind(CachedQuery cachedQuery, FormatCode[] paramFormats, byte[][] paramValues, FormatCode[] resultFormats) throws PostgresException;
+    protected abstract Portal processBind(CachedQuery cachedQuery,
+                                          String portalName,
+                                          FormatCode[] paramFormats,
+                                          byte[][] paramValues,
+                                          FormatCode[] resultFormats)
+            throws PostgresException;
 }

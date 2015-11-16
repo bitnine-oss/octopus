@@ -29,8 +29,10 @@ import kr.co.bitnine.octopus.sql.TupleSetSql;
 public final class CursorDdl extends Portal {
     private final OctopusSqlRunner sqlRunner;
 
-    CursorDdl(CachedStatement cachedStatement, OctopusSqlRunner sqlRunner) {
-        super(cachedStatement, new FormatCode[0], new byte[0][], new FormatCode[0]);
+    CursorDdl(CachedStatement cachedStatement, String name,
+              OctopusSqlRunner sqlRunner) {
+        super(cachedStatement, name, new FormatCode[0], new byte[0][],
+                new FormatCode[0]);
 
         this.sqlRunner = sqlRunner;
     }

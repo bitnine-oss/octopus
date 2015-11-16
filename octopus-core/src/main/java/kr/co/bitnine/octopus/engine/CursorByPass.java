@@ -15,6 +15,7 @@
 package kr.co.bitnine.octopus.engine;
 
 import kr.co.bitnine.octopus.frame.ConnectionManager;
+import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresAttribute;
 import kr.co.bitnine.octopus.postgres.catalog.PostgresType;
@@ -43,8 +44,8 @@ import java.sql.SQLException;
 public final class CursorByPass extends Portal {
     private static final Log LOG = LogFactory.getLog(CursorByPass.class);
 
+    private final int sessionId;
     private final String dataSourceName;
-
     private final String queryString;
 
     private Connection conn;
@@ -52,13 +53,14 @@ public final class CursorByPass extends Portal {
     private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
 
-    public CursorByPass(CachedStatement cachedStatement,
+    public CursorByPass(CachedStatement cachedStatement, String name,
                         FormatCode[] paramFormats, byte[][] paramValues,
                         FormatCode[] resultFormats,
                         String dataSourceName, String connectionString)
             throws PostgresException {
-        super(cachedStatement, paramFormats, paramValues, resultFormats);
+        super(cachedStatement, name, paramFormats, paramValues, resultFormats);
 
+        sessionId = Session.currentSession().getId();
         this.dataSourceName = dataSourceName;
 
         /*
@@ -94,6 +96,8 @@ public final class CursorByPass extends Portal {
 
         try {
             conn = ConnectionManager.getConnection(dataSourceName);
+            LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
                 for (int i = 0; i < types.length; i++) {
@@ -257,6 +261,8 @@ public final class CursorByPass extends Portal {
                 stmt.close();
                 stmt = null;
             }
+
+            LOG.info("return connection to \"" + dataSourceName + "\" for session(" + sessionId + ')');
             conn.close();
         } catch (SQLException ignore) { }
 

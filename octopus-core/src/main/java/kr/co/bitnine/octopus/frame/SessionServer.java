@@ -150,10 +150,12 @@ public final class SessionServer extends AbstractService {
                 try {
                     clientAddress = clientChannel.getRemoteAddress().toString();
                 } catch (IOException ignore) { }
-                LOG.info("connection from " + clientAddress + " is accepted");
 
                 Session sess = sessionFactory.createSession(
                         clientChannel, sessEvtHandler);
+                if (LOG.isInfoEnabled())
+                    LOG.info("connection from " + clientAddress + " is accepted (session=" + sess.getId() + ')');
+
                 registerSession(sess);
                 try {
                     executor.execute(sess);
@@ -172,10 +174,12 @@ public final class SessionServer extends AbstractService {
     }
 
     private void registerSession(Session session) {
+        LOG.info("register session(" + session.getId() + ')');
         sessions.put(session.getId(), session);
     }
 
     private void unregisterSession(Session session) {
+        LOG.info("unregister session (" + session.getId() + ')');
         sessions.remove(session.getId());
     }
 
