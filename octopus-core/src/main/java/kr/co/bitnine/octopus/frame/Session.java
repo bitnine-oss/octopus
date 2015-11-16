@@ -505,18 +505,18 @@ public final class Session implements Runnable {
                 return;
             }
 
-            TupleSet ts = p.run(0);
-            if (ts != null) {
-                // FIXME: See {PortalState}
-                try {
+            // FIXME: See {PortalState}
+            try {
+                TupleSet ts = p.run(0);
+                if (ts != null) {   // ts == null if DDL
                     sendRowDescription(ts.getTupleDesc(), ts.getTupleDesc().getResultFormats());
                     sendDataRow(ts, 0);
                     ts.close();
-                } catch (Exception e) {
-                    p.setState(Portal.State.FAILED);
-                    ts.close();
-                    throw e;
                 }
+            } catch (Exception e) {
+                p.setState(Portal.State.FAILED);
+                p.close();
+                throw e;
             }
 
             // NOTE: SimpleQuery has no Suspend/Execute mechanism
@@ -608,31 +608,28 @@ public final class Session implements Runnable {
                 return;
             }
 
-            TupleSet ts = p.run(numRows);
-            if (ts != null) {
-                /*
-                 * FIXME: {PortalState} refactoring!
-                 * To run portal repeatedly, the state of the portal must be
-                 * either DONE or FAILED.
-                 * If extended query protocol is ended abnormally, the state
-                 * of the portal must be set with FAILED.
-                 */
-                try {
+            /*
+             * FIXME: {PortalState} refactoring!
+             * To run portal repeatedly, the state of the portal must be
+             * either DONE or FAILED.
+             * If extended query protocol is ended abnormally, the state
+             * of the portal must be set with FAILED.
+             */
+            try {
+                TupleSet ts = p.run(numRows);
+                if (ts != null) // ts == null if DDL
                     sendDataRow(ts, numRows);
-                } catch (Exception e) {
-                    p.setState(Portal.State.FAILED);
-                    ts.close();
-                    throw e;
-                }
+            } catch (Exception e) {
+                p.setState(Portal.State.FAILED);
+                p.close();
+                throw e;
             }
 
             if (p.getState() == Portal.State.ACTIVE) {
                 messageStream.putMessage(Message.builder('s').build()); // PortalSuspend
             } else {
                 sendCommandComplete(p.getCompletionTag());
-
-                if (ts != null)
-                    ts.close();
+                p.close();
             }
         } catch (PostgresException e) {
             new OctopusException(e.getErrorData()).emitErrorReport();
@@ -717,6 +714,7 @@ public final class Session implements Runnable {
                         sendRowDescription(tupDesc, tupDesc.getResultFormats());
                 } catch (Exception e) {
                     p.setState(Portal.State.FAILED);
+                    p.close();
                     throw e;
                 }
                 break;

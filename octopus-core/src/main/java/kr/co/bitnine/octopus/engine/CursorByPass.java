@@ -47,6 +47,7 @@ public final class CursorByPass extends Portal {
 
     private final String queryString;
 
+    private Connection conn;
     private PreparedStatement stmt;
     private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
@@ -80,10 +81,6 @@ public final class CursorByPass extends Portal {
         if (connectionString.startsWith("jdbc:hive2:"))
             dp = SqlDialect.DatabaseProduct.HIVE;
         queryString = cloned.toSqlString(dp.getDialect()).getSql();
-
-        stmt = null;
-        tupSetByPass = null;
-        tupDesc = null;
     }
 
     private void prepareStatement() throws PostgresException {
@@ -96,7 +93,7 @@ public final class CursorByPass extends Portal {
         byte[][] values = getParamValues();
 
         try {
-            Connection conn = ConnectionManager.getConnection(dataSourceName);
+            conn = ConnectionManager.getConnection(dataSourceName);
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
                 for (int i = 0; i < types.length; i++) {
@@ -111,6 +108,10 @@ public final class CursorByPass extends Portal {
                             break;
                         case TIMESTAMP: // TODO
                         default:
+                            setState(State.FAILED);
+
+                            close();
+
                             PostgresErrorData edata = new PostgresErrorData(
                                     PostgresSeverity.ERROR,
                                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
@@ -165,10 +166,9 @@ public final class CursorByPass extends Portal {
 
             setState(State.READY);
         } catch (SQLException e) {
-            /*
-             * NOTE: setting state to State.FAILED is meaningless here
-             *       because this cursor will not be cached
-             */
+            setState(State.FAILED);
+
+            close();
 
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
@@ -214,6 +214,8 @@ public final class CursorByPass extends Portal {
         } catch (SQLException e) {
             setState(State.FAILED);
 
+            close();
+
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to execute by-pass query: " + e.getMessage());
@@ -247,13 +249,18 @@ public final class CursorByPass extends Portal {
 
     @Override
     public void close() {
-        if (stmt == null)
+        if (conn == null)
             return;
 
         try {
-            Connection conn = stmt.getConnection();
-            stmt.close();
+            if (stmt != null) {
+                stmt.close();
+                stmt = null;
+            }
             conn.close();
         } catch (SQLException ignore) { }
+
+        tupDesc = null;
+        tupSetByPass = null;    // how about ResultSet?
     }
 }
