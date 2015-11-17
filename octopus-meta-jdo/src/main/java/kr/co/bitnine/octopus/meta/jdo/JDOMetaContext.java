@@ -17,6 +17,8 @@ package kr.co.bitnine.octopus.meta.jdo;
 import java.util.ArrayList;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
+import kr.co.bitnine.octopus.meta.logs.UpdateLogger;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
 import kr.co.bitnine.octopus.meta.result.ResultOfGetColumns;
 import kr.co.bitnine.octopus.meta.jdo.model.MColumn;
 import kr.co.bitnine.octopus.meta.jdo.model.MDataSource;
@@ -62,9 +64,14 @@ public final class JDOMetaContext implements MetaContext {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
 
     private final PersistenceManager pm;
+    private final UpdateLoggerFactory updateLoggerFactory;
 
-    public JDOMetaContext(PersistenceManager persistenceManager) {
+    private UpdateLogger updateLogger;
+
+    public JDOMetaContext(PersistenceManager persistenceManager,
+                          UpdateLoggerFactory updateLoggerFactory) {
         pm = persistenceManager;
+        this.updateLoggerFactory = updateLoggerFactory;
     }
 
     private MUser getMUser(String name, boolean nothrow) throws MetaException {
@@ -273,7 +280,7 @@ public final class JDOMetaContext implements MetaContext {
             addColumn(rawColumn, mTable);
     }
 
-    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema) {
+    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema, UpdateLogger upLog) {
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
             TableType tableType = rawTable.getType();
@@ -282,6 +289,8 @@ public final class JDOMetaContext implements MetaContext {
             // TODO: handle table type (SYSTEM_TABLE, ALIAS, SYNONYM etc...)
             MTable mTable = new MTable(tableName, tableType.name(), mSchema);
             pm.makePersistent(mTable);
+            if (upLog != null)
+                upLog.create(null, tableName);
 
             addColumnsOfTable(rawTable, mTable);
         }
@@ -297,7 +306,7 @@ public final class JDOMetaContext implements MetaContext {
             MSchema mSchema = new MSchema(schemaName, mDataSource);
             pm.makePersistent(mSchema);
 
-            addTablesOfSchema(rawSchema, mSchema);
+            addTablesOfSchema(rawSchema, mSchema, null);
         }
     }
 
@@ -351,6 +360,7 @@ public final class JDOMetaContext implements MetaContext {
                 // add new table
                 MTable mTable = new MTable(tableName, "TABLE", mSchema);
                 pm.makePersistent(mTable);
+                updateLogger.create(null, tableName);
                 addColumnsOfTable(rawTable, mTable);
             }
         }
@@ -361,6 +371,7 @@ public final class JDOMetaContext implements MetaContext {
             for (String name : oldTableNames) {
                 LOG.debug("delete table. tableName=" + mSchema.getName() + '.' + name);
                 pm.deletePersistent(oldTables.get(name));
+                updateLogger.delete(null, name);
             }
         }
     }
@@ -385,6 +396,7 @@ public final class JDOMetaContext implements MetaContext {
 
             LOG.debug("update schema. schemaName=" + schemaName);
             newSchemaNames.add(schemaName);
+            updateLogger.setDefaultSchema(schemaName);
             if (oldSchemas.containsKey(schemaName)) {
                 // update schema
                 MSchema mSchema = oldSchemas.get(schemaName);
@@ -393,7 +405,8 @@ public final class JDOMetaContext implements MetaContext {
                 // add new schema
                 MSchema mSchema = new MSchema(schemaName, mDataSource);
                 pm.makePersistent(mSchema);
-                addTablesOfSchema(rawSchema, mSchema);
+                updateLogger.create(schemaName);
+                addTablesOfSchema(rawSchema, mSchema, updateLogger);
             }
         }
 
@@ -402,7 +415,15 @@ public final class JDOMetaContext implements MetaContext {
             oldSchemaNames.removeAll(newSchemaNames);
             for (String name : oldSchemaNames) {
                 LOG.debug("delete schema. schemaName=" + name);
+
+                MSchema mSchema = oldSchemas.get(name);
+
+                for (MetaTable table : mSchema.getTables())
+                    updateLogger.delete(name, table.getName());
+
                 pm.deletePersistent(oldSchemas.get(name));
+
+                updateLogger.delete(name);
             }
         }
     }
@@ -412,22 +433,37 @@ public final class JDOMetaContext implements MetaContext {
         MDataSource mDataSource = getMDataSource(dataSourceName, false);
 
         Transaction tx = pm.currentTransaction();
+        Connection conn = null;
         try {
+            updateLogger = updateLoggerFactory.createUpdateLogger(dataSourceName);
+
             String connectionString = mDataSource.getConnectionString();
-            Connection conn = DriverManager.getConnection(connectionString);
+            conn = DriverManager.getConnection(connectionString);
             DataContext dc = DataContextFactory.createJdbcDataContext(conn);
 
+            updateLogger.begin();
             tx.begin();
 
             LOG.debug("update data source. dataSourceName=" + dataSourceName);
             updateJdbcDataSourceInternal(dc, mDataSource, schemaRegex, tableRegex);
 
             tx.commit();
+            updateLogger.end();
         } catch (Exception e) {
             throw new MetaException("failed to update data source '" + dataSourceName + "' - " + e.getMessage(), e);
         } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException ignore) { }
+            }
             if (tx.isActive())
                 tx.rollback();
+
+            if (updateLogger != null) {
+                updateLogger.close();
+                updateLogger = null;
+            }
         }
 
         return mDataSource;

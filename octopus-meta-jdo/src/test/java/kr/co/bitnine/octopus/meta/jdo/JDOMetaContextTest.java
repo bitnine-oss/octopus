@@ -3,6 +3,8 @@ package kr.co.bitnine.octopus.meta.jdo;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.logs.StdoutUpdateLoggerFactory;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
@@ -54,6 +56,8 @@ public class JDOMetaContextTest
         memDbData.stop();
     }
 
+    private final UpdateLoggerFactory ulf = new StdoutUpdateLoggerFactory();
+
     private MemoryDatabase memDbMeta;
     private MetaStore metaStore;
     private MetaContext metaContext;
@@ -70,7 +74,7 @@ public class JDOMetaContextTest
         conf.setProperty("metastore.jdo.connection.URL", memDbMeta.connectionString);
         conf.setProperty("metastore.jdo.connection.username", "");
         conf.setProperty("metastore.jdo.connection.password", "");
-        metaStore.start(conf);
+        metaStore.start(conf, ulf);
 
         metaContext = metaStore.getMetaContext();
         metaContext.addJdbcDataSource(MemoryDatabase.DRIVER_NAME, memDbData.connectionString, memDbData.name);

@@ -22,6 +22,8 @@ import kr.co.bitnine.octopus.frame.SessionServer;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactoryImpl;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.util.StringUtils;
 
@@ -44,7 +46,9 @@ public final class OctopusMaster extends CompositeService {
     protected void serviceInit(Configuration conf) throws Exception {
         MetaStore metaStore = MetaStores.newInstance(
                 conf.get(OctopusConfiguration.METASTORE_CLASS));
-        MetaStoreService metaStoreService = new MetaStoreService(metaStore);
+        UpdateLoggerFactory updateLoggerFactory = new UpdateLoggerFactoryImpl();
+        MetaStoreService metaStoreService =
+                new MetaStoreService(metaStore, updateLoggerFactory);
         addService(metaStoreService);
 
         ConnectionManager connectionManager = new ConnectionManager(metaStore);

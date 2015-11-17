@@ -12,23 +12,22 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta;
+package kr.co.bitnine.octopus.meta.logs;
 
-import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
+public interface UpdateLogger {
+    void begin();
 
-import java.util.Properties;
+    void setDefaultSchema(String schemaName);
 
-/**
- * Octopus MetaStore
- * <p/>
- * Octopus MetaStore has data source information; schemas, tables and columns.
- * It should support fast search on the information.
- */
-public interface MetaStore {
-    void start(Properties conf, UpdateLoggerFactory updateLoggerFactory)
-            throws MetaException;
+    void create(String schemaName);
 
-    void stop();
+    void create(String schemaName, String tableName);
 
-    MetaContext getMetaContext();
+    void delete(String schemaName);
+
+    void delete(String schemaName, String tableName);
+
+    void end();
+
+    void close();
 }

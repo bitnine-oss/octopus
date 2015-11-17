@@ -19,6 +19,7 @@ import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.meta.MetaStoreService;
 import kr.co.bitnine.octopus.meta.MetaStores;
+import kr.co.bitnine.octopus.meta.logs.StdoutUpdateLoggerFactory;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.schema.SchemaManager;
@@ -75,7 +76,8 @@ public class SessionServerTest {
         conf.set("metastore.jdo.connection.password", "");
 
         MetaStore metaStore = MetaStores.newInstance(conf.get("metastore.class"));
-        metaStoreService = new MetaStoreService(metaStore);
+        metaStoreService = new MetaStoreService(metaStore,
+                new StdoutUpdateLoggerFactory());
         metaStoreService.init(conf);
         metaStoreService.start();
 

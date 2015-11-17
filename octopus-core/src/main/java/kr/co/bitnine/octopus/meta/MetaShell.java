@@ -15,6 +15,8 @@
 package kr.co.bitnine.octopus.meta;
 
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactoryImpl;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 
@@ -35,7 +37,8 @@ public final class MetaShell {
         Properties props = new Properties();
         for (Map.Entry e : conf)
             props.put(e.getKey(), e.getValue());
-        metaStore.start(props);
+        UpdateLoggerFactory updateLoggerFactory = new UpdateLoggerFactoryImpl();
+        metaStore.start(props, updateLoggerFactory);
     }
 
     private void process(String[] args) throws MetaException {

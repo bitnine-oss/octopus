@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.meta;
 
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -27,11 +28,14 @@ public class MetaStoreService extends AbstractService {
 
     private final Properties props = new Properties();
     private final MetaStore metaStore;
+    private final UpdateLoggerFactory updateLoggerFactory;
 
-    public MetaStoreService(MetaStore metaStore) {
+    public MetaStoreService(MetaStore metaStore,
+                            UpdateLoggerFactory updateLoggerFactory) {
         super(metaStore.getClass().getName());
 
         this.metaStore = metaStore;
+        this.updateLoggerFactory = updateLoggerFactory;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class MetaStoreService extends AbstractService {
     protected final void serviceStart() throws Exception {
         LOG.info("start service - " + getName());
 
-        metaStore.start(props);
+        metaStore.start(props, updateLoggerFactory);
         MetaStores.initialize(metaStore);
 
         super.serviceStart();
