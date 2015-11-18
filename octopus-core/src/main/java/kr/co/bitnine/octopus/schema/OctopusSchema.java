@@ -21,20 +21,18 @@ import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 
 import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-public final class OctopusSchema extends AbstractSchema {
+public class OctopusSchema extends AbstractSchema {
+    private static final Log LOG = LogFactory.getLog(OctopusSchema.class);
+
     private final String name;
-    private final ImmutableMap<String, Table> tableMap;
     private final OctopusDataSource dataSource;
+    protected ImmutableMap<String, Table> tableMap;
 
     public OctopusSchema(MetaSchema metaSchema, OctopusDataSource dataSource) {
         name = metaSchema.getName();
-
-        ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
-        for (MetaTable metaTable : metaSchema.getTables())
-            builder.put(metaTable.getName(), new OctopusTable(metaTable, this));
-        tableMap = builder.build();
-
         this.dataSource = dataSource;
     }
 
@@ -49,6 +47,7 @@ public final class OctopusSchema extends AbstractSchema {
 
     @Override
     protected Map<String, Table> getTableMap() {
+        LOG.debug("OctopusSchema getTableMap called. tableMapSize: " + tableMap.size());
         return tableMap;
     }
 

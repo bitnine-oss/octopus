@@ -16,23 +16,27 @@ package kr.co.bitnine.octopus.schema;
 
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
+import org.apache.calcite.adapter.java.AbstractQueryableTable;
+import org.apache.calcite.linq4j.QueryProvider;
+import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.Schema;
-import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class OctopusTable extends AbstractTable {
-    private final String name;
+public class OctopusTable extends AbstractQueryableTable {
     private Schema.TableType tableType;
-    private final RelProtoDataType protoRowType;
-    private final OctopusSchema schema;
+    protected RelProtoDataType protoRowType;
+    protected final OctopusSchema schema;
+    protected final String name;
 
     public OctopusTable(MetaTable metaTable, OctopusSchema schema) {
+        super(Object[].class);
         name = metaTable.getName();
 
         try {
@@ -75,5 +79,10 @@ public final class OctopusTable extends AbstractTable {
 
     public OctopusSchema getSchema() {
         return schema;
+    }
+
+    @Override
+    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
+        return null;
     }
 }
