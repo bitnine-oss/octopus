@@ -42,24 +42,28 @@ public final class UpdateLoggerImpl implements UpdateLogger {
 
     @Override
     public void create(String schemaName) {
-        writer.println("CREATE SCHEMA \"" + schemaName + '"');
+        writer.println("CREATE SCHEMA \"" + dataSourceName
+                + "\".\"" + schemaName + '"');
     }
 
     @Override
     public void create(String schemaName, String tableName) {
         String s = schemaName == null ? defaultSchemaName : schemaName;
-        writer.println("CREATE TABLE \"" + s + "\".\"" + tableName + '"');
+        writer.println("CREATE TABLE \"" + dataSourceName
+                + "\".\"" + s + "\".\"" + tableName + '"');
     }
 
     @Override
     public void delete(String schemaName) {
-        writer.println("DELETE SCHEMA \"" + schemaName + '"');
+        writer.println("DELETE SCHEMA \"" + dataSourceName
+                + "\".\"" + schemaName + '"');
     }
 
     @Override
     public void delete(String schemaName, String tableName) {
         String s = schemaName == null ? defaultSchemaName : schemaName;
-        writer.println("DELETE TABLE \"" + s + "\".\"" + tableName + '"');
+        writer.println("DELETE TABLE \"" + dataSourceName
+                + "\".\"" + s + "\".\"" + tableName + '"');
     }
 
     @Override

@@ -36,26 +36,28 @@ public final class StdoutUpdateLoggerFactory implements UpdateLoggerFactory {
 
             @Override
             public void create(String schemaName) {
-                System.out.println("CREATE SCHEMA \"" + schemaName + '"');
+                System.out.println("CREATE SCHEMA \"" + dataSourceName
+                        + "\".\"" + schemaName + '"');
             }
 
             @Override
             public void create(String schemaName, String tableName) {
                 String s = schemaName == null ? defaultSchemaName : schemaName;
-                System.out.println("CREATE TABLE \"" + s
-                        + "\".\"" + tableName + '"');
+                System.out.println("CREATE TABLE \"" + dataSourceName
+                        + "\".\"" + s + "\".\"" + tableName + '"');
             }
 
             @Override
             public void delete(String schemaName) {
-                System.out.println("DELETE SCHEMA \"" + schemaName + '"');
+                System.out.println("DELETE SCHEMA \"" + dataSourceName
+                        + "\".\"" + schemaName + '"');
             }
 
             @Override
             public void delete(String schemaName, String tableName) {
                 String s = schemaName == null ? defaultSchemaName : schemaName;
-                System.out.println("DELETE TABLE \"" + s
-                        + "\".\"" + tableName + '"');
+                System.out.println("DELETE TABLE \"" + dataSourceName
+                        + "\".\"" + s + "\".\"" + tableName + '"');
             }
 
             @Override
