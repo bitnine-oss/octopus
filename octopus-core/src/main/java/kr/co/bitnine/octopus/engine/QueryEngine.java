@@ -314,8 +314,15 @@ public final class QueryEngine extends AbstractQueryProcessor {
         }
 
         LOG.info("create portal '" + portalName + "' for by-pass (session=" + Session.currentSession().getId() + ')');
-        return new CursorByPass(cStmt, portalName, paramFormats, paramValues,
-                resultFormats, dataSourceName, connectionString);
+        Portal p;
+        if (connectionString.startsWith("jdbc:hive2:"))
+            p = new CursorHive(cStmt, portalName, paramFormats, paramValues,
+                    resultFormats, dataSourceName);
+        else {
+            p = new CursorByPass(cStmt, portalName, paramFormats, paramValues,
+                    resultFormats, dataSourceName);
+        }
+        return p;
     }
 
     private List<String> getDatasourceNames(SqlNode query) {

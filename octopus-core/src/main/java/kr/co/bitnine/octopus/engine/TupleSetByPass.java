@@ -32,15 +32,15 @@ import java.sql.SQLException;
 public final class TupleSetByPass implements TupleSet {
     private static final Log LOG = LogFactory.getLog(TupleSetByPass.class);
 
-    private final CursorByPass cursorByPass;
+    private final Portal portal;
     private final ResultSet resultSet;
     private final TupleDesc tupDesc;
 
     private int fetchSize;
     private int fetchCount;
 
-    TupleSetByPass(CursorByPass cursorByPass, ResultSet resultSet, TupleDesc tupDesc) {
-        this.cursorByPass = cursorByPass;
+    TupleSetByPass(Portal portal, ResultSet resultSet, TupleDesc tupDesc) {
+        this.portal = portal;
         this.resultSet = resultSet;
         this.tupDesc = tupDesc;
 
@@ -60,7 +60,7 @@ public final class TupleSetByPass implements TupleSet {
 
         try {
             if (!resultSet.next()) {
-                cursorByPass.setState(Portal.State.DONE);
+                portal.setState(Portal.State.DONE);
                 return null;
             }
 
