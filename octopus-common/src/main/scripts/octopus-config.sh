@@ -108,3 +108,4 @@ fi
 OCTOPUS_OPTS="$OCTOPUS_OPTS -Dlog4j.configuration=$log4jprops"
 OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.log.dir=$OCTOPUS_LOG_DIR"
 OCTOPUS_OPTS="$OCTOPUS_OPTS -Doctopus.log.file=$OCTOPUS_LOG_FILE"
+OCTOPUS_OPTS="$OCTOPUS_OPTS -Dmeta.update.log.dir=$OCTOPUS_LOG_DIR"

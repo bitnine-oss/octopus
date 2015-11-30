@@ -36,6 +36,11 @@ public class QueryEngineTest {
     private static MetaContext metaContext;
     private static QueryEngine queryEngine;
 
+/*
+ * Temporarily disable these test cases.
+ * Currently, to execute query, session and privilege information must be needed.
+ * TODO: refactor QueryEngine to remove such dependencies
+ *
     @BeforeClass
     public static void setUpClass() throws Exception {
         metaMemDb = new MemoryDatabase("META");
@@ -83,11 +88,7 @@ public class QueryEngineTest {
         dataMemDb.stop();
         metaMemDb.stop();
     }
-/*
- * Temporarily disable these test cases.
- * Currently, to execute query, session and privilege information must be needed.
- * TODO: refactor QueryEngine to remove such dependencies
- *
+
     @Test
     public void testQuery() throws Exception
     {

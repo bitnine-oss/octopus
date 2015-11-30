@@ -17,6 +17,7 @@ package kr.co.bitnine.octopus.meta.jdo;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.MetaStore;
+import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,9 +29,11 @@ public final class JDOMetaStore implements MetaStore {
     private static final Log LOG = LogFactory.getLog(JDOMetaStore.class);
 
     private static PersistenceManagerFactory pmf;
+    private static UpdateLoggerFactory ulf;
 
     @Override
-    public void start(Properties conf) throws MetaException {
+    public void start(Properties conf, UpdateLoggerFactory updateLoggerFactory)
+            throws MetaException {
         Properties props = new Properties();
         props.setProperty("javax.jdo.PersistenceManagerFactoryClass", "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
         props.setProperty("datanucleus.ConnectionDriverName", conf.getProperty("metastore.jdo.connection.drivername"));
@@ -49,6 +52,7 @@ public final class JDOMetaStore implements MetaStore {
         }
 
         pmf = JDOHelper.getPersistenceManagerFactory(props);
+        JDOMetaStore.ulf = updateLoggerFactory;
     }
 
     @Override
@@ -58,6 +62,6 @@ public final class JDOMetaStore implements MetaStore {
 
     @Override
     public MetaContext getMetaContext() {
-        return new JDOMetaContext(pmf.getPersistenceManager());
+        return new JDOMetaContext(pmf.getPersistenceManager(), ulf);
     }
 }

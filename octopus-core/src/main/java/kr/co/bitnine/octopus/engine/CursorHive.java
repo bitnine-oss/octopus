@@ -14,7 +14,6 @@
 
 package kr.co.bitnine.octopus.engine;
 
-import java.sql.DriverManager;
 import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
@@ -33,7 +32,6 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -43,23 +41,21 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-public final class CursorByPass extends Portal {
-    private static final Log LOG = LogFactory.getLog(CursorByPass.class);
+public final class CursorHive extends Portal {
+    private static final Log LOG = LogFactory.getLog(CursorHive.class);
 
     private final int sessionId;
     private final String dataSourceName;
     private final String queryString;
-    private final String connectionString;
 
     private Connection conn;
     private PreparedStatement stmt;
     private TupleSetByPass tupSetByPass;
     private TupleDesc tupDesc;
 
-    public CursorByPass(CachedStatement cachedStatement, String name,
-                        FormatCode[] paramFormats, byte[][] paramValues,
-                        FormatCode[] resultFormats, String dataSourceName)
-            throws PostgresException {
+    public CursorHive(CachedStatement cachedStatement, String name,
+                      FormatCode[] paramFormats, byte[][] paramValues,
+                      FormatCode[] resultFormats, String dataSourceName) {
         super(cachedStatement, name, paramFormats, paramValues, resultFormats);
 
         sessionId = Session.currentSession().getId();
@@ -74,29 +70,36 @@ public final class CursorByPass extends Portal {
          *       To reduce number of copies, cache queryString.
          */
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
-        if (dataSourceName == null) {
-            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-            queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
-        }
-        else {
-            SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
-                @Override
-                public SqlNode visit(SqlIdentifier id) {
-                    return id.clone(id.getParserPosition());
-                }
-            });
-            TableNameTranslator.toDSN(cloned);
-            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-            if (connectionString.startsWith("jdbc:hive2:"))
-                dp = SqlDialect.DatabaseProduct.HIVE;
-            queryString = cloned.toSqlString(dp.getDialect()).getSql();
-        }
-        this.connectionString = connectionString;
+        SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
+            @Override
+            public SqlNode visit(SqlIdentifier id) {
+                return id.clone(id.getParserPosition());
+            }
+        });
+        TableNameTranslator.toDSN(cloned);
+        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.HIVE;
+        queryString = cloned.toSqlString(dp.getDialect()).getSql();
     }
 
-    private void prepareStatement() throws PostgresException {
-        if (getState() != State.NEW)
+    private void prepareConnection() throws PostgresException {
+        if (conn != null)
             return;
+
+        try {
+            conn = ConnectionManager.getConnection(dataSourceName);
+            LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+        } catch (SQLException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "failed to prepare by-pass query: " + e.getMessage());
+            throw new PostgresException(edata, e);
+        }
+    }
+
+    private void prepareStatement(int maxRows) throws PostgresException {
+        String modQuery = queryString;
+        if (maxRows > -1)
+            modQuery = queryString + " LIMIT " + maxRows;
 
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         PostgresType[] types = cStmt.getParamTypes();
@@ -104,16 +107,7 @@ public final class CursorByPass extends Portal {
         byte[][] values = getParamValues();
 
         try {
-            if (dataSourceName == null) { // complex query
-                conn = DriverManager.getConnection(connectionString);
-                LOG.info("Avatica JDBC connection for session(" + sessionId + ')');
-            }
-            else {
-                conn = ConnectionManager.getConnection(dataSourceName);
-                LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
-            }
-
-            stmt = conn.prepareStatement(queryString);
+            stmt = conn.prepareStatement(modQuery);
             if (types.length > 0) {
                 for (int i = 0; i < types.length; i++) {
                     if (values[i] == null) {
@@ -127,10 +121,6 @@ public final class CursorByPass extends Portal {
                             break;
                         case TIMESTAMP: // TODO
                         default:
-                            setState(State.FAILED);
-
-                            close();
-
                             PostgresErrorData edata = new PostgresErrorData(
                                     PostgresSeverity.ERROR,
                                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
@@ -182,13 +172,7 @@ public final class CursorByPass extends Portal {
                     }
                 }
             }
-
-            setState(State.READY);
         } catch (SQLException e) {
-            setState(State.FAILED);
-
-            close();
-
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to prepare by-pass query: " + e.getMessage());
@@ -196,22 +180,15 @@ public final class CursorByPass extends Portal {
         }
     }
 
-    private void execute(int numRows) throws PostgresException {
-        if (getState() == State.DONE || getState() == State.FAILED)
-            setState(State.READY);
+    @Override
+    public TupleDesc describe() throws PostgresException {
+        if (tupDesc != null)
+            return tupDesc;
 
-        if (getState() != State.READY)
-            return;
-
-        LOG.debug("execute CursorByPass (rows=" + numRows + ")");
-
+        prepareConnection();
+        prepareStatement(0);
         try {
-            // NOTE: some JDBC drivers do not ignore setFetchSize(0)
-            if (numRows > 0)
-                stmt.setFetchSize(numRows);
-
             ResultSet rs = stmt.executeQuery();
-
             ResultSetMetaData rsmd = rs.getMetaData();
             int colCnt = rsmd.getColumnCount();
             PostgresAttribute[] attrs = new PostgresAttribute[colCnt];
@@ -225,16 +202,13 @@ public final class CursorByPass extends Portal {
                     typeInfo = rsmd.getColumnDisplaySize(i + 1);
                 attrs[i] = new PostgresAttribute(colName, type, typeInfo);
             }
+            rs.close();
+            stmt.close();
+            stmt = null;
 
             tupDesc = new TupleDesc(attrs, getResultFormats());
-            tupSetByPass = new TupleSetByPass(this, rs, tupDesc);
-
-            setState(State.ACTIVE);
+            return tupDesc;
         } catch (SQLException e) {
-            setState(State.FAILED);
-
-            close();
-
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to execute by-pass query: " + e.getMessage());
@@ -242,23 +216,30 @@ public final class CursorByPass extends Portal {
         }
     }
 
-    @Override
-    public TupleDesc describe() throws PostgresException {
-        prepareStatement();
-        execute(0);
-
-        assert tupDesc != null;
-        return tupDesc;
-    }
-
+    // NOTE: run only 1 time
     @Override
     public TupleSet run(int numRows) throws PostgresException {
-        prepareStatement();
-        execute(numRows);
+        if (tupSetByPass != null)
+            return tupSetByPass;
 
-        tupSetByPass.resetFetchSize(numRows);
+        describe();
 
-        return tupSetByPass;
+        if (numRows > 0)
+            prepareStatement(numRows);
+        else
+            prepareStatement(-1);
+
+        try {
+            ResultSet rs = stmt.executeQuery();
+            tupSetByPass = new TupleSetByPass(this, rs, tupDesc);
+            setState(State.ACTIVE);
+            return tupSetByPass;
+        } catch (SQLException e) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "failed to execute by-pass query: " + e.getMessage());
+            throw new PostgresException(edata, e);
+        }
     }
 
     @Override

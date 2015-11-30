@@ -12,23 +12,12 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta;
+package kr.co.bitnine.octopus.meta.logs;
 
-import kr.co.bitnine.octopus.meta.logs.UpdateLoggerFactory;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 
-import java.util.Properties;
-
-/**
- * Octopus MetaStore
- * <p/>
- * Octopus MetaStore has data source information; schemas, tables and columns.
- * It should support fast search on the information.
- */
-public interface MetaStore {
-    void start(Properties conf, UpdateLoggerFactory updateLoggerFactory)
-            throws MetaException;
-
-    void stop();
-
-    MetaContext getMetaContext();
+public interface UpdateLoggerFactory {
+    UpdateLogger createUpdateLogger(String dataSourceName)
+            throws FileNotFoundException, UnsupportedEncodingException;
 }
