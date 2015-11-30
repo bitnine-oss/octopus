@@ -233,6 +233,8 @@ public final class JDOMetaContext implements MetaContext {
 
             LOG.debug("complete addJdbcDataSource");
             return mDataSource;
+        } catch (MetaException me) {
+            throw me;
         } catch (Exception e) {
             throw new MetaException("failed to add data source '" + name + "' - " + e.getMessage(), e);
         } finally {
@@ -275,12 +277,20 @@ public final class JDOMetaContext implements MetaContext {
         pm.makePersistent(mColumn);
     }
 
-    private void addColumnsOfTable(Table rawTable, MTable mTable) {
-        for (Column rawColumn : rawTable.getColumns())
+    private Column[] getRawTableColumns(Table rawTable) throws MetaException {
+        Column[] rawColumns = rawTable.getColumns();
+        if (rawColumns == null || rawColumns.length < 1)
+            throw new MetaException("table '" + rawTable.getName() + "' has no column");
+
+        return rawColumns;
+    }
+
+    private void addColumnsOfTable(Table rawTable, MTable mTable) throws MetaException {
+        for (Column rawColumn : getRawTableColumns(rawTable))
             addColumn(rawColumn, mTable);
     }
 
-    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema, UpdateLogger upLog) {
+    private void addTablesOfSchema(Schema rawSchema, MSchema mSchema, UpdateLogger upLog) throws MetaException {
         for (Table rawTable : rawSchema.getTables()) {
             String tableName = rawTable.getName();
             TableType tableType = rawTable.getType();
@@ -296,7 +306,7 @@ public final class JDOMetaContext implements MetaContext {
         }
     }
 
-    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) {
+    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) throws MetaException {
         for (Schema rawSchema : dc.getSchemas()) {
             String schemaName = rawSchema.getName();
             if (schemaName == null)
@@ -310,7 +320,7 @@ public final class JDOMetaContext implements MetaContext {
         }
     }
 
-    private void updateColumnsOfTable(Table rawTable, MTable mTable) {
+    private void updateColumnsOfTable(Table rawTable, MTable mTable) throws MetaException {
         Map<String, MColumn> oldColumns = new HashMap<>();
 
         for (MetaColumn col : mTable.getColumns())
@@ -319,7 +329,7 @@ public final class JDOMetaContext implements MetaContext {
         Set<String> oldColumnNames = new TreeSet<>(oldColumns.keySet());
         Set<String> newColumnNames = new TreeSet<>();
 
-        for (Column rawColumn : rawTable.getColumns()) {
+        for (Column rawColumn : getRawTableColumns(rawTable)) {
             String colName = rawColumn.getName();
 
             newColumnNames.add(colName);
@@ -335,7 +345,7 @@ public final class JDOMetaContext implements MetaContext {
             pm.deletePersistent(oldColumns.get(name));
     }
 
-    private void updateTablesOfSchema(Schema rawSchema, MSchema mSchema, final String tableRegex) {
+    private void updateTablesOfSchema(Schema rawSchema, MSchema mSchema, final String tableRegex) throws MetaException {
         Map<String, MTable> oldTables = new HashMap<>();
 
         for (MetaTable table : mSchema.getTables())
@@ -449,6 +459,8 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.commit();
             updateLogger.end();
+        } catch (MetaException me) {
+            throw me;
         } catch (Exception e) {
             throw new MetaException("failed to update data source '" + dataSourceName + "' - " + e.getMessage(), e);
         } finally {
