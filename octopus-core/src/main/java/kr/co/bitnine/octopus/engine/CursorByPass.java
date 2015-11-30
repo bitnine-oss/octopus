@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import java.sql.DriverManager;
 import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
@@ -32,6 +33,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
+import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -47,6 +49,7 @@ public final class CursorByPass extends Portal {
     private final int sessionId;
     private final String dataSourceName;
     private final String queryString;
+    private final String connectionString;
 
     private Connection conn;
     private PreparedStatement stmt;
@@ -72,17 +75,24 @@ public final class CursorByPass extends Portal {
          *       To reduce number of copies, cache queryString.
          */
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
-        SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
-            @Override
-            public SqlNode visit(SqlIdentifier id) {
-                return id.clone(id.getParserPosition());
-            }
-        });
-        TableNameTranslator.toDSN(cloned);
-        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-        if (connectionString.startsWith("jdbc:hive2:"))
-            dp = SqlDialect.DatabaseProduct.HIVE;
-        queryString = cloned.toSqlString(dp.getDialect()).getSql();
+        if (dataSourceName == null) {
+            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
+            queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
+        }
+        else {
+            SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
+                @Override
+                public SqlNode visit(SqlIdentifier id) {
+                    return id.clone(id.getParserPosition());
+                }
+            });
+            TableNameTranslator.toDSN(cloned);
+            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
+            if (connectionString.startsWith("jdbc:hive2:"))
+                dp = SqlDialect.DatabaseProduct.HIVE;
+            queryString = cloned.toSqlString(dp.getDialect()).getSql();
+        }
+        this.connectionString = connectionString;
     }
 
     private void prepareStatement() throws PostgresException {
@@ -95,8 +105,14 @@ public final class CursorByPass extends Portal {
         byte[][] values = getParamValues();
 
         try {
-            conn = ConnectionManager.getConnection(dataSourceName);
-            LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+            if (dataSourceName == null) { // complex query
+                conn = DriverManager.getConnection(connectionString);
+                LOG.info("Avatica JDBC connection for session(" + sessionId + ')');
+            }
+            else {
+                conn = ConnectionManager.getConnection(dataSourceName);
+                LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+            }
 
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {

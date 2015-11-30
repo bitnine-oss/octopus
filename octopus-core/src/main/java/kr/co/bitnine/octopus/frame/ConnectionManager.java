@@ -44,7 +44,7 @@ public final class ConnectionManager extends AbstractService {
     private PoolingDriver poolingDriver;
 
     public ConnectionManager(MetaStore metaStore) {
-        super(ConnectionManager.class.getSimpleName());
+        super(ConnectionManager.class.getName());
 
         this.metaStore = metaStore;
     }
@@ -54,6 +54,7 @@ public final class ConnectionManager extends AbstractService {
         LOG.info("initialize service - " + getName());
 
         Class.forName("org.apache.commons.dbcp2.PoolingDriver");
+        Class.forName("kr.co.bitnine.octopus.engine.calcite.Driver"); // FIXME:
         poolingDriver = (PoolingDriver) DriverManager.getDriver(DRIVER_PREFIX);
 
         super.serviceInit(conf);
@@ -77,7 +78,6 @@ public final class ConnectionManager extends AbstractService {
     protected void serviceStop() throws Exception {
         LOG.info("stop service - " + getName());
 
-        DriverManager.deregisterDriver(poolingDriver);
         for (String poolName : poolingDriver.getPoolNames())
             poolingDriver.closePool(poolName);
 

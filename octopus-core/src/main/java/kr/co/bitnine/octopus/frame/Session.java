@@ -732,6 +732,7 @@ public final class Session implements Runnable {
                 new OctopusException(edata).emitErrorReport();
             }
         } catch (PostgresException e) {
+            LOG.error(ExceptionUtils.getStackTrace(e));
             new OctopusException(e.getErrorData()).emitErrorReport();
         }
     }

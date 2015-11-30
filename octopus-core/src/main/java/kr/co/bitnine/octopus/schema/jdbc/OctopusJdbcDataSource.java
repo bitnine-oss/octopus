@@ -19,8 +19,6 @@ import javax.sql.DataSource;
 import kr.co.bitnine.octopus.meta.model.MetaDataSource;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
 import kr.co.bitnine.octopus.schema.OctopusDataSource;
-import org.apache.calcite.adapter.jdbc.JdbcConvention;
-import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -44,7 +42,7 @@ public class OctopusJdbcDataSource extends OctopusDataSource {
 
         /* TODO: what is this? */
         final Expression expression =
-                Schemas.subSchemaExpression(parentSchema, name, JdbcSchema.class);
+                Schemas.subSchemaExpression(parentSchema, name, OctopusJdbcSchema.class);
 
         this.dialect = createDialect(dataSource);
         this.convention = JdbcConvention.of(dialect, expression, metaDataSource.getName());

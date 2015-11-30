@@ -24,9 +24,14 @@ import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import kr.co.bitnine.octopus.util.NetUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -41,12 +46,20 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Properties;
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestWatcher;
+import org.junit.rules.TestWatchman;
+import org.junit.runner.Description;
+import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SessionServerTest {
+    private static final Log LOG = LogFactory.getLog(SchemaManager.class);
+
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
     private static MetaStoreService metaStoreService;
@@ -57,10 +70,26 @@ public class SessionServerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            LOG.info("start JUnit test: " + description.getDisplayName());
+        }
+
+        @Override
+        protected void finished(Description description) {
+            LOG.info("finished. JUnit test: " + description.getDisplayName());
+        }
+    };
 
     @BeforeClass
     public static void setUpClass() throws Exception {
         Class.forName("kr.co.bitnine.octopus.Driver");
+    }
+
+    @Before
+    public void setUpDatabases() throws Exception {
         metaMemDb = new MemoryDatabase("meta");
         metaMemDb.start();
 
@@ -87,7 +116,7 @@ public class SessionServerTest {
         connectionManager.init(conf);
         connectionManager.start();
 
-        schemaManager = new SchemaManager(metaStore);
+        schemaManager = SchemaManager.getSingletonInstance(metaStore);
         schemaManager.init(conf);
         schemaManager.start();
 
@@ -106,10 +135,11 @@ public class SessionServerTest {
         conn.close();
     }
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
+    @After
+    public void tearDownClass() throws Exception {
         sessionServer.stop();
         schemaManager.stop();
+        connectionManager.stop();
         metaStoreService.stop();
 
         dataMemDb.stop();
@@ -476,7 +506,7 @@ public class SessionServerTest {
         MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
         newMemDb.start();
 
-        newMemDb.runExecuteUpdate("CREATE TABLE \"TMP\" (\"ID\" INTEGER, \"NAME\" STRING)");
+        newMemDb.runExecuteUpdate("CREATE TABLE \"TMP2\" (\"ID\" INTEGER, \"NAME\" STRING)");
 
         Connection conn = getConnection("octopus", "bitnine");
         Statement stmt = conn.createStatement();
@@ -488,13 +518,12 @@ public class SessionServerTest {
         ResultSet rs = stmt.executeQuery(
                 "SELECT \"EM\".\"id\", \"EM\".\"name\" " +
                         "FROM \"employee\" \"EM\", " +
-                        "\"DATA2\".\"__DEFAULT\".\"TMP\" \"TM\" " +
+                        "\"DATA2\".\"__DEFAULT\".\"TMP2\" \"TM\" " +
                         "WHERE \"EM\".\"id\" = \"TM\".\"ID\"");
         rs.close();
         stmt.close();
         conn.close();
         newMemDb.stop();
-        schemaManager.resetDataSourcePool();
     }
 
     @Test

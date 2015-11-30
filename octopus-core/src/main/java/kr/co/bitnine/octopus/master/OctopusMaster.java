@@ -50,7 +50,7 @@ public final class OctopusMaster extends CompositeService {
         ConnectionManager connectionManager = new ConnectionManager(metaStore);
         addService(connectionManager);
 
-        SchemaManager schemaManager = new SchemaManager(metaStore);
+        SchemaManager schemaManager = SchemaManager.getSingletonInstance(metaStore);
         addService(schemaManager);
 
         SessionFactory sessFactory = new SessionFactoryImpl(

@@ -42,7 +42,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.util.ImmutableNullableList;
 import org.apache.calcite.util.IntList;
 import org.apache.calcite.util.Pair;
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 /**
  * Utilities for the JDBC provider.
@@ -228,11 +228,25 @@ public final class JdbcUtils {
        There is no synchronization between closeAll() and get().
      */
     public void closeAll() throws SQLException {
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("Cache size: " + cache.size());
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
       cache.asMap();
       for (BasicDataSource datasource : cache.asMap().values()) {
           datasource.close();
       }
-        cache.invalidateAll();
+      cache.invalidateAll();
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("Cache size: " + cache.size());
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
+        System.out.println("*******************************************************");
     }
   }
 }

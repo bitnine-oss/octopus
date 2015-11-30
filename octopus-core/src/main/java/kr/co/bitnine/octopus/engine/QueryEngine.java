@@ -303,30 +303,39 @@ public final class QueryEngine extends AbstractQueryProcessor {
         SqlNode validatedQuery = cStmt.getValidatedQuery();
 
         List<String> dsNames = getDatasourceNames(validatedQuery);
-        if (dsNames.size() > 1) {   // by-pass
+
+        String connectionString = null;
+        String dataSourceName = null;
+
+        if (dsNames.size() > 1) { // complex query: by-pass to Calcite
+            LOG.debug("complex query: " + validatedQuery.toString());
+            connectionString = "jdbc:octopus-calcite:";
+            /*
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     PostgresSQLState.FEATURE_NOT_SUPPORTED,
                     "only by-pass query is supported");
             throw new PostgresException(edata);
+            */
+        }
+        else { // by-pass
+            if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
+                checkSelectPrivilegeThrow(validatedQuery);
+
+            LOG.debug("by-pass query: " + validatedQuery.toString());
+
+            dataSourceName = dsNames.get(0);
+            try {
+                MetaDataSource dataSource = metaContext.getDataSource(dataSourceName);
+                connectionString = dataSource.getConnectionString();
+            } catch (MetaException e) {
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        "failed to get DataSource");
+                throw new PostgresException(edata, e);
+            }
         }
 
-        if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
-            checkSelectPrivilegeThrow(validatedQuery);
-
-        LOG.debug("by-pass query: " + validatedQuery.toString());
-
-        String dataSourceName = dsNames.get(0);
-        String connectionString;
-        try {
-            MetaDataSource dataSource = metaContext.getDataSource(dataSourceName);
-            connectionString = dataSource.getConnectionString();
-        } catch (MetaException e) {
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.ERROR,
-                    "failed to get DataSource");
-            throw new PostgresException(edata, e);
-        }
 
         LOG.info("create portal '" + portalName + "' for by-pass (session=" + Session.currentSession().getId() + ')');
         return new CursorByPass(cStmt, portalName, paramFormats, paramValues,

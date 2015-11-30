@@ -18,7 +18,6 @@ package kr.co.bitnine.octopus.schema.jdbc;
 
 import java.util.Collections;
 import java.util.List;
-import org.apache.calcite.adapter.jdbc.JdbcConvention;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
