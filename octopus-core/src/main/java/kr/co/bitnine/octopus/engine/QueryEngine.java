@@ -61,7 +61,6 @@ import kr.co.bitnine.octopus.sql.TupleSetSql;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlExplainLevel;
@@ -310,13 +309,6 @@ public final class QueryEngine extends AbstractQueryProcessor {
         if (dsNames.size() > 1) { // complex query: by-pass to Calcite
             LOG.debug("complex query: " + validatedQuery.toString());
             connectionString = "jdbc:octopus-calcite:";
-            /*
-            PostgresErrorData edata = new PostgresErrorData(
-                    PostgresSeverity.ERROR,
-                    PostgresSQLState.FEATURE_NOT_SUPPORTED,
-                    "only by-pass query is supported");
-            throw new PostgresException(edata);
-            */
         }
         else { // by-pass
             if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))

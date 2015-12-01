@@ -49,7 +49,6 @@ public final class CursorByPass extends Portal {
     private final int sessionId;
     private final String dataSourceName;
     private final String queryString;
-    private final String connectionString;
 
     private Connection conn;
     private PreparedStatement stmt;
@@ -75,6 +74,9 @@ public final class CursorByPass extends Portal {
          */
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         if (dataSourceName == null) {
+            /* Complex queries are processed by Calcite via Avatica JDBC driver.
+             * So they are not converted to DSN form.
+             */
             SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
             queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
         }
@@ -87,11 +89,8 @@ public final class CursorByPass extends Portal {
             });
             TableNameTranslator.toDSN(cloned);
             SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-            if (connectionString.startsWith("jdbc:hive2:"))
-                dp = SqlDialect.DatabaseProduct.HIVE;
             queryString = cloned.toSqlString(dp.getDialect()).getSql();
         }
-        this.connectionString = connectionString;
     }
 
     private void prepareStatement() throws PostgresException {
@@ -105,7 +104,7 @@ public final class CursorByPass extends Portal {
 
         try {
             if (dataSourceName == null) { // complex query
-                conn = DriverManager.getConnection(connectionString);
+                conn = DriverManager.getConnection("jdbc:octopus-calcite:");
                 LOG.info("Avatica JDBC connection for session(" + sessionId + ')');
             }
             else {
