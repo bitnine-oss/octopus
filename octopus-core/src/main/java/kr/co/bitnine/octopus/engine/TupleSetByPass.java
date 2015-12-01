@@ -81,6 +81,9 @@ public final class TupleSetByPass implements TupleSet {
                 case FLOAT8:
                     datum = resultSet.getDouble(i + 1);
                     break;
+                case NUMERIC:
+                    datum = resultSet.getBigDecimal(i + 1);
+                    break;
                 case VARCHAR:
                     datum = resultSet.getString(i + 1);
                     break;

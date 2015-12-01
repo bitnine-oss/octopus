@@ -31,10 +31,10 @@ public final class TypeInfo {
         JDBC_TO_POSTGRES.put(Types.BOOLEAN, PostgresType.BOOL);
         JDBC_TO_POSTGRES.put(Types.CHAR, PostgresType.CHAR);
         JDBC_TO_POSTGRES.put(Types.DATE, PostgresType.DATE);
+        JDBC_TO_POSTGRES.put(Types.DECIMAL, PostgresType.NUMERIC);
         JDBC_TO_POSTGRES.put(Types.DOUBLE, PostgresType.FLOAT8);
         JDBC_TO_POSTGRES.put(Types.FLOAT, PostgresType.FLOAT4);
         JDBC_TO_POSTGRES.put(Types.INTEGER, PostgresType.INT4);
-        JDBC_TO_POSTGRES.put(Types.NUMERIC, PostgresType.NUMERIC);
         JDBC_TO_POSTGRES.put(Types.REAL, PostgresType.FLOAT4);
         JDBC_TO_POSTGRES.put(Types.SMALLINT, PostgresType.INT2);
         JDBC_TO_POSTGRES.put(Types.TIME, PostgresType.TIME);
@@ -52,7 +52,7 @@ public final class TypeInfo {
         POSTGRES_TO_JDBC.put(PostgresType.INT2, Types.SMALLINT);
         POSTGRES_TO_JDBC.put(PostgresType.INT4, Types.INTEGER);
         POSTGRES_TO_JDBC.put(PostgresType.INT8, Types.BIGINT);
-        POSTGRES_TO_JDBC.put(PostgresType.NUMERIC, Types.NUMERIC);
+        POSTGRES_TO_JDBC.put(PostgresType.NUMERIC, Types.DECIMAL);
         POSTGRES_TO_JDBC.put(PostgresType.TIME, Types.TIME);
         POSTGRES_TO_JDBC.put(PostgresType.TIMESTAMP, Types.TIMESTAMP);
         POSTGRES_TO_JDBC.put(PostgresType.VARCHAR, Types.VARCHAR);

@@ -119,6 +119,7 @@ public final class CursorHive extends Portal {
                         case VARCHAR:
                             stmt.setNull(i + 1, TypeInfo.jdbcTypeOfPostgresType(types[i]));
                             break;
+                        case NUMERIC:   // TODO
                         case TIMESTAMP: // TODO
                         default:
                             PostgresErrorData edata = new PostgresErrorData(
@@ -162,6 +163,7 @@ public final class CursorHive extends Portal {
                         else
                             stmt.setString(i + 1, (String) io.recv(values[i]));
                         break;
+                    case NUMERIC:   // TODO
                     case TIMESTAMP: // TODO
                     default:
                         PostgresErrorData edata = new PostgresErrorData(

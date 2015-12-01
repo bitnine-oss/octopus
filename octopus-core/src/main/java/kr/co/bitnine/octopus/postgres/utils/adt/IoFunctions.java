@@ -28,6 +28,7 @@ public final class IoFunctions {
         TYPE_TO_IO.put(PostgresType.FLOAT4, new IoFloat4());
         TYPE_TO_IO.put(PostgresType.FLOAT8, new IoFloat8());
         TYPE_TO_IO.put(PostgresType.VARCHAR, new IoVarchar());
+        TYPE_TO_IO.put(PostgresType.NUMERIC, new IoNumeric());
         TYPE_TO_IO.put(PostgresType.TIMESTAMP, new IoTimestamp());
     }
 
