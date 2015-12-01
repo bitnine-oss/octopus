@@ -87,6 +87,9 @@ public final class TupleSetByPass implements TupleSet {
                 case VARCHAR:
                     datum = resultSet.getString(i + 1);
                     break;
+                case DATE:
+                    datum = resultSet.getDate(i + 1);
+                    break;
                 case TIMESTAMP:
                     datum = resultSet.getTimestamp(i + 1);
                     break;

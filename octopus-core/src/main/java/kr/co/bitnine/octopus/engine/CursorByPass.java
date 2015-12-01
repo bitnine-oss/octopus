@@ -108,6 +108,7 @@ public final class CursorByPass extends Portal {
                             stmt.setNull(i + 1, TypeInfo.jdbcTypeOfPostgresType(types[i]));
                             break;
                         case NUMERIC:   // TODO
+                        case DATE:      // TODO
                         case TIMESTAMP: // TODO
                         default:
                             setState(State.FAILED);
@@ -156,6 +157,7 @@ public final class CursorByPass extends Portal {
                             stmt.setString(i + 1, (String) io.recv(values[i]));
                         break;
                     case NUMERIC:   // TODO
+                    case DATE:      // TODO
                     case TIMESTAMP: // TODO
                     default:
                         PostgresErrorData edata = new PostgresErrorData(
