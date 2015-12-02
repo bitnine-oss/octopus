@@ -528,7 +528,7 @@ public final class Session implements Runnable {
 
             sendCommandComplete(p.getCompletionTag());
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
     }
 
@@ -550,7 +550,7 @@ public final class Session implements Runnable {
         try {
             queryEngine.parse(queryString, stmtName, paramTypes);
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
 
         // ParseComplete
@@ -592,7 +592,7 @@ public final class Session implements Runnable {
         try {
             queryEngine.bind(stmtName, portalName, paramFormats, paramValues, resultFormats);
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
 
         // BindComplete
@@ -638,7 +638,7 @@ public final class Session implements Runnable {
                 p.close();
             }
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
     }
 
@@ -664,7 +664,7 @@ public final class Session implements Runnable {
                 new OctopusException(edata).emitErrorReport();
             }
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
 
         // CloseComplete
@@ -732,7 +732,7 @@ public final class Session implements Runnable {
                 new OctopusException(edata).emitErrorReport();
             }
         } catch (PostgresException e) {
-            new OctopusException(e.getErrorData()).emitErrorReport();
+            new OctopusException(e.getErrorData(), e).emitErrorReport();
         }
     }
 
