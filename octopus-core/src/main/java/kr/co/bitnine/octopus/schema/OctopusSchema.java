@@ -16,7 +16,6 @@ package kr.co.bitnine.octopus.schema;
 
 import com.google.common.collect.ImmutableMap;
 import kr.co.bitnine.octopus.meta.model.MetaSchema;
-import kr.co.bitnine.octopus.meta.model.MetaTable;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 
@@ -24,34 +23,38 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class OctopusSchema extends AbstractSchema {
+public abstract class OctopusSchema extends AbstractSchema {
     private static final Log LOG = LogFactory.getLog(OctopusSchema.class);
 
     private final String name;
     private final OctopusDataSource dataSource;
-    protected ImmutableMap<String, Table> tableMap;
+    private ImmutableMap<String, Table> tableMap;
 
     public OctopusSchema(MetaSchema metaSchema, OctopusDataSource dataSource) {
         name = metaSchema.getName();
         this.dataSource = dataSource;
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public boolean isMutable() {
+    public final boolean isMutable() {
         return false;
     }
 
     @Override
-    protected Map<String, Table> getTableMap() {
+    public final Map<String, Table> getTableMap() {
         LOG.debug("OctopusSchema getTableMap called. tableMapSize: " + tableMap.size());
         return tableMap;
     }
 
-    public OctopusDataSource getDataSource() {
+    public final void setTableMap(ImmutableMap<String, Table> tableMap) {
+        this.tableMap = tableMap;
+    }
+
+    public final OctopusDataSource getDataSource() {
         return dataSource;
     }
 }

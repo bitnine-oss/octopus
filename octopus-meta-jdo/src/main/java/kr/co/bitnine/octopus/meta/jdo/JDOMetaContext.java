@@ -49,7 +49,6 @@ import kr.co.bitnine.octopus.meta.model.MetaTable;
 import kr.co.bitnine.octopus.meta.model.MetaUser;
 import kr.co.bitnine.octopus.meta.privilege.ObjectPrivilege;
 import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
-import kr.co.bitnine.octopus.meta.result.ResultOfGetColumns;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -619,7 +619,7 @@ public final class Session implements Runnable {
              * If extended query protocol is ended abnormally, the state
              * of the portal must be set with FAILED.
              */
-            LOG.error("run portal '" + p.getName() + "'");
+            LOG.info("run portal '" + p.getName() + "'");
             try {
                 TupleSet ts = p.run(numRows);
                 if (ts != null) // ts == null if DDL
@@ -745,6 +745,7 @@ public final class Session implements Runnable {
         }
 
         metaContext.close();
+        queryEngine.closeAll();
 
         eventHandler.onClose(this);
     }

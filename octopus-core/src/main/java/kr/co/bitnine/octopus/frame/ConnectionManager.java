@@ -79,7 +79,7 @@ public final class ConnectionManager extends AbstractService {
         LOG.info("stop service - " + getName());
 
         for (String poolName : poolingDriver.getPoolNames())
-            poolingDriver.closePool(poolName);
+            closePool(poolName);
 
         super.serviceStop();
     }
@@ -119,7 +119,7 @@ public final class ConnectionManager extends AbstractService {
     }
 
     public void closePool(String dataSourceName) {
-        LOG.debug("close connection pool of the data source '" + dataSourceName + '"');
+        LOG.info("close connection pool of the data source '" + dataSourceName + '"');
 
         try {
             poolingDriver.closePool(dataSourceName);
@@ -130,7 +130,7 @@ public final class ConnectionManager extends AbstractService {
 
     public static Connection getConnection(String dataSourceName)
             throws SQLException {
-        LOG.debug("try to get a connection to the data source '" + dataSourceName + '"');
+        LOG.info("try to get a connection to the data source '" + dataSourceName + '"');
         return DriverManager.getConnection(DRIVER_PREFIX + dataSourceName);
     }
 }

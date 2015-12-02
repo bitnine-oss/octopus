@@ -22,28 +22,32 @@ import org.apache.commons.logging.LogFactory;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
-public class OctopusDataSource extends AbstractSchema {
+public abstract class OctopusDataSource extends AbstractSchema {
     private static final Log LOG = LogFactory.getLog(OctopusDataSource.class);
 
-    protected final String name;
-    protected ImmutableMap<String, Schema> subSchemaMap;
+    private final String name;
+    private ImmutableMap<String, Schema> subSchemaMap;
 
     public OctopusDataSource(MetaDataSource metaDataSource) {
         name = metaDataSource.getName();
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public boolean isMutable() {
+    public final boolean isMutable() {
         return false;
     }
 
     @Override
-    protected Map<String, Schema> getSubSchemaMap() {
+    public final Map<String, Schema> getSubSchemaMap() {
         LOG.debug("OctopusDataSource getSubSchemaMap called. subSchemaMapSize: " + subSchemaMap.size());
         return subSchemaMap;
+    }
+
+    public final void setSubSchemaMap(ImmutableMap<String, Schema> subSchemaMap) {
+        this.subSchemaMap = subSchemaMap;
     }
 }

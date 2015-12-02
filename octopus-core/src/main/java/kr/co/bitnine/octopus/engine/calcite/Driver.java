@@ -1,12 +1,9 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package kr.co.bitnine.octopus.engine.calcite;
 
 import java.util.logging.Level;
@@ -21,7 +19,6 @@ import java.util.logging.Logger;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.AvaticaConnection;
-import org.apache.calcite.avatica.AvaticaFactory;
 import org.apache.calcite.avatica.BuiltInConnectionProperty;
 import org.apache.calcite.avatica.ConnectionProperty;
 import org.apache.calcite.avatica.DriverVersion;
@@ -46,10 +43,10 @@ import java.util.Properties;
 /**
  * Calcite JDBC driver to be used inside Octopus.
  */
-public class Driver extends UnregisteredDriver {
+public final class Driver extends UnregisteredDriver {
     public static final String CONNECT_STRING_PREFIX = "jdbc:octopus-calcite:";
 
-    final Function0<CalcitePrepare> prepareFactory;
+    private final Function0<CalcitePrepare> prepareFactory;
 
     static {
         new Driver().register();
@@ -60,23 +57,29 @@ public class Driver extends UnregisteredDriver {
         this.prepareFactory = createPrepareFactory();
     }
 
+    public Function0<CalcitePrepare> getPrepareFactory() {
+        return prepareFactory;
+    }
+
     protected Function0<CalcitePrepare> createPrepareFactory() {
         return CalcitePrepare.DEFAULT_FACTORY;
     }
 
-    @Override protected String getConnectStringPrefix() {
+    @Override
+    protected String getConnectStringPrefix() {
         return CONNECT_STRING_PREFIX;
     }
 
-    @Override protected String getFactoryClassName(JdbcVersion jdbcVersion) {
+    @Override
+    protected String getFactoryClassName(JdbcVersion jdbcVersion) {
         switch (jdbcVersion) {
-            case JDBC_30:
-            case JDBC_40:
-                throw new IllegalArgumentException("JDBC version not supported: "
-                        + jdbcVersion);
-            case JDBC_41:
-            default:
-                return "kr.co.bitnine.octopus.engine.calcite.CalciteJdbc41Factory";
+        case JDBC_30:
+        case JDBC_40:
+            throw new IllegalArgumentException("JDBC version not supported: "
+                    + jdbcVersion);
+        case JDBC_41:
+        default:
+            return "kr.co.bitnine.octopus.engine.calcite.CalciteJdbc41Factory";
         }
     }
 
@@ -90,18 +93,22 @@ public class Driver extends UnregisteredDriver {
                 "unknown version");
     }
 
-    @Override protected Collection<ConnectionProperty> getConnectionProperties() {
+    @Override
+    protected Collection<ConnectionProperty> getConnectionProperties() {
         final List<ConnectionProperty> list = new ArrayList<ConnectionProperty>();
         Collections.addAll(list, BuiltInConnectionProperty.values());
         Collections.addAll(list, CalciteConnectionProperty.values());
         return list;
     }
 
-    @Override public Meta createMeta(AvaticaConnection connection) {
+    @Override
+    public Meta createMeta(AvaticaConnection connection) {
         return new CalciteMetaImpl((CalciteConnectionImpl) connection);
     }
 
-    /** Creates an internal connection. */
+    /**
+     * Creates an internal connection.
+     */
     CalciteConnection connect(CalciteSchema rootSchema,
                               JavaTypeFactory typeFactory) {
         /*
@@ -121,12 +128,14 @@ public class Driver extends UnregisteredDriver {
                         typeFactory);
     }
 
-    @Override protected Handler createHandler() {
+    @Override
+    protected Handler createHandler() {
         return new HandlerImpl() {
-            @Override public void onConnectionInit(AvaticaConnection connection_)
+            @Override
+            public void onConnectionInit(AvaticaConnection conn)
                     throws SQLException {
                 final CalciteConnectionImpl connection =
-                        (CalciteConnectionImpl) connection_;
+                        (CalciteConnectionImpl) conn;
                 super.onConnectionInit(connection);
                 CalciteSchema calciteSchema = CalciteSchema.from(SchemaManager.getSingletonInstance(null).getCurrentSchema());
                 connection.setRootSchema(calciteSchema);
@@ -140,5 +149,3 @@ public class Driver extends UnregisteredDriver {
         throw new RuntimeException(msg, e);
     }
 }
-
-// End Driver.java

@@ -1,12 +1,9 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package kr.co.bitnine.octopus.engine.calcite;
 
 import org.apache.calcite.DataContext;
@@ -83,31 +81,31 @@ import java.util.TimeZone;
 /**
  * Implementation of JDBC connection
  * in the Calcite engine.
- *
+ * <p/>
  * <p>Abstract to allow newer versions of JDBC to add methods.</p>
  */
 abstract class CalciteConnectionImpl
         extends AvaticaConnection
         implements CalciteConnection, QueryProvider {
-    public final JavaTypeFactory typeFactory;
+    private final JavaTypeFactory typeFactory;
 
-    CalciteSchema rootSchema;
-    final Function0<CalcitePrepare> prepareFactory;
-    final CalciteServer server = new CalciteServerImpl();
+    private CalciteSchema rootSchema;
+    private final Function0<CalcitePrepare> prepareFactory;
+    private final CalciteServer server = new CalciteServerImpl();
 
     // must be package-protected
     static final Trojan TROJAN = createTrojan();
 
     /**
      * Creates a CalciteConnectionImpl.
-     *
+     * <p/>
      * <p>Not public; method is called only from the driver.</p>
      *
-     * @param driver Driver
-     * @param factory Factory for JDBC objects
-     * @param url Server URL
-     * @param info Other connection properties
-     * @param rootSchema Root schema, or null
+     * @param driver      Driver
+     * @param factory     Factory for JDBC objects
+     * @param url         Server URL
+     * @param info        Other connection properties
+     * @param rootSchema  Root schema, or null
      * @param typeFactory Type factory, or null
      */
     protected CalciteConnectionImpl(Driver driver, AvaticaFactory factory,
@@ -115,7 +113,7 @@ abstract class CalciteConnectionImpl
                                     JavaTypeFactory typeFactory) {
         super(driver, factory, url, info);
         CalciteConnectionConfig cfg = new CalciteConnectionConfigImpl(info);
-        this.prepareFactory = driver.prepareFactory;
+        this.prepareFactory = driver.getPrepareFactory();
         if (typeFactory != null) {
             this.typeFactory = typeFactory;
         } else {
@@ -134,6 +132,14 @@ abstract class CalciteConnectionImpl
         this.properties.put(InternalProperty.QUOTING, cfg.quoting());
     }
 
+    public Function0<CalcitePrepare> getPrepareFactory() {
+        return prepareFactory;
+    }
+
+    public CalciteServer getServer() {
+        return server;
+    }
+
     CalciteMetaImpl meta() {
         return (CalciteMetaImpl) meta;
     }
@@ -142,8 +148,10 @@ abstract class CalciteConnectionImpl
         return new CalciteConnectionConfigImpl(info);
     }
 
-    /** Called after the constructor has completed and the model has been
-     * loaded. */
+    /**
+     * Called after the constructor has completed and the model has been
+     * loaded.
+     */
     void init() {
         final MaterializationService service = MaterializationService.instance();
         for (CalciteSchema.LatticeEntry e : Schemas.getLatticeEntries(rootSchema)) {
@@ -155,13 +163,14 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    @Override public <T> T unwrap(Class<T> iface) throws SQLException {
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
         if (iface == RelRunner.class) {
             return iface.cast(
                     new RelRunner() {
                         public PreparedStatement prepare(RelNode rel) {
                             try {
-                                return prepareStatement_(CalcitePrepare.Query.of(rel),
+                                return prepareStatementInternal(CalcitePrepare.Query.of(rel),
                                         ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
                                         getHoldability());
                             } catch (SQLException e) {
@@ -173,23 +182,25 @@ abstract class CalciteConnectionImpl
         return super.unwrap(iface);
     }
 
-    @Override public CalciteStatement createStatement(int resultSetType,
-                                                      int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+    @Override
+    public CalciteStatement createStatement(int resultSetType,
+                                            int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         return (CalciteStatement) super.createStatement(resultSetType,
                 resultSetConcurrency, resultSetHoldability);
     }
 
-    @Override public CalcitePreparedStatement prepareStatement(
+    @Override
+    public CalcitePreparedStatement prepareStatement(
             String sql,
             int resultSetType,
             int resultSetConcurrency,
             int resultSetHoldability) throws SQLException {
         final CalcitePrepare.Query<Object> query = CalcitePrepare.Query.of(sql);
-        return prepareStatement_(query, resultSetType, resultSetConcurrency,
+        return prepareStatementInternal(query, resultSetType, resultSetConcurrency,
                 resultSetHoldability);
     }
 
-    private CalcitePreparedStatement prepareStatement_(
+    private CalcitePreparedStatement prepareStatementInternal(
             CalcitePrepare.Query<?> query,
             int resultSetType,
             int resultSetConcurrency,
@@ -209,9 +220,8 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    <T> CalcitePrepare.CalciteSignature<T>
-    parseQuery(CalcitePrepare.Query<T> query,
-               CalcitePrepare.Context prepareContext, long maxRowCount) {
+    <T> CalcitePrepare.CalciteSignature<T> parseQuery(CalcitePrepare.Query<T> query,
+            CalcitePrepare.Context prepareContext, long maxRowCount) {
         CalcitePrepare.Dummy.push(prepareContext);
         try {
             final CalcitePrepare prepare = prepareFactory.apply();
@@ -223,6 +233,10 @@ abstract class CalciteConnectionImpl
     }
 
     // CalciteConnection methods
+
+    public CalciteSchema getCalciteRootSchema() {
+        return rootSchema;
+    }
 
     public SchemaPlus getRootSchema() {
         return rootSchema.plus();
@@ -306,9 +320,11 @@ abstract class CalciteConnectionImpl
         this.rootSchema = rootSchema;
     }
 
-    /** Implementation of Queryable. */
+    /**
+     * Implementation of Queryable.
+     */
     static class CalciteQueryable<T> extends BaseQueryable<T> {
-        public CalciteQueryable(CalciteConnection connection, Type elementType,
+        CalciteQueryable(CalciteConnection connection, Type elementType,
                                 Expression expression) {
             super(connection, elementType, expression);
         }
@@ -318,9 +334,11 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    /** Implementation of Server. */
+    /**
+     * Implementation of Server.
+     */
     private static class CalciteServerImpl implements CalciteServer {
-        final Map<Integer, CalciteServerStatement> statementMap = Maps.newHashMap();
+        private final Map<Integer, CalciteServerStatement> statementMap = Maps.newHashMap();
 
         public void removeStatement(Meta.StatementHandle h) {
             statementMap.remove(h.id);
@@ -337,21 +355,26 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    /** Schema that has no parents. */
+    /**
+     * Schema that has no parents.
+     */
     static class RootSchema extends AbstractSchema {
         RootSchema() {
             super();
         }
 
-        @Override public Expression getExpression(SchemaPlus parentSchema,
-                                                  String name) {
+        @Override
+        public Expression getExpression(SchemaPlus parentSchema,
+                                        String name) {
             return Expressions.call(
                     DataContext.ROOT,
                     BuiltInMethod.DATA_CONTEXT_GET_ROOT_SCHEMA.method);
         }
     }
 
-    /** Implementation of DataContext. */
+    /**
+     * Implementation of DataContext.
+     */
     static class DataContextImpl implements DataContext {
         private final ImmutableMap<Object, Object> map;
         private final CalciteSchema rootSchema;
@@ -430,11 +453,13 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    /** Implementation of Context. */
+    /**
+     * Implementation of Context.
+     */
     static class ContextImpl implements CalcitePrepare.Context {
         private final CalciteConnectionImpl connection;
 
-        public ContextImpl(CalciteConnectionImpl connection) {
+        ContextImpl(CalciteConnectionImpl connection) {
             this.connection = Preconditions.checkNotNull(connection);
         }
 
@@ -467,8 +492,10 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    /** Implementation of {@link DataContext} that has few variables and is
-     * {@link Serializable}. For Spark. */
+    /**
+     * Implementation of {@link DataContext} that has few variables and is
+     * {@link Serializable}. For Spark.
+     */
     private static class SlimDataContext implements DataContext, Serializable {
         public SchemaPlus getRootSchema() {
             return null;
@@ -487,14 +514,16 @@ abstract class CalciteConnectionImpl
         }
     }
 
-    /** Implementation of {@link CalciteServerStatement}. */
+    /**
+     * Implementation of {@link CalciteServerStatement}.
+     */
     static class CalciteServerStatementImpl
             implements CalciteServerStatement {
         private final CalciteConnectionImpl connection;
         private Iterator<Object> iterator;
         private Meta.Signature signature;
 
-        public CalciteServerStatementImpl(CalciteConnectionImpl connection) {
+        CalciteServerStatementImpl(CalciteConnectionImpl connection) {
             this.connection = Preconditions.checkNotNull(connection);
         }
 
@@ -518,11 +547,9 @@ abstract class CalciteConnectionImpl
             return iterator;
         }
 
-        public void setResultSet(Iterator<Object> iterator) {
-            this.iterator = iterator;
+        public void setResultSet(Iterator<Object> iter) {
+            this.iterator = iter;
         }
     }
 
 }
-
-// End CalciteConnectionImpl.java

@@ -100,7 +100,7 @@ limitations under the License.
         </plugin>
 
         <!-- reporting -->
-        <!-- plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>2.16</version>
@@ -111,7 +111,7 @@ limitations under the License.
               <version>6.10.1</version>
             </dependency>
           </dependencies>
-        </plugin -->
+        </plugin>
 
         <!-- tools -->
         <plugin>

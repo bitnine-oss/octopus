@@ -24,7 +24,6 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
 import kr.co.bitnine.octopus.schema.jdbc.JdbcUtils;
 import kr.co.bitnine.octopus.schema.jdbc.OctopusJdbcDataSource;
-import kr.co.bitnine.octopus.schema.jdbc.OctopusJdbcSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -48,7 +47,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class SchemaManager extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SchemaManager.class);
-    private static SchemaManager singletonInstance = null;
+    private static SchemaManager singletonInstance;
 
     private final MetaStore metaStore;
     private SchemaPlus rootSchema;
@@ -90,9 +89,11 @@ public final class SchemaManager extends AbstractService {
 
     @Override
     protected void serviceStop() throws Exception {
-        super.serviceStop();
+        LOG.info("stop service - " + getName());
         resetDataSourcePool();
         singletonInstance = null;
+
+        super.serviceStop();
     }
 
     public void resetDataSourcePool() throws Exception {

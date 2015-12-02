@@ -27,12 +27,12 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class OctopusJdbcDataSource extends OctopusDataSource {
+public final class OctopusJdbcDataSource extends OctopusDataSource {
     private static final Log LOG = LogFactory.getLog(OctopusJdbcDataSource.class);
 
-    public final SqlDialect dialect;
-    final JdbcConvention convention;
-    final DataSource dataSource;
+    private final SqlDialect dialect;
+    private final JdbcConvention convention;
+    private final DataSource dataSource;
 
     public OctopusJdbcDataSource(SchemaPlus parentSchema, MetaDataSource metaDataSource) {
         super(metaDataSource);
@@ -42,7 +42,7 @@ public class OctopusJdbcDataSource extends OctopusDataSource {
 
         /* TODO: what is this? */
         final Expression expression =
-                Schemas.subSchemaExpression(parentSchema, name, OctopusJdbcSchema.class);
+                Schemas.subSchemaExpression(parentSchema, getName(), OctopusJdbcSchema.class);
 
         this.dialect = createDialect(dataSource);
         this.convention = JdbcConvention.of(dialect, expression, metaDataSource.getName());
@@ -50,20 +50,32 @@ public class OctopusJdbcDataSource extends OctopusDataSource {
         ImmutableMap.Builder<String, Schema> builder = ImmutableMap.builder();
         for (MetaSchema metaSchema : metaDataSource.getSchemas())
             builder.put(metaSchema.getName(), new OctopusJdbcSchema(metaSchema, this));
-        subSchemaMap = builder.build();
+        setSubSchemaMap(builder.build());
     }
 
-    /** Creates a JDBC data source with the given specification. */
+    /**
+     * Creates a JDBC data source with the given specification.
+     */
     public static DataSource dataSource(String connectionString, String driverClassName) {
         return JdbcUtils.DataSourcePool.INSTANCE.get(connectionString, driverClassName);
     }
 
-    /** Returns a suitable SQL dialect for the given data source. */
+    /**
+     * Returns a suitable SQL dialect for the given data source.
+     */
     public static SqlDialect createDialect(DataSource dataSource) {
         return JdbcUtils.DialectPool.INSTANCE.get(dataSource);
     }
 
     public DataSource getDataSource() {
         return dataSource;
+    }
+
+    public SqlDialect getDialect() {
+        return dialect;
+    }
+
+    public JdbcConvention getConvention() {
+        return convention;
     }
 }

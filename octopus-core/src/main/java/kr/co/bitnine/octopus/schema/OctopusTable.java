@@ -29,11 +29,11 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class OctopusTable extends AbstractQueryableTable {
+public abstract class OctopusTable extends AbstractQueryableTable {
     private Schema.TableType tableType;
-    protected RelProtoDataType protoRowType;
-    protected final OctopusSchema schema;
-    protected final String name;
+    private RelProtoDataType protoRowType;
+    private final OctopusSchema schema;
+    private final String name;
 
     public OctopusTable(MetaTable metaTable, OctopusSchema schema) {
         super(Object[].class);
@@ -63,26 +63,28 @@ public class OctopusTable extends AbstractQueryableTable {
         this.schema = schema;
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public RelDataType getRowType(RelDataTypeFactory relDataTypeFactory) {
+    public final RelDataType getRowType(RelDataTypeFactory relDataTypeFactory) {
         return protoRowType.apply(relDataTypeFactory);
     }
 
     @Override
-    public Schema.TableType getJdbcTableType() {
+    public final Schema.TableType getJdbcTableType() {
         return tableType;
     }
 
-    public OctopusSchema getSchema() {
+    public final OctopusSchema getSchema() {
         return schema;
     }
 
-    @Override
-    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
-        return null;
+    public final RelProtoDataType getProtoRowType() {
+        return protoRowType;
     }
+
+    @Override
+    public abstract <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schemaPlus, String tableName);
 }

@@ -34,6 +34,6 @@ public class OctopusJdbcSchema extends OctopusSchema {
         ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
         for (MetaTable metaTable : metaSchema.getTables())
             builder.put(metaTable.getName(), new OctopusJdbcTable(metaTable, this));
-        tableMap = builder.build();
+        setTableMap(builder.build());
     }
 }

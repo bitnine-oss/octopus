@@ -33,7 +33,6 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -79,8 +78,7 @@ public final class CursorByPass extends Portal {
              */
             SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
             queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
-        }
-        else {
+        } else {
             SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
                 @Override
                 public SqlNode visit(SqlIdentifier id) {
@@ -106,8 +104,7 @@ public final class CursorByPass extends Portal {
             if (dataSourceName == null) { // complex query
                 conn = DriverManager.getConnection("jdbc:octopus-calcite:");
                 LOG.info("Avatica JDBC connection for session(" + sessionId + ')');
-            }
-            else {
+            } else {
                 conn = ConnectionManager.getConnection(dataSourceName);
                 LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
             }
@@ -217,7 +214,7 @@ public final class CursorByPass extends Portal {
             for (int i = 0; i < colCnt; i++) {
                 String colName = rsmd.getColumnName(i + 1);
                 int colType = rsmd.getColumnType(i + 1);
-                LOG.debug("JDBC type of column '" + colName + "' is " + colType);
+                LOG.info("JDBC type of column '" + colName + "' is " + colType);
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
                 int typeInfo = -1;
                 if (type == PostgresType.VARCHAR)

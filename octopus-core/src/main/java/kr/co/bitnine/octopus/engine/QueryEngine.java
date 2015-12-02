@@ -309,8 +309,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
         if (dsNames.size() > 1) { // complex query: by-pass to Calcite
             LOG.debug("complex query: " + validatedQuery.toString());
             connectionString = "jdbc:octopus-calcite:";
-        }
-        else { // by-pass
+        } else { // by-pass
             if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
                 checkSelectPrivilegeThrow(validatedQuery);
 

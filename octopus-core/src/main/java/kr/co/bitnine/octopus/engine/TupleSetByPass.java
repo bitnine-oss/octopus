@@ -64,6 +64,7 @@ public final class TupleSetByPass implements TupleSet {
                 return null;
             }
 
+
             PostgresAttribute[] attrs = tupDesc.getAttributes();
             Tuple t = new Tuple(attrs.length);
             for (int i = 0; i < attrs.length; i++) {

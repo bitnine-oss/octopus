@@ -1,12 +1,9 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,12 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package kr.co.bitnine.octopus.engine.calcite;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,319 +48,275 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.util.ImmutableIntList;
-import org.apache.calcite.util.Stacks;
 
 /**
  * API for a service that prepares statements for execution.
  */
 public interface CalcitePrepare {
-  Function0<org.apache.calcite.jdbc.CalcitePrepare> DEFAULT_FACTORY =
-      new Function0<org.apache.calcite.jdbc.CalcitePrepare>() {
-        public org.apache.calcite.jdbc.CalcitePrepare apply() {
-          return new CalcitePrepareImpl();
-        }
-      };
-  ThreadLocal<ArrayList<Context>> THREAD_CONTEXT_STACK =
-      new ThreadLocal<ArrayList<Context>>() {
-        @Override protected ArrayList<Context> initialValue() {
-          return new ArrayList<>();
-        }
-      };
+    Function0<org.apache.calcite.jdbc.CalcitePrepare> DEFAULT_FACTORY =
+            new Function0<org.apache.calcite.jdbc.CalcitePrepare>() {
+                public org.apache.calcite.jdbc.CalcitePrepare apply() {
+                    return new CalcitePrepareImpl();
+                }
+            };
+    ThreadLocal<ArrayList<Context>> THREAD_CONTEXT_STACK =
+            new ThreadLocal<ArrayList<Context>>() {
+                @Override
+                protected ArrayList<Context> initialValue() {
+                    return new ArrayList<>();
+                }
+            };
 
-  ParseResult parse(Context context, String sql);
+    ParseResult parse(Context context, String sql);
 
-  ConvertResult convert(Context context, String sql);
+    ConvertResult convert(Context context, String sql);
 
-  /** Executes a DDL statement.
-   *
-   * <p>The statement identified itself as DDL in the
-   * {@link org.apache.calcite.jdbc.CalcitePrepare.ParseResult#kind} field. */
-  void executeDdl(Context context, SqlNode node);
-
-  /** Analyzes a view.
-   *
-   * @param context Context
-   * @param sql View SQL
-   * @param fail Whether to fail (and throw a descriptive error message) if the
-   *             view is not modifiable
-   * @return Result of analyzing the view
-   */
-  AnalyzeViewResult analyzeView(Context context, String sql, boolean fail);
-
-  <T> CalciteSignature<T> prepareSql(
-          Context context,
-          Query<T> query,
-          Type elementType,
-          long maxRowCount);
-
-  <T> CalciteSignature<T> prepareQueryable(
-          Context context,
-          Queryable<T> queryable);
-
-  /** Context for preparing a statement. */
-  interface Context {
-    JavaTypeFactory getTypeFactory();
-
-    CalciteSchema getRootSchema();
-
-    List<String> getDefaultSchemaPath();
-
-    CalciteConnectionConfig config();
-
-    /** Returns the spark handler. Never null. */
-    SparkHandler spark();
-
-    DataContext getDataContext();
-  }
-
-  /** Callback to register Spark as the main engine. */
-  interface SparkHandler {
-    RelNode flattenTypes(RelOptPlanner planner, RelNode rootRel,
-                         boolean restructure);
-
-    void registerRules(RuleSetBuilder builder);
-
-    boolean enabled();
-
-    ArrayBindable compile(ClassDeclaration expr, String s);
-
-    Object sparkContext();
-
-    /** Allows Spark to declare the rules it needs. */
-    interface RuleSetBuilder {
-      void addRule(RelOptRule rule);
-      void removeRule(RelOptRule rule);
-    }
-  }
-
-  /** Namespace that allows us to define non-abstract methods inside an
-   * interface. */
-  class Dummy {
-    private static SparkHandler sparkHandler;
-
-    private Dummy() {}
-
-    /** Returns a spark handler. Returns a trivial handler, for which
-     * {@link SparkHandler#enabled()} returns {@code false}, if {@code enable}
-     * is {@code false} or if Spark is not on the class path. Never returns
-     * null. */
-    public static synchronized SparkHandler getSparkHandler(boolean enable) {
-      if (sparkHandler == null) {
-        sparkHandler = enable ? createHandler() : new TrivialSparkHandler();
-      }
-      return sparkHandler;
-    }
-
-    private static SparkHandler createHandler() {
-      try {
-        final Class<?> clazz =
-            Class.forName("org.apache.calcite.adapter.spark.SparkHandlerImpl");
-        Method method = clazz.getMethod("instance");
-        return (CalcitePrepare.SparkHandler) method.invoke(null);
-      } catch (ClassNotFoundException e) {
-        return new TrivialSparkHandler();
-      } catch (IllegalAccessException
-          | ClassCastException
-          | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public static void push(Context context) {
-      Stacks.push(THREAD_CONTEXT_STACK.get(), context);
-    }
-
-    public static Context peek() {
-      return Stacks.peek(THREAD_CONTEXT_STACK.get());
-    }
-
-    public static void pop(Context context) {
-      Stacks.pop(THREAD_CONTEXT_STACK.get(), context);
-    }
-
-    /** Implementation of {@link SparkHandler} that either does nothing or
-     * throws for each method. Use this if Spark is not installed. */
-    private static class TrivialSparkHandler implements SparkHandler {
-      public RelNode flattenTypes(RelOptPlanner planner, RelNode rootRel,
-                                  boolean restructure) {
-        return rootRel;
-      }
-
-      public void registerRules(RuleSetBuilder builder) {
-      }
-
-      public boolean enabled() {
-        return false;
-      }
-
-      public ArrayBindable compile(ClassDeclaration expr, String s) {
-        throw new UnsupportedOperationException();
-      }
-
-      public Object sparkContext() {
-        throw new UnsupportedOperationException();
-      }
-    }
-  }
-
-  /** The result of parsing and validating a SQL query. */
-  class ParseResult {
-    public final CalcitePrepareImpl prepare;
-    public final String sql; // for debug
-    public final SqlNode sqlNode;
-    public final RelDataType rowType;
-    public final RelDataTypeFactory typeFactory;
-
-    public ParseResult(CalcitePrepareImpl prepare, SqlValidator validator,
-                       String sql,
-                       SqlNode sqlNode, RelDataType rowType) {
-      super();
-      this.prepare = prepare;
-      this.sql = sql;
-      this.sqlNode = sqlNode;
-      this.rowType = rowType;
-      this.typeFactory = validator.getTypeFactory();
-    }
-
-    /** Returns the kind of statement.
-     *
-     * <p>Possibilities include:
-     *
-     * <ul>
-     *   <li>Queries: usually {@link SqlKind#SELECT}, but
-     *   other query operators such as {@link SqlKind#UNION} and
-     *   {@link SqlKind#ORDER_BY} are possible
-     *   <li>DML statements: {@link SqlKind#INSERT}, {@link SqlKind#UPDATE} etc.
-     *   <li>Session control statements: {@link SqlKind#COMMIT}
-     *   <li>DDL statements: {@link SqlKind#CREATE_TABLE},
-     *   {@link SqlKind#DROP_INDEX}
-     * </ul>
-     *
-     * @return Kind of statement, never null
+    /**
+     * Executes a DDL statement.
+     * <p/>
+     * <p>The statement identified itself as DDL in the
+     * {@link org.apache.calcite.jdbc.CalcitePrepare.ParseResult#kind} field.
      */
-    public SqlKind kind() {
-      return sqlNode.getKind();
-    }
-  }
+    void executeDdl(Context context, SqlNode node);
 
-  /** The result of parsing and validating a SQL query and converting it to
-   * relational algebra. */
-  class ConvertResult extends ParseResult {
-    public final RelRoot root;
+    /**
+     * Analyzes a view.
+     *
+     * @param context Context
+     * @param sql     View SQL
+     * @param fail    Whether to fail (and throw a descriptive error message) if the
+     *                view is not modifiable
+     * @return Result of analyzing the view
+     */
+    AnalyzeViewResult analyzeView(Context context, String sql, boolean fail);
 
-    public ConvertResult(CalcitePrepareImpl prepare, SqlValidator validator,
-                         String sql, SqlNode sqlNode, RelDataType rowType, RelRoot root) {
-      super(prepare, validator, sql, sqlNode, rowType);
-      this.root = root;
-    }
-  }
+    <T> CalciteSignature<T> prepareSql(
+            Context context,
+            Query<T> query,
+            Type elementType,
+            long maxRowCount);
 
-  /** The result of analyzing a view. */
-  class AnalyzeViewResult extends ConvertResult {
-    /** Not null if and only if the view is modifiable. */
-    public final Table table;
-    public final ImmutableList<String> tablePath;
-    public final RexNode constraint;
-    public final ImmutableIntList columnMapping;
+    <T> CalciteSignature<T> prepareQueryable(
+            Context context,
+            Queryable<T> queryable);
 
-    public AnalyzeViewResult(CalcitePrepareImpl prepare,
-                             SqlValidator validator, String sql, SqlNode sqlNode,
-                             RelDataType rowType, RelRoot root, Table table,
-                             ImmutableList<String> tablePath, RexNode constraint,
-                             ImmutableIntList columnMapping) {
-      super(prepare, validator, sql, sqlNode, rowType, root);
-      this.table = table;
-      this.tablePath = tablePath;
-      this.constraint = constraint;
-      this.columnMapping = columnMapping;
-    }
-  }
+    /**
+     * Context for preparing a statement.
+     */
+    interface Context {
+        JavaTypeFactory getTypeFactory();
 
-  /** The result of preparing a query. It gives the Avatica driver framework
-   * the information it needs to create a prepared statement, or to execute a
-   * statement directly, without an explicit prepare step. */
-  class CalciteSignature<T> extends Meta.Signature {
-    @JsonIgnore public final RelDataType rowType;
-    @JsonIgnore private final List<RelCollation> collationList;
-    private final long maxRowCount;
-    private final Bindable<T> bindable;
+        CalciteSchema getRootSchema();
 
-    public CalciteSignature(String sql, List<AvaticaParameter> parameterList,
-                            Map<String, Object> internalParameters, RelDataType rowType,
-                            List<ColumnMetaData> columns, Meta.CursorFactory cursorFactory,
-                            List<RelCollation> collationList, long maxRowCount,
-                            Bindable<T> bindable) {
-      super(columns, sql, parameterList, internalParameters, cursorFactory, null);
-      this.rowType = rowType;
-      this.collationList = collationList;
-      this.maxRowCount = maxRowCount;
-      this.bindable = bindable;
+        List<String> getDefaultSchemaPath();
+
+        CalciteConnectionConfig config();
+
+        /**
+         * Returns the spark handler. Never null.
+         */
+        SparkHandler spark();
+
+        DataContext getDataContext();
     }
 
-    public CalciteSignature(String sql,
-        List<AvaticaParameter> parameterList,
-        Map<String, Object> internalParameters,
-        RelDataType rowType,
-        List<ColumnMetaData> columns,
-        Meta.CursorFactory cursorFactory,
-        List<RelCollation> collationList,
-        long maxRowCount,
-        Bindable<T> bindable,
-        Meta.StatementType statementType) {
-      super(columns, sql, parameterList, internalParameters, cursorFactory,
-          statementType);
-      this.rowType = rowType;
-      this.collationList = collationList;
-      this.maxRowCount = maxRowCount;
-      this.bindable = bindable;
+    /**
+     * Callback to register Spark as the main engine.
+     */
+    interface SparkHandler {
+        RelNode flattenTypes(RelOptPlanner planner, RelNode rootRel,
+                             boolean restructure);
+
+        void registerRules(RuleSetBuilder builder);
+
+        boolean enabled();
+
+        ArrayBindable compile(ClassDeclaration expr, String s);
+
+        Object sparkContext();
+
+        /**
+         * Allows Spark to declare the rules it needs.
+         */
+        interface RuleSetBuilder {
+            void addRule(RelOptRule rule);
+
+            void removeRule(RelOptRule rule);
+        }
     }
 
-    public Enumerable<T> enumerable(DataContext dataContext) {
-      Enumerable<T> enumerable = bindable.bind(dataContext);
-      if (maxRowCount >= 0) {
-        // Apply limit. In JDBC 0 means "no limit". But for us, -1 means
-        // "no limit", and 0 is a valid limit.
-        enumerable = EnumerableDefaults.take(enumerable, maxRowCount);
-      }
-      return enumerable;
+    /**
+     * The result of parsing and validating a SQL query.
+     */
+    class ParseResult {
+        private final CalcitePrepareImpl prepare;
+        private final String sql; // for debug
+        private final SqlNode sqlNode;
+        private final RelDataType rowType;
+        private final RelDataTypeFactory typeFactory;
+
+        ParseResult(CalcitePrepareImpl prepare, SqlValidator validator,
+                    String sql,
+                    SqlNode sqlNode, RelDataType rowType) {
+            super();
+            this.prepare = prepare;
+            this.sql = sql;
+            this.sqlNode = sqlNode;
+            this.rowType = rowType;
+            this.typeFactory = validator.getTypeFactory();
+        }
+
+        /**
+         * Returns the kind of statement.
+         * <p/>
+         * <p>Possibilities include:
+         * <p/>
+         * <ul>
+         * <li>Queries: usually {@link SqlKind#SELECT}, but
+         * other query operators such as {@link SqlKind#UNION} and
+         * {@link SqlKind#ORDER_BY} are possible
+         * <li>DML statements: {@link SqlKind#INSERT}, {@link SqlKind#UPDATE} etc.
+         * <li>Session control statements: {@link SqlKind#COMMIT}
+         * <li>DDL statements: {@link SqlKind#CREATE_TABLE},
+         * {@link SqlKind#DROP_INDEX}
+         * </ul>
+         *
+         * @return Kind of statement, never null
+         */
+        public SqlKind kind() {
+            return sqlNode.getKind();
+        }
     }
 
-    public List<RelCollation> getCollationList() {
-      return collationList;
-    }
-  }
+    /**
+     * The result of parsing and validating a SQL query and converting it to
+     * relational algebra.
+     */
+    class ConvertResult extends ParseResult {
+        private final RelRoot root;
 
-  /** A union type of the three possible ways of expressing a query: as a SQL
-   * string, a {@link Queryable} or a {@link RelNode}. Exactly one must be
-   * provided. */
-  class Query<T> {
-    public final String sql;
-    public final Queryable<T> queryable;
-    public final RelNode rel;
-
-    private Query(String sql, Queryable<T> queryable, RelNode rel) {
-      this.sql = sql;
-      this.queryable = queryable;
-      this.rel = rel;
-
-      assert (sql == null ? 0 : 1)
-          + (queryable == null ? 0 : 1)
-          + (rel == null ? 0 : 1) == 1;
+        ConvertResult(CalcitePrepareImpl prepare, SqlValidator validator,
+                      String sql, SqlNode sqlNode, RelDataType rowType, RelRoot root) {
+            super(prepare, validator, sql, sqlNode, rowType);
+            this.root = root;
+        }
     }
 
-    public static <T> Query<T> of(String sql) {
-      return new Query<>(sql, null, null);
+    /**
+     * The result of analyzing a view.
+     */
+    class AnalyzeViewResult extends ConvertResult {
+        /**
+         * Not null if and only if the view is modifiable.
+         */
+        private final Table table;
+        private final ImmutableList<String> tablePath;
+        private final RexNode constraint;
+        private final ImmutableIntList columnMapping;
+
+        AnalyzeViewResult(CalcitePrepareImpl prepare,
+                          SqlValidator validator, String sql, SqlNode sqlNode,
+                          RelDataType rowType, RelRoot root, Table table,
+                          ImmutableList<String> tablePath, RexNode constraint,
+                          ImmutableIntList columnMapping) {
+            super(prepare, validator, sql, sqlNode, rowType, root);
+            this.table = table;
+            this.tablePath = tablePath;
+            this.constraint = constraint;
+            this.columnMapping = columnMapping;
+        }
     }
 
-    public static <T> Query<T> of(Queryable<T> queryable) {
-      return new Query<>(null, queryable, null);
+    /**
+     * The result of preparing a query. It gives the Avatica driver framework
+     * the information it needs to create a prepared statement, or to execute a
+     * statement directly, without an explicit prepare step.
+     */
+    class CalciteSignature<T> extends Meta.Signature {
+        @JsonIgnore
+        private final RelDataType rowType;
+        @JsonIgnore
+        private final List<RelCollation> collationList;
+        private final long maxRowCount;
+        private final Bindable<T> bindable;
+
+        CalciteSignature(String sql, List<AvaticaParameter> parameterList,
+                         Map<String, Object> internalParameters, RelDataType rowType,
+                         List<ColumnMetaData> columns, Meta.CursorFactory cursorFactory,
+                         List<RelCollation> collationList, long maxRowCount,
+                         Bindable<T> bindable) {
+            super(columns, sql, parameterList, internalParameters, cursorFactory, null);
+            this.rowType = rowType;
+            this.collationList = collationList;
+            this.maxRowCount = maxRowCount;
+            this.bindable = bindable;
+        }
+
+        CalciteSignature(String sql,
+                         List<AvaticaParameter> parameterList,
+                         Map<String, Object> internalParameters,
+                         RelDataType rowType,
+                         List<ColumnMetaData> columns,
+                         Meta.CursorFactory cursorFactory,
+                         List<RelCollation> collationList,
+                         long maxRowCount,
+                         Bindable<T> bindable,
+                         Meta.StatementType statementType) {
+            super(columns, sql, parameterList, internalParameters, cursorFactory,
+                    statementType);
+            this.rowType = rowType;
+            this.collationList = collationList;
+            this.maxRowCount = maxRowCount;
+            this.bindable = bindable;
+        }
+
+        public Enumerable<T> enumerable(DataContext dataContext) {
+            Enumerable<T> enumerable = bindable.bind(dataContext);
+            if (maxRowCount >= 0) {
+                // Apply limit. In JDBC 0 means "no limit". But for us, -1 means
+                // "no limit", and 0 is a valid limit.
+                enumerable = EnumerableDefaults.take(enumerable, maxRowCount);
+            }
+            return enumerable;
+        }
+
+        public List<RelCollation> getCollationList() {
+            return collationList;
+        }
     }
 
-    public static <T> Query<T> of(RelNode rel) {
-      return new Query<>(null, null, rel);
+    /**
+     * A union type of the three possible ways of expressing a query: as a SQL
+     * string, a {@link Queryable} or a {@link RelNode}. Exactly one must be
+     * provided.
+     */
+    //CHECKSTYLE:OFF
+    final class Query<T> {
+    //CHECKSTYLE:ON
+        private final String sql;
+        private final Queryable<T> queryable;
+        private final RelNode rel;
+
+        private Query(String sql, Queryable<T> queryable, RelNode rel) {
+            this.sql = sql;
+            this.queryable = queryable;
+            this.rel = rel;
+
+            assert (sql == null ? 0 : 1)
+                    + (queryable == null ? 0 : 1)
+                    + (rel == null ? 0 : 1) == 1;
+        }
+
+        public static <T> Query<T> of(String sql) {
+            return new Query<>(sql, null, null);
+        }
+
+        public static <T> Query<T> of(Queryable<T> queryable) {
+            return new Query<>(null, queryable, null);
+        }
+
+        public static <T> Query<T> of(RelNode rel) {
+            return new Query<>(null, null, rel);
+        }
     }
-  }
 }
-
-// End CalcitePrepare.java

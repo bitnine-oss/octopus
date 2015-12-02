@@ -196,7 +196,7 @@ limitations under the License.
     </dependencies>
   </dependencyManagement>
 
-  <!--build>
+  <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -220,5 +220,5 @@ limitations under the License.
         </executions>
       </plugin>
     </plugins>
-  </build-->
+  </build>
 </project>
