@@ -60,7 +60,11 @@ import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
 import kr.co.bitnine.octopus.sql.TupleSetSql;
 import org.antlr.v4.runtime.RecognitionException;
 import org.apache.calcite.avatica.util.Casing;
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -69,6 +73,7 @@ import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
+import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -256,6 +261,8 @@ public final class QueryEngine extends AbstractQueryProcessor {
             schemaManager.lockRead();
             try {
                 SqlNode validated = planner.validate(parse);
+                RelRoot relRoot = planner.rel(validated);
+                LOG.info(RelOptUtil.dumpPlan("Generated plan: ", relRoot.rel, false, SqlExplainLevel.ALL_ATTRIBUTES));
                 return new CachedStatement(validated, refinedQuery, paramTypes);
             } finally {
                 schemaManager.unlockRead();
@@ -267,9 +274,16 @@ public final class QueryEngine extends AbstractQueryProcessor {
                     "syntax error " + e.getMessage());
             throw new PostgresException(edata, e);
         } catch (ValidationException e) {
+            LOG.info(ExceptionUtils.getStackTrace(e));
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
-                    "validation failed");
+                    "validation failed. " + e.toString());
+            throw new PostgresException(edata, e);
+        } catch (RelConversionException e) {
+            LOG.debug(ExceptionUtils.getStackTrace(e));
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    "plan generation failed");
             throw new PostgresException(edata, e);
         }
     }
@@ -287,6 +301,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
 
         // TODO: query on multiple data sources
         SqlNode validatedQuery = cStmt.getValidatedQuery();
+
         List<String> dsNames = getDatasourceNames(validatedQuery);
         if (dsNames.size() > 1) {   // by-pass
             PostgresErrorData edata = new PostgresErrorData(

@@ -25,8 +25,12 @@ import kr.co.bitnine.octopus.sql.OctopusSql;
 import kr.co.bitnine.octopus.sql.OctopusSqlCommand;
 import kr.co.bitnine.octopus.sql.OctopusSqlRunner;
 import kr.co.bitnine.octopus.sql.TupleSetSql;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public final class CursorDdl extends Portal {
+    private static final Log LOG = LogFactory.getLog(QueryEngine.class);
     private final OctopusSqlRunner sqlRunner;
 
     CursorDdl(CachedStatement cachedStatement, String name,
@@ -54,6 +58,7 @@ public final class CursorDdl extends Portal {
         } catch (PostgresException e) {
             throw e;
         } catch (Exception e) {
+            LOG.info(ExceptionUtils.getStackTrace(e));
             PostgresErrorData edata = new PostgresErrorData(
                     PostgresSeverity.ERROR,
                     "failed to run DDL - " + e.getMessage());

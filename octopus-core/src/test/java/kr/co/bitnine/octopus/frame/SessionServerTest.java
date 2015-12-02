@@ -208,6 +208,7 @@ public class SessionServerTest {
         stmt.close();
         conn.close();
         newMemDb.stop();
+        schemaManager.resetDataSourcePool();
     }
 
     @Test
@@ -255,6 +256,7 @@ public class SessionServerTest {
         stmt.close();
         conn.close();
         newMemDb.stop();
+        schemaManager.resetDataSourcePool();
     }
 
     @Test
@@ -291,8 +293,6 @@ public class SessionServerTest {
 
         rows = checkNumRows(stmt, tblName);
         assertEquals(rows, 1);
-
-        dataMemDb.runExecuteUpdate("DROP TABLE \"" + tblName + '"');
 
         stmt.close();
         conn.close();
@@ -471,6 +471,32 @@ public class SessionServerTest {
         pstmt.close();
 
         conn.close();
+    }
+
+    @Test
+    public void testComplexSelect() throws Exception {
+        MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
+        newMemDb.start();
+
+        newMemDb.runExecuteUpdate("CREATE TABLE \"TMP\" (\"ID\" INTEGER, \"NAME\" STRING)");
+
+        Connection conn = getConnection("octopus", "bitnine");
+        Statement stmt = conn.createStatement();
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + newMemDb.name
+                + "\" CONNECT TO '" + newMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+
+        stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "SELECT \"EM\".\"id\", \"EM\".\"name\" " +
+                        "FROM \"employee\" \"EM\", " +
+                        "\"DATA2\".\"__DEFAULT\".\"TMP\" \"TM\" " +
+                        "WHERE \"EM\".\"id\" = \"TM\".\"ID\"");
+        rs.close();
+        stmt.close();
+        conn.close();
+        newMemDb.stop();
+        schemaManager.resetDataSourcePool();
     }
 
     @Test
