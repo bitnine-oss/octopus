@@ -185,7 +185,11 @@ public final class SessionServer extends AbstractService {
 
     private void cancelSession(int sessionId) {
         Session sess = sessions.get(sessionId);
-        if (sess != null)
+        if (sess != null) {
+            LOG.info("cancel session(" + sessionId + ')');
             sess.cancel();
+        } else {
+            LOG.warn("cancel request received but session(" + sessionId + ") does not exist");
+        }
     }
 }

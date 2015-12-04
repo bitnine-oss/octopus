@@ -33,6 +33,7 @@ public enum PostgresSQLState {
     DUPLICATE_SCHEMA        ("3F006"),
     DUPLICATE_TABLE         ("42P07"),
     TOO_MANY_CONNECTIONS    ("53300"),
+    QUERY_CANCELED          ("57014"),
     INTERNAL_ERROR          ("XX000");
 
     private final String state;

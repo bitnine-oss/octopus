@@ -52,6 +52,7 @@ public final class Session implements Runnable {
 
     private final SocketChannel clientChannel;
     private final int sessionId; // secret key
+    private final CancelContext cancelContext;
 
     interface EventHandler {
         void onClose(Session session);
@@ -72,6 +73,7 @@ public final class Session implements Runnable {
             SchemaManager schemaManager) {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
+        cancelContext = new CancelContext(this);
 
         this.eventHandler = eventHandler;
 
@@ -84,6 +86,10 @@ public final class Session implements Runnable {
 
     public int getId() {
         return sessionId;
+    }
+
+    public boolean isCanceled() {
+        return cancelContext.isCanceled();
     }
 
     private static final ThreadLocal<Session> LOCAL_SESSION = new ThreadLocal<>();
@@ -338,10 +344,13 @@ public final class Session implements Runnable {
 
                 switch (type) {
                 case 'Q':
+                    cancelContext.enterCancel();
                     handleQuery(msg);
+                    cancelContext.exitCancel();
                     sendReadyForQuery = true;
                     break;
                 case 'P':
+                    cancelContext.enterCancel();
                     handleParse(msg);
                     break;
                 case 'B':
@@ -362,6 +371,7 @@ public final class Session implements Runnable {
                     break;
                 case 'S':
                     LOG.debug("handle Sync message");
+                    cancelContext.exitCancel();
                     sendReadyForQuery = true;
                     break;
                 case 'X':
@@ -388,6 +398,7 @@ public final class Session implements Runnable {
                     throw oe;
                 case ERROR:
                     LOG.error(ExceptionUtils.getStackTrace(oe));
+                    cancelContext.exitCancel();
                     break;
                 default:
                     throw new RuntimeException("could not reach here");
@@ -468,6 +479,17 @@ public final class Session implements Runnable {
 
         // DataRow
         while (true) {
+            if (isCanceled()) {
+                if (LOG.isDebugEnabled())
+                    LOG.debug("cancel sending result rows for session(" + sessionId + ')');
+
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        PostgresSQLState.QUERY_CANCELED,
+                        "canceling statement for session(" + getId() + ") due to user request");
+                throw new PostgresException(edata);
+            }
+
             Tuple t = ts.next();
             if (t == null)
                 break;
@@ -619,7 +641,7 @@ public final class Session implements Runnable {
              * If extended query protocol is ended abnormally, the state
              * of the portal must be set with FAILED.
              */
-            LOG.error("run portal '" + p.getName() + "'");
+            LOG.info("run portal '" + p.getName() + "'");
             try {
                 TupleSet ts = p.run(numRows);
                 if (ts != null) // ts == null if DDL
@@ -749,6 +771,6 @@ public final class Session implements Runnable {
     }
 
     void cancel() {
-        // TODO
+        cancelContext.cancel();
     }
 }

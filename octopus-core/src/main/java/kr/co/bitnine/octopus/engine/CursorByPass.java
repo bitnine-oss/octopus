@@ -182,6 +182,16 @@ public final class CursorByPass extends Portal {
         }
     }
 
+    private void checkCancel() throws PostgresException {
+        if (Session.currentSession().isCanceled()) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.QUERY_CANCELED,
+                    "canceling statement for session(" + sessionId + ") due to user request");
+            throw new PostgresException(edata);
+        }
+    }
+
     private void execute(int numRows) throws PostgresException {
         if (getState() == State.DONE || getState() == State.FAILED)
             setState(State.READY);
@@ -196,7 +206,9 @@ public final class CursorByPass extends Portal {
             if (numRows > 0)
                 stmt.setFetchSize(numRows);
 
+            checkCancel();
             ResultSet rs = stmt.executeQuery();
+            checkCancel();
 
             ResultSetMetaData rsmd = rs.getMetaData();
             int colCnt = rsmd.getColumnCount();
@@ -257,15 +269,24 @@ public final class CursorByPass extends Portal {
         if (conn == null)
             return;
 
-        try {
-            if (stmt != null) {
-                stmt.close();
+        if (stmt != null) {
+            try {
+                stmt.cancel();
+            } catch (SQLException e) {
+                LOG.error("failed to cancel statement for session(" + sessionId + ')');
+            } finally {
+                try {
+                    stmt.close();
+                } catch (SQLException ignore) { }
                 stmt = null;
             }
+        }
 
+        try {
             LOG.info("return connection to \"" + dataSourceName + "\" for session(" + sessionId + ')');
             conn.close();
         } catch (SQLException ignore) { }
+        conn = null;
 
         tupDesc = null;
         tupSetByPass = null;    // how about ResultSet?

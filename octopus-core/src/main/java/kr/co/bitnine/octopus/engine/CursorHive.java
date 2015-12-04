@@ -32,6 +32,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -184,6 +185,16 @@ public final class CursorHive extends Portal {
         }
     }
 
+    private void checkCancel() throws PostgresException {
+        if (Session.currentSession().isCanceled()) {
+            PostgresErrorData edata = new PostgresErrorData(
+                    PostgresSeverity.ERROR,
+                    PostgresSQLState.QUERY_CANCELED,
+                    "canceling statement for session(" + sessionId + ") due to user request");
+            throw new PostgresException(edata);
+        }
+    }
+
     @Override
     public TupleDesc describe() throws PostgresException {
         if (tupDesc != null)
@@ -192,7 +203,9 @@ public final class CursorHive extends Portal {
         prepareConnection();
         prepareStatement(0);
         try {
+            checkCancel();
             ResultSet rs = stmt.executeQuery();
+            checkCancel();
             ResultSetMetaData rsmd = rs.getMetaData();
             int colCnt = rsmd.getColumnCount();
             PostgresAttribute[] attrs = new PostgresAttribute[colCnt];
@@ -234,7 +247,9 @@ public final class CursorHive extends Portal {
             prepareStatement(-1);
 
         try {
+            checkCancel();
             ResultSet rs = stmt.executeQuery();
+            checkCancel();
             tupSetByPass = new TupleSetByPass(this, rs, tupDesc);
             setState(State.ACTIVE);
             return tupSetByPass;
@@ -256,15 +271,24 @@ public final class CursorHive extends Portal {
         if (conn == null)
             return;
 
-        try {
-            if (stmt != null) {
-                stmt.close();
+        if (stmt != null) {
+            try {
+                stmt.cancel();
+            } catch (SQLException e) {
+                LOG.error("failed to cancel statement for session(" + sessionId + ")\n" + ExceptionUtils.getStackTrace(e));
+            } finally {
+                try {
+                    stmt.close();
+                } catch (SQLException ignore) { }
                 stmt = null;
             }
+        }
 
+        try {
             LOG.info("return connection to \"" + dataSourceName + "\" for session(" + sessionId + ')');
             conn.close();
         } catch (SQLException ignore) { }
+        conn = null;
 
         tupDesc = null;
         tupSetByPass = null;    // how about ResultSet?
