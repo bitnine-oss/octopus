@@ -73,7 +73,7 @@ import org.apache.calcite.tools.ValidationException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.hadoop.conf.Configuration;
 
 public final class QueryEngine extends AbstractQueryProcessor {
     private static final Log LOG = LogFactory.getLog(QueryEngine.class);
@@ -81,13 +81,16 @@ public final class QueryEngine extends AbstractQueryProcessor {
     private final MetaContext metaContext;
     private final ConnectionManager connectionManager;
     private final SchemaManager schemaManager;
+    private final Configuration conf;
 
     public QueryEngine(MetaContext metaContext,
                        ConnectionManager connectionManager,
-                       SchemaManager schemaManager) {
+                       SchemaManager schemaManager,
+                       Configuration conf) {
         this.metaContext = metaContext;
         this.connectionManager = connectionManager;
         this.schemaManager = schemaManager;
+        this.conf = conf;
     }
 
     @Override
@@ -955,11 +958,13 @@ public final class QueryEngine extends AbstractQueryProcessor {
      * <p/>
      * Borrowed from Tajo
      */
-    private static String convertPattern(final String pattern) {
+    private String convertPattern(final String pattern) {
+        final boolean ignoreCase = conf.getBoolean("master.query.ddl.like.ignorecase", false);
         final char searchStringEscape = '\\';
 
+        String convertedPattern;
         if (pattern == null) {
-            return ".*";
+            convertedPattern = ".*";
         } else {
             StringBuilder result = new StringBuilder(pattern.length());
 
@@ -982,7 +987,12 @@ public final class QueryEngine extends AbstractQueryProcessor {
                 }
             }
 
-            return result.toString();
+            convertedPattern = result.toString();
         }
+
+        if (ignoreCase)
+            convertedPattern = "(?i)" + convertedPattern;
+
+        return convertedPattern;
     }
 }

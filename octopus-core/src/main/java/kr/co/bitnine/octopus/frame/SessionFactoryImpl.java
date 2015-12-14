@@ -16,6 +16,7 @@ package kr.co.bitnine.octopus.frame;
 
 import kr.co.bitnine.octopus.meta.MetaStore;
 import kr.co.bitnine.octopus.schema.SchemaManager;
+import org.apache.hadoop.conf.Configuration;
 
 import java.nio.channels.SocketChannel;
 
@@ -34,8 +35,10 @@ public final class SessionFactoryImpl implements SessionFactory {
 
     @Override
     public Session createSession(SocketChannel clientChannel,
-                                 Session.EventHandler sessEvtHandler) {
+                                 Session.EventHandler sessEvtHandler,
+                                 Configuration conf) {
         return new Session(clientChannel, sessEvtHandler,
-                metaStore.getMetaContext(), connectionManager, schemaManager);
+                metaStore.getMetaContext(), connectionManager, schemaManager,
+                conf);
     }
 }

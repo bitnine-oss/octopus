@@ -14,9 +14,12 @@
 
 package kr.co.bitnine.octopus.frame;
 
+import org.apache.hadoop.conf.Configuration;
+
 import java.nio.channels.SocketChannel;
 
 public interface SessionFactory {
     Session createSession(SocketChannel clientChannel,
-                          Session.EventHandler sessEvtHandler);
+                          Session.EventHandler sessEvtHandler,
+                          Configuration conf);
 }

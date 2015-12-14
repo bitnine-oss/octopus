@@ -40,6 +40,7 @@ import kr.co.bitnine.octopus.schema.SchemaManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public final class Session implements Runnable {
 
     Session(SocketChannel clientChannel, EventHandler eventHandler,
             MetaContext metaContext, ConnectionManager connectionManager,
-            SchemaManager schemaManager) {
+            SchemaManager schemaManager, Configuration conf) {
         this.clientChannel = clientChannel;
         sessionId = new Random(this.hashCode()).nextInt();
         cancelContext = new CancelContext(this);
@@ -79,7 +80,7 @@ public final class Session implements Runnable {
 
         messageStream = new MessageStream(clientChannel);
         this.metaContext = metaContext;
-        queryEngine = new QueryEngine(metaContext, connectionManager, schemaManager);
+        queryEngine = new QueryEngine(metaContext, connectionManager, schemaManager, conf);
 
         postgresConf = new PostgresConfiguration();
     }

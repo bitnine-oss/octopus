@@ -152,7 +152,7 @@ public final class SessionServer extends AbstractService {
                 } catch (IOException ignore) { }
 
                 Session sess = sessionFactory.createSession(
-                        clientChannel, sessEvtHandler);
+                        clientChannel, sessEvtHandler, getConfig());
                 if (LOG.isInfoEnabled())
                     LOG.info("connection from " + clientAddress + " is accepted (session=" + sess.getId() + ')');
 

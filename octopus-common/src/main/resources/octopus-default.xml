@@ -40,6 +40,12 @@ does not already exist, create it.
   </property>
 
   <property>
+    <name>master.query.ddl.like.ignorecase</name>
+    <value>false</value>
+    <description>Support case-insensitive LIKE pattern matching on DDL.</description>
+  </property>
+
+  <property>
     <name>metastore.class</name>
     <value>kr.co.bitnine.octopus.meta.jdo.JDOMetaStore</value>
     <description>The class name of Octopus Metastore.</description>
