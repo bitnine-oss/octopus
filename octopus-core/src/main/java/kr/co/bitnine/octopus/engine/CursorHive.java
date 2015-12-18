@@ -195,6 +195,12 @@ public final class CursorHive extends Portal {
         }
     }
 
+    private String getColumnName(String hiveColumnName) {
+        String normalizedColumnName = hiveColumnName.toLowerCase();
+        String[] names = normalizedColumnName.split("\\.");
+        return names[names.length - 1];
+    }
+
     @Override
     public TupleDesc describe() throws PostgresException {
         if (tupDesc != null)
@@ -210,7 +216,7 @@ public final class CursorHive extends Portal {
             int colCnt = rsmd.getColumnCount();
             PostgresAttribute[] attrs = new PostgresAttribute[colCnt];
             for (int i = 0; i < colCnt; i++) {
-                String colName = rsmd.getColumnName(i + 1);
+                String colName = getColumnName(rsmd.getColumnName(i + 1));
                 int colType = rsmd.getColumnType(i + 1);
                 LOG.debug("JDBC type of column '" + colName + "' is " + colType);
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
