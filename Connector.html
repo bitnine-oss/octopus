@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Connector &mdash; octopus 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="octopus 0.1 documentation" href="index.html"/>
+        <link rel="prev" title="SQL" href="SQL.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> octopus
+          
+
+          
+            
+            <img src="_static/Octopus-logo.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="개요.html">개요</a></li>
+<li class="toctree-l1"><a class="reference internal" href="설치 및 운영.html">설치 및 운영</a></li>
+<li class="toctree-l1"><a class="reference internal" href="사용자 도구.html">사용자 도구</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SQL.html">SQL</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Connector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-jdbc">Octopus JDBC 드라이버 얻기</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Octopus JDBC 드라이버 사용</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-jdbc-api">Octopus JDBC API</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">octopus</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Connector</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/Connector.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="connector">
+<h1>Connector<a class="headerlink" href="#connector" title="Permalink to this headline">¶</a></h1>
+<p>다른 프로그램에서 Octopus에 대해 질의를 수행하거나 스키마 정보 등을 가져오기 위해 Octopus JDBC 드라이버를 이용해야 한다. 그래서 Octopus JDBC 드라이버를 얻는 방법과 이 방법으로 얻은 Octopus JDBC 드라이버를 애플리케이션에서 어떻게 사용하는지에 대해 예를 들어 설명한다.</p>
+<div class="section" id="octopus-jdbc">
+<h2>Octopus JDBC 드라이버 얻기<a class="headerlink" href="#octopus-jdbc" title="Permalink to this headline">¶</a></h2>
+<p>Octopus의 JDBC 드라이버는 Octopus 설치 디렉터리 내에 있는 share/octopus 디렉터리에서 얻을 수 있다. 해당 디렉터리에 있는 octopus-jdbc-x.y.z-SNAPSHOP.jar 파일을 CLASSPATH에 추가하여 Octopus JDBC 드라이버를 사용할 수 있다.</p>
+</div>
+<div class="section" id="id1">
+<h2>Octopus JDBC 드라이버 사용<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Octopus JDBC 드라이버를 사용할 경우 JDBC 드라이버 클래스와 연결 URL이 필요하며, 이에 대한 정보는 다음과 같다.</p>
+<ul>
+<li><p class="first">JDBC 드라이버 클래스 정보</p>
+<blockquote>
+<div><ul class="simple">
+<li>kr.co.bitnine.octopus.Driver</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">연결 URL 정보</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference external" href="jdbc:octopus:/">jdbc:octopus:/</a>/&lt;octopus-hostname&gt;[:&lt;octopus-port&gt;]<ul>
+<li>예) <a class="reference external" href="jdbc:octopus://127.0.0.1:58001">jdbc:octopus://127.0.0.1:58001</a></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<table border="1" class="docutils" id="making-a-table">
+<colgroup>
+<col width="23%" />
+<col width="52%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">인자</th>
+<th class="head">설명</th>
+<th class="head">기본값</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>octopus-hostname</td>
+<td>접속할 Octopus 인스턴스의 hostname</td>
+<td>없음 (필수)</td>
+</tr>
+<tr class="row-odd"><td>octopus-port</td>
+<td>접속할 Octopus 인스턴스의 port 번호</td>
+<td>58000</td>
+</tr>
+</tbody>
+</table>
+<p>다음은 Octopus JDBC 드라이버 사용 예제이다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>public class OctopusJdbcTest <span class="o">{</span>
+    public static void main<span class="o">(</span>String<span class="o">[]</span> args<span class="o">)</span> throws Exception <span class="o">{</span>
+        Class.forName<span class="o">(</span><span class="s2">&quot;kr.co.bitnine.octopus.Driver&quot;</span><span class="o">)</span><span class="p">;</span>
+        String <span class="nv">connectionString</span> <span class="o">=</span> <span class="s2">&quot;jdbc:octopus://127.0.0.1&quot;</span><span class="p">;</span>
+String <span class="nv">username</span> <span class="o">=</span> <span class="s2">&quot;octopus&quot;</span><span class="p">;</span>
+String <span class="nv">password</span> <span class="o">=</span> <span class="s2">&quot;bitnine&quot;</span><span class="p">;</span>
+        Connection <span class="nv">conn</span> <span class="o">=</span> DriverManager.getConnection<span class="o">(</span>connectionString,
+username, password<span class="o">)</span><span class="p">;</span>
+Statement <span class="nv">stmt</span> <span class="o">=</span> conn.createStatement<span class="o">()</span><span class="p">;</span>
+    ResultSet <span class="nv">rs</span> <span class="o">=</span> stmt.executeQuery<span class="o">(</span><span class="s2">&quot;SHOW ALL USERS&quot;</span><span class="o">)</span><span class="p">;</span>
+        <span class="k">while</span> <span class="o">(</span>rs.next<span class="o">())</span> <span class="o">{</span>
+String <span class="nv">name</span> <span class="o">=</span> rs.getString<span class="o">(</span>1<span class="o">)</span><span class="p">;</span>
+            System.out.println<span class="o">(</span>name<span class="o">)</span><span class="p">;</span>
+        <span class="o">}</span>
+        rs.close<span class="o">()</span><span class="p">;</span>
+stmt.close<span class="o">()</span><span class="p">;</span>
+        conn.close<span class="o">()</span><span class="p">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="octopus-jdbc-api">
+<h2>Octopus JDBC API<a class="headerlink" href="#octopus-jdbc-api" title="Permalink to this headline">¶</a></h2>
+<p>Octopus는 JDBC 4.2를 지원하고 있다. 그러나 Octopus 특성상 commit/rollback 관련 동작을 지원하지 않고 있으며, 구현상의 제약으로 DatabaseMetaData의 경우 몇 가지 함수만 지원하고 있다.</p>
+<p>아래는 Octopus의 &#8216;&#8217;DatabaseMetaData&#8217;&#8216;에서 지원하고 있는 함수 목록이다.</p>
+<table border="1" class="docutils" id="making-b-table">
+<colgroup>
+<col width="35%" />
+<col width="65%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">함수</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>getCatalogs</td>
+<td>모든 데이터소스 조회</td>
+</tr>
+<tr class="row-odd"><td>getColumns</td>
+<td>특정 칼럼 조회</td>
+</tr>
+<tr class="row-even"><td>getConnection</td>
+<td>현재 연결 객체 반환</td>
+</tr>
+<tr class="row-odd"><td>getSchemas</td>
+<td>특정 스키마 정보 조회</td>
+</tr>
+<tr class="row-even"><td>getTables</td>
+<td>특정 테이블 정보 조회</td>
+</tr>
+</tbody>
+</table>
+<p>위에 나열된 조회 함수에 대한 결과 칼럼은 4.4.4를 참고하기 바란다. 그 밖에 자세한 내용은 Java의 &#8216;&#8217;java.sql&#8217;&#8217; 패키지 문서를 참고하기 바란다.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="SQL.html" class="btn btn-neutral" title="SQL" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, bitnine.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

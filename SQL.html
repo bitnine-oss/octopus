@@ -1,0 +1,1121 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>SQL &mdash; octopus 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="octopus 0.1 documentation" href="index.html"/>
+        <link rel="next" title="Connector" href="Connector.html"/>
+        <link rel="prev" title="사용자 도구" href="사용자 도구.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> octopus
+          
+
+          
+            
+            <img src="_static/Octopus-logo.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="개요.html">개요</a></li>
+<li class="toctree-l1"><a class="reference internal" href="설치 및 운영.html">설치 및 운영</a></li>
+<li class="toctree-l1"><a class="reference internal" href="사용자 도구.html">사용자 도구</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">SQL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-type">Data Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-definition-language">Data Definition Language</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alter-system-add-datasource">ALTER SYSTEM ADD DATASOURCE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alter-system-update-datasource">ALTER SYSTEM UPDATE DATASOURCE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alter-system-drop-datasource">ALTER SYSTEM DROP DATASOURCE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-manipulation-language">Data Manipulation Language</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-administration-statements">Octopus Administration Statements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">사용자 계정</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">권한</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">주석 및 칼럼 분류</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#show">SHOW 명령</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Connector.html">Connector</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">octopus</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>SQL</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/SQL.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sql">
+<h1>SQL<a class="headerlink" href="#sql" title="Permalink to this headline">¶</a></h1>
+<p>이 장에서는 Octopus에서 지원하는 SQL에 대해 기술한다.</p>
+<div class="section" id="data-type">
+<h2>Data Type<a class="headerlink" href="#data-type" title="Permalink to this headline">¶</a></h2>
+<p>현재 Octopus에서 지원하는 데이터 타입은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-a-table">
+<colgroup>
+<col width="9%" />
+<col width="11%" />
+<col width="80%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">SQL type</th>
+<th class="head">크기(bytes)</th>
+<th class="head">범위</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>INTEGER</td>
+<td>4</td>
+<td>-231 (-2,147,483,648) ~ 231 - 1 (2,147,483,647)</td>
+</tr>
+<tr class="row-odd"><td>BIGINT</td>
+<td>8</td>
+<td>-263 (-9,223,372,036,854,775,808) ~ 263 - 1 (9,223,372,036,854,775,807)</td>
+</tr>
+<tr class="row-even"><td>FLOAT</td>
+<td>4</td>
+<td>-3.4E+38 ~ 3.4E+38</td>
+</tr>
+<tr class="row-odd"><td>REAL</td>
+<td>4</td>
+<td>-3.4E+38 ~ 3.4E+38</td>
+</tr>
+<tr class="row-even"><td>DOUBLE</td>
+<td>8</td>
+<td>-1.7E–308 ~ 1.7E+308</td>
+</tr>
+<tr class="row-odd"><td>NUMERIC</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td>VARCHAR</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td>DATE</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td>YYYY-mm-dd 형식</td>
+</tr>
+<tr class="row-even"><td>TIMESTAMP</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td>YYYY-mm-dd HH:MM:SS[.NNNNNNNNN] 형식</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="data-definition-language">
+<h2>Data Definition Language<a class="headerlink" href="#data-definition-language" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="alter-system-add-datasource">
+<h3>ALTER SYSTEM ADD DATASOURCE<a class="headerlink" href="#alter-system-add-datasource" title="Permalink to this headline">¶</a></h3>
+<p>Octopus에서 관리할 데이터소스를 추가한다. JDBC 연결을 지원하는 데이터소스만 추가할 수 있다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM ADD DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span>
+  CONNECT TO <span class="s1">&#39;&lt;jdbcConnectionString&gt;&#39;</span>
+  USING <span class="s1">&#39;&lt;jdbcDriverName&gt;&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName</strong></p>
+<p>추가할 데이터소스의 이름을 지정.</p>
+<p><strong>jdbcConnectionString</strong></p>
+<p>데이터소스의 JDBC 연결 주소.</p>
+<p><strong>jdbcDriverName</strong></p>
+<p>데이터소스 연결에 사용할 JDBC 드라이버 이름.</p>
+<ul class="simple">
+<li>예제</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM ADD DATASOURCE <span class="s2">&quot;spark&quot;</span>
+  CONNECT TO <span class="s1">&#39;jdbc:hive2://localhost:10001&#39;</span>
+  USING <span class="s1">&#39;org.apache.hive.JDBC&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alter-system-update-datasource">
+<h3>ALTER SYSTEM UPDATE DATASOURCE<a class="headerlink" href="#alter-system-update-datasource" title="Permalink to this headline">¶</a></h3>
+<p>Octopus에서 관리중인 데이터소스의 스키마 정보가 변경되었을 경우, 이를 Octopus의 메타스토어에 반영한다. 데이터소스 전체, 특정 스키마만, 특정 테이블만 갱신할 수 있도록 다양한 문법을 지원한다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM UPDATE DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> <span class="p">;</span>
+ALTER SYSTEM UPDATE SCHEMA <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s1">&#39;schemaPattern&#39;</span> <span class="p">;</span>
+ALTER SYSTEM UPDATE TABLE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s1">&#39;schemaPattern&#39;</span> . <span class="s1">&#39;tablePattern&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName</strong></p>
+<p>갱신할 데이터소스의 이름을 지정.</p>
+<p><strong>schemaPattern, tablePattern</strong></p>
+<p>갱신할 스키마, 테이블 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일.</p>
+<ul class="simple">
+<li>예제</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM UPDATE DATASOURCE <span class="s2">&quot;spark&quot;</span><span class="p">;</span>
+ALTER SYSTEM UPDATE SCHEMA <span class="s2">&quot;spark&quot;</span>.<span class="s1">&#39;div%&#39;</span><span class="p">;</span>
+ALTER SYSTEM UPDATE TABLE <span class="s2">&quot;spark&quot;</span>.<span class="s1">&#39;%&#39;</span>.<span class="s1">&#39;%stat%&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alter-system-drop-datasource">
+<h3>ALTER SYSTEM DROP DATASOURCE<a class="headerlink" href="#alter-system-drop-datasource" title="Permalink to this headline">¶</a></h3>
+<p>Octopus의 메타스토어에서 데이터소스를 삭제한다. 삭제된 데이터소스에 대한 스키마 정보 조회와 질의 처리를 더 이상 할 수 없다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM DROP DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName</strong></p>
+<p>삭제할 데이터소스의 이름을 지정.</p>
+<ul class="simple">
+<li>예제</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>ALTER SYSTEM DROP DATASOURCE <span class="s2">&quot;spark&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="data-manipulation-language">
+<h2>Data Manipulation Language<a class="headerlink" href="#data-manipulation-language" title="Permalink to this headline">¶</a></h2>
+<p>Octopus는 여러 데이터소스에 대한 SELECT 질의만 지원하며 INSERT, UPDATE, DELETE는 지원하지 않는다. Octopus는 아래와 같은 SELECT 문을 지원한다. 단, by-pass 질의의 경우 Octopus의 특성상 데이터 소스가 지원하지 않는 문법은 처리할 수 없다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>query:
+  <span class="o">[</span> WITH withItem <span class="o">{</span> , withItem <span class="o">}</span>* query <span class="o">]</span>
+<span class="p">|</span> <span class="o">{</span> <span class="k">select</span>
+  <span class="p">|</span> query UNION <span class="o">[</span> ALL <span class="o">]</span> query
+  <span class="p">|</span> query EXCEPT query
+  <span class="p">|</span> query INTERSECT query
+  <span class="o">}</span>
+  <span class="o">[</span> ORDER BY orderItem <span class="o">{</span> , orderItem <span class="o">}</span>* <span class="o">]</span>
+  <span class="o">[</span> LIMIT <span class="o">{</span> &lt;count&gt; <span class="p">|</span> ALL <span class="o">}</span> <span class="o">]</span>
+  <span class="o">[</span> OFFSET &lt;start&gt; <span class="o">{</span> ROW <span class="p">|</span> ROWS <span class="o">}</span> <span class="o">]</span>
+  <span class="o">[</span> FETCH <span class="o">{</span> FIRST <span class="p">|</span> NEXT <span class="o">}</span> <span class="o">[</span> &lt;count&gt; <span class="o">]</span> <span class="o">{</span> ROW <span class="p">|</span> ROWS <span class="o">}</span> <span class="o">]</span>
+
+withItem: &lt;withName&gt; <span class="o">[</span> <span class="o">(</span> &lt;withColumn&gt; <span class="o">{</span> , &lt;withColumn&gt; <span class="o">}</span>* <span class="o">)</span> <span class="o">]</span> AS <span class="o">(</span> query <span class="o">)</span>
+
+orderItem: &lt;expression&gt; <span class="o">[</span> ASC <span class="p">|</span> DESC <span class="o">]</span> <span class="o">[</span> NULLS FIRST <span class="p">|</span> NULLS LAST <span class="o">]</span>
+
+<span class="k">select</span>:
+  SELECT <span class="o">[</span> STREAM <span class="o">]</span> <span class="o">[</span> ALL <span class="p">|</span> DISTINCT <span class="o">]</span>
+  <span class="o">{</span> <span class="s1">&#39;*&#39;</span> <span class="p">|</span> projectItem <span class="o">{</span> , projectItem <span class="o">}</span>* <span class="o">}</span>
+  FROM tableExpression
+  <span class="o">[</span> WHERE &lt;booleanExpression&gt; <span class="o">]</span>
+  <span class="o">[</span> GROUP BY groupItem <span class="o">{</span> , groupItem <span class="o">}</span>* <span class="o">]</span>
+  <span class="o">[</span> HAVING &lt;booleanExpression&gt; <span class="o">]</span>
+
+projectItem:
+  &lt;expression&gt; <span class="o">[</span> <span class="o">[</span> AS <span class="o">]</span> &lt;columnAlias&gt; <span class="o">]</span>
+<span class="p">|</span> &lt;tableAlias&gt; . <span class="s1">&#39;*&#39;</span>
+
+tableExpression:
+  tableReference <span class="o">{</span> , tableReference <span class="o">}</span>*
+<span class="p">|</span> tableExpression <span class="o">[</span> NATURAL <span class="o">]</span> <span class="o">[</span> LEFT <span class="p">|</span> RIGHT <span class="p">|</span> FULL <span class="o">]</span> JOIN
+  tableExpression <span class="o">[</span> joinCondition <span class="o">]</span>
+
+joinCondition: ON &lt;booleanExpression&gt; <span class="p">|</span> USING <span class="o">(</span> &lt;column&gt; <span class="o">{</span> , &lt;column&gt; <span class="o">}</span>* <span class="o">)</span>
+
+tableReference:
+  <span class="o">[</span> LATERAL <span class="o">]</span> tablePrimary
+  <span class="o">[</span> <span class="o">[</span> AS <span class="o">]</span> &lt;tableAlias&gt; <span class="o">[</span> <span class="o">(</span> &lt;columnAlias&gt; <span class="o">{</span> , &lt;columnAlias&gt; <span class="o">}</span>* <span class="o">)</span> <span class="o">]</span> <span class="o">]</span>
+
+tablePrimary:
+  <span class="o">[</span> TABLE <span class="o">]</span> <span class="o">[</span> <span class="o">[</span> &lt;dataSourceName&gt; . <span class="o">]</span> &lt;schemaName&gt; . <span class="o">]</span> &lt;tableName&gt;
+  <span class="p">|</span> <span class="o">(</span> query <span class="o">)</span>
+  <span class="p">|</span> values
+  <span class="p">|</span> UNNEST <span class="o">(</span> &lt;expression&gt; <span class="o">)</span>
+  <span class="p">|</span> TABLE <span class="o">(</span> <span class="o">[</span> SPECIFIC <span class="o">]</span> functionName <span class="o">(</span> &lt;expression&gt; <span class="o">{</span> , &lt;expression&gt; <span class="o">}</span>* <span class="o">)</span> <span class="o">)</span>
+
+values: VALUES &lt;expression&gt; <span class="o">{</span> , &lt;expression&gt; <span class="o">}</span>*
+
+groupItem:
+  &lt;expression&gt;
+<span class="p">|</span> <span class="o">(</span> <span class="o">)</span>
+<span class="p">|</span> <span class="o">(</span> &lt;expression. <span class="o">{</span> , expression <span class="o">}</span>* <span class="o">)</span>
+<span class="p">|</span> CUBE <span class="o">(</span> &lt;expression&gt; <span class="o">{</span> , expression <span class="o">}</span>* <span class="o">)</span>
+<span class="p">|</span> ROLLUP <span class="o">(</span> expression <span class="o">{</span> , expression <span class="o">}</span>* <span class="o">)</span>
+<span class="p">|</span> GROUPING SETS <span class="o">(</span> groupItem <span class="o">{</span> , groupItem <span class="o">}</span>* <span class="o">)</span>
+</pre></div>
+</div>
+<p><strong>count, start</strong></p>
+<p>몇 개의 결과를 가져올지, 몇 번째 결과부터 가져올지 지정 (0 이상의 정수)</p>
+<p><strong>withName, withColumn</strong></p>
+<p>WITH 절의 이름과 결과 칼럼 이름을 지정 (식별자 형식)</p>
+<p><strong>columnAlias, tableAlias</strong></p>
+<p>칼럼, 테이블의 별칭을 지정 (식별자 형식)</p>
+<p><strong>dataSourceName, schemaName, tableName</strong></p>
+<p>데이터소스, 스키마, 테이블의 이름을 지정 (식별자 형식)</p>
+<ul class="simple">
+<li>expression</li>
+</ul>
+<p>산술 표현식, 비교 표현식, 혹은 논리 표현식이 올 수 있다. 표현식에서 사용하는 값은 특정 칼럼의 값을 해당 칼럼의 식별자로 얻어오거나, 상수를 직접 입력할 수 있다. Octopus에서는 아래와 같은 산술 연산자, 비교 연산자들을 지원하며, 각 표현식에서 사용할 수 있다.</p>
+<table border="1" class="docutils" id="making-b-table">
+<colgroup>
+<col width="29%" />
+<col width="48%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">산술 연산자</th>
+<th class="head">설명</th>
+<th class="head">결과</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>numeric1 + numeric2</td>
+<td>numeric1과 numeric2의 합</td>
+<td>numeric</td>
+</tr>
+<tr class="row-odd"><td>numeric1 - numeric2</td>
+<td>numeric1에서 numeric2를 뺌</td>
+<td>numeric</td>
+</tr>
+<tr class="row-even"><td>numeric1 * numeric2</td>
+<td>numeric1과 numeric2의 곱</td>
+<td>numeric</td>
+</tr>
+<tr class="row-odd"><td>numeric1 / numeric2</td>
+<td>numeric1을 numeric2로 나눈 몫</td>
+<td>numeric</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils" id="making-c-table">
+<colgroup>
+<col width="27%" />
+<col width="41%" />
+<col width="32%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">비교 연산자</th>
+<th class="head">설명</th>
+<th class="head">결과</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>value1 = value2</td>
+<td>같음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>value1 &lt;&gt; value2</td>
+<td>같지 않음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>value1 &gt; value2</td>
+<td>큼</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>value1 &gt;= value2</td>
+<td>크거나 같음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>value1 &lt; value2</td>
+<td>작음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>value1 &lt;= value2</td>
+<td>작거나 같음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>value IS NULL</td>
+<td>value가 NULL</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>value IS NOT NULL</td>
+<td>value가 NULL이 아님</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>string1 LIKE string2</td>
+<td>string1이 패턴 string2와 맞음</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>string1 NOT LIKE string2</td>
+<td>string1이 패턴 string2와 맞지 않음</td>
+<td>boolean</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>booleanExpression (논리 표현식)</li>
+</ul>
+<p>논리 연산자들의 AND, OR 조합으로 이루어진 표현식이다. Octopus에서는 아래와 같은 논리 연산자들을 지원한다.</p>
+<table border="1" class="docutils" id="making-d-table">
+<colgroup>
+<col width="23%" />
+<col width="54%" />
+<col width="24%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">연산자</th>
+<th class="head">설명</th>
+<th class="head">결과</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>boolean1 OR boolean2</td>
+<td>boolean1 혹은 boolean2가 참</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>boolean1 AND boolean2</td>
+<td>boolean2 그리고 booelan2가 참</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>NOT boolean</td>
+<td>boolean이 참이 아님; boolean이 UNKNOWN이면 UNKNOWN</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>boolean IS FALSE</td>
+<td>boolean이 거짓; boolean이 UNKNOWN이면 거짓</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>boolean IS NOT FALSE</td>
+<td>boolean이 거짓이 아님; boolean이 UNKNOWN이면 참</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>boolean IS TRUE</td>
+<td>boolean이 참; boolean이 UNKNOWN이면 거짓</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>boolean IS NOT TRUE</td>
+<td>boolean이 참이 아님; boolean이 UNKNOWN이면 참</td>
+<td>boolean</td>
+</tr>
+<tr class="row-odd"><td>boolean IS UNKNOWN</td>
+<td>boolean이 UNKNOWN</td>
+<td>boolean</td>
+</tr>
+<tr class="row-even"><td>boolean IS NOT UNKNOWN</td>
+<td>boolean이 UNKNOWN이 아님</td>
+<td>boolean</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="octopus-administration-statements">
+<h2>Octopus Administration Statements<a class="headerlink" href="#octopus-administration-statements" title="Permalink to this headline">¶</a></h2>
+<p>Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특정 스키마에 대한 접근 권한이 있는지 확인하고, 접근 권한을 부여할 수 있도록 하는 접근 제어 기능을 제공한다. 그리고 특정 스키마 정보에 주석을 추가할 수 있다. 마지막으로 각종 정보들을 조회할 수 있는 기능을 제공한다. 이 절에서는 이와 같은 Octopus 관리에 필요한 문장들에 대해 살펴본다.</p>
+<div class="section" id="id1">
+<h3>사용자 계정<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>사용자 계정 생성 및 수정</li>
+</ul>
+<p>아래 두 문장은 각각 새로운 Octopus 사용자 계정을 생성 및 수정한다. 생성된 계정은 어떠한 권한도 가지고 있지 않는다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>CREATE USER <span class="s2">&quot;&lt;user&gt;&quot;</span> IDENTIFIED BY <span class="s1">&#39;&lt;password&gt;&#39;</span> <span class="p">;</span>
+
+ALTER USER <span class="s2">&quot;&lt;user&gt;&quot;</span> IDENTIFIED BY <span class="s1">&#39;&lt;password&gt;&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>user</strong></p>
+<p>생성/수정할 계정 이름을 지정.</p>
+<p><strong>password</strong></p>
+<p>새로운 계정의 암호 혹은 수정할 암호 지정.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>CREATE USER <span class="s2">&quot;octopus&quot;</span> IDENTIFIED BY <span class="s1">&#39;bitnine&#39;</span><span class="p">;</span>
+
+ALTER USER <span class="s2">&quot;octopus&quot;</span> IDENTIFIED BY <span class="s1">&#39;squid&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>사용자 계정 삭제</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>DROP USER <span class="s2">&quot;&lt;user&gt;&quot;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>user</strong></p>
+<p>삭제할 계정을 지정.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>DROP USER <span class="s2">&quot;octopus&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>권한<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>먼저 시스템 권한을 부여하고 제거하는 문장에 대해 알아본다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>GRANT systemPrivileges TO grantees <span class="p">;</span>
+
+REVOKE systemPrivileges FROM grantees <span class="p">;</span>
+
+systemPrivileges: systemPrivilege <span class="o">{</span> , systemPrivilege <span class="o">}</span>*
+grantees: grantee <span class="o">{</span> , grantee <span class="o">}</span>*
+grantee: <span class="s1">&#39;&lt;user&gt;&#39;</span>
+</pre></div>
+</div>
+<p><strong>user</strong></p>
+<p>권한을 부여 받을 대상 계정.</p>
+<p><strong>systemPrivilege</strong></p>
+<p>아래 표에 있는 시스템 권한들을 지원한다.</p>
+<table border="1" class="docutils" id="making-e-table">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">권한</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ALTER SYSTEM</td>
+<td>ALTER SYSTEM 문장 실행 권한</td>
+</tr>
+<tr class="row-odd"><td>SELECT ANY TABLE</td>
+<td>모든 테이블에 대한 SELECT 질의 권한</td>
+</tr>
+<tr class="row-even"><td>CREATE USER</td>
+<td>사용자 계정 생성 권한</td>
+</tr>
+<tr class="row-odd"><td>ALTER USER</td>
+<td>사용자 계정 수정 권한</td>
+</tr>
+<tr class="row-even"><td>DROP USER</td>
+<td>사용자 계정 삭제 권한</td>
+</tr>
+<tr class="row-odd"><td>COMMENT ANY</td>
+<td>모든 대상에 대한 주석 및 칼럼 분류 추가 권한</td>
+</tr>
+<tr class="row-even"><td>GRANT ANY OBJECT PRIVILEGE</td>
+<td>객체 권한 부여 권한</td>
+</tr>
+<tr class="row-odd"><td>GRANT ANY PRIVILEGE</td>
+<td>시스템 권한 부여 권한</td>
+</tr>
+<tr class="row-even"><td>ALL PRIVILEGES</td>
+<td>위의 모든 시스템 권한</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>GRANT ALTER SYSTEM, CREATE USER, DROP USER TO <span class="s2">&quot;octopus&quot;</span>, <span class="s2">&quot;admin&quot;</span><span class="p">;</span>
+
+REVOKE ALTER SYSTEM FROM <span class="s2">&quot;octopus&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>다음으로 객체 권한을 부여하고 제거하는 문장에 대해 알아본다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>GRANT objectPrivileges ON object TO grantees <span class="p">;</span>
+
+REVOKE objectPrivileges ON object FROM grantees <span class="p">;</span>
+
+objectPrivileges: objectPrivilege <span class="o">{</span> , objectPrivilege <span class="o">}</span>*
+object: <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s2">&quot;&lt;schemaName&gt;&quot;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName, schemaName</strong></p>
+<p>부여할 권한을 지정한 스키마에 국한.</p>
+<p><strong>objectPrivilege</strong></p>
+<p>아래 표에 있는 객체 권한들을 지원한다.</p>
+<table border="1" class="docutils" id="making-f-table">
+<colgroup>
+<col width="23%" />
+<col width="77%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">권한</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SELECT</td>
+<td>특정 스키마에 속한 테이블들에 대한 SELECT 질의 권한</td>
+</tr>
+<tr class="row-odd"><td>COMMENT</td>
+<td>특정 스키마에 속한 테이블과 칼럼에 대한 주석 및 칼럼 분류 추가 권한</td>
+</tr>
+<tr class="row-even"><td>ALL [ PRIVILEGES ]</td>
+<td>위의 모든 객체 권한</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>GRANT ALL ON <span class="s2">&quot;spark&quot;</span>.<span class="s2">&quot;default&quot;</span> TO <span class="s2">&quot;anon&quot;</span><span class="p">;</span>
+
+REVOKE COMMENT ON <span class="s2">&quot;spark&quot;</span>.<span class="s2">&quot;default&quot;</span> FROM <span class="s2">&quot;anon&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>주석 및 칼럼 분류<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>Octopus는 수많은 데이터소스, 스키마, 테이블, 칼럼, 사용자 계정에 대한 관리 용이를 위해 각 대상에 주석을 추가할 수 있는 기능을 제공하고 있다. 또한 칼럼이 어떤 내용을 담고 있는지에 대한 분류를 추가할 수 있는 기능도 제공하고 있다. 그리고 이렇게 추가한 주석과 칼럼 분류를 대상의 이름으로 조회할 수 있다. 먼저 주석과 칼럼 분류를 추가하는 문장을 알아보고, 조회하는 문장은 4.4.4의 SHOW 명령에서 알아보도록 한다.</p>
+<ul class="simple">
+<li>주석 추가</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>COMMENT ON target IS <span class="s1">&#39;&lt;comment&gt;&#39;</span> <span class="p">;</span>
+Target: DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span>
+       <span class="p">|</span> SCHEMA <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s2">&quot;&lt;schemaName&gt;&quot;</span>
+       <span class="p">|</span> TABLE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s2">&quot;&lt;schemaName&gt;&quot;</span> . <span class="s2">&quot;&lt;tableName&gt;&quot;</span>
+       <span class="p">|</span> COLUMN <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s2">&quot;&lt;schemaName&gt;&quot;</span> . <span class="s2">&quot;&lt;tableName&gt;&quot;</span> .
+                  <span class="s2">&quot;&lt;columnName&gt;&quot;</span>
+       <span class="p">|</span> USER <span class="s2">&quot;&lt;user&gt;&quot;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName, schemaName, tableName, columnName, user</strong></p>
+<p>주석을 추가할 데이터소스, 스키마, 테이블, 칼럼, 사용자 계정을 지정.</p>
+<p><strong>comment</strong></p>
+<p>대상에 추가할 주석 문자열.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>COMMENT ON USER <span class="s2">&quot;octopus&quot;</span> IS <span class="s1">&#39;super user&#39;</span><span class="p">;</span>
+COMMENT ON TABLE <span class="s2">&quot;spark&quot;</span>.<span class="s2">&quot;default&quot;</span>.<span class="s2">&quot;stat&quot;</span> IS <span class="s1">&#39;basic statistics&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>칼럼 분류 추가</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>SET DATACATEGORY
+  ON COLUMN <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> . <span class="s2">&quot;&lt;schemaName&gt;&quot;</span> . <span class="s2">&quot;&lt;tableName&gt;&quot;</span> .
+              <span class="s2">&quot;&lt;columnName&gt;&quot;</span>
+  IS <span class="s1">&#39;&lt;category&gt;&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName, schemaName, tableName, columnName</strong></p>
+<p>칼럼 분류를 추가할 칼럼을 지정.</p>
+<p><strong>category</strong></p>
+<p>칼럼 분류 문자열.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>SET DATACATEGORY ON COLUMN <span class="s2">&quot;spark&quot;</span>.<span class="s2">&quot;account&quot;</span>.<span class="s2">&quot;vip&quot;</span>.<span class="s2">&quot;ssn&quot;</span> IS <span class="s1">&#39;private&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="show">
+<h3>SHOW 명령<a class="headerlink" href="#show" title="Permalink to this headline">¶</a></h3>
+<p>이 절에서는 사용자 계정 정보, 스키마 정보, 권한 정보, 주석, 칼럼 분류를 조회할 수 있는 기능을 제공한다.</p>
+<ul class="simple">
+<li>사용자 계정 조회</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW ALL USERS <span class="p">;</span>
+</pre></div>
+</div>
+<p>결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-g-table">
+<colgroup>
+<col width="22%" />
+<col width="23%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>USER_NAME</td>
+<td>VARCHAR</td>
+<td>사용자 계정 이름</td>
+</tr>
+<tr class="row-odd"><td>REMARKS</td>
+<td>VARCHAR</td>
+<td>사용자 계정에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>데이터소스, 스키마, 테이블, 칼럼 조회</li>
+</ul>
+<p>아래 문장은 차례로 데이터소스, 스키마, 테이블, 칼럼 정보를 조회한다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW DATASOURCES <span class="p">;</span>
+
+SHOW SCHEMAS <span class="o">[</span> DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> <span class="o">]</span> <span class="o">[</span> SCHEMA &lt;schemaPattern&gt; <span class="o">]</span> <span class="p">;</span>
+
+SHOW TABLES <span class="o">[</span> DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> <span class="o">]</span> <span class="o">[</span> SCHEMA <span class="s1">&#39;&lt;schemaPattern&gt;&#39;</span> <span class="o">]</span>
+              <span class="o">[</span> TABLE <span class="s1">&#39;&lt;tablePattern&gt;&#39;</span> <span class="o">]</span> <span class="p">;</span>
+
+SHOW COLUMNS <span class="o">[</span> DATASOURCE <span class="s2">&quot;&lt;dataSourceName&gt;&quot;</span> <span class="o">]</span> <span class="o">[</span> SCHEMA <span class="s1">&#39;&lt;schemaPattern&gt;&#39;</span> <span class="o">]</span>
+               <span class="o">[</span> TABLE <span class="s1">&#39;&lt;tablePattern&gt;&#39;</span> <span class="o">]</span> <span class="o">[</span> COLUMN <span class="s1">&#39;&lt;columnPattern&gt;&#39;</span> <span class="o">]</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>dataSourceName</strong></p>
+<p>정보를 조회할 데이터소스 이름</p>
+<p><strong>schemaPattern, tablePattern, columnPattern</strong></p>
+<p>정보를 조회할 특정 스키마, 테이블, 칼럼의 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일하며 생략할 경우 모든 대상을 조회한다.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW TABLES DATASOURCE <span class="s2">&quot;spark&quot;</span> TABLE <span class="s1">&#39;%stat%&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>데이터소스에 대한 결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-h-table">
+<colgroup>
+<col width="20%" />
+<col width="24%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TABLE_CAT</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-odd"><td>REMARKS</td>
+<td>VARCHAR</td>
+<td>데이터소스에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+<p>스키마에 대한 결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-j-table">
+<colgroup>
+<col width="33%" />
+<col width="20%" />
+<col width="47%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TABLE_SCHEM</td>
+<td>VARCHAR</td>
+<td>스키마 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_CATALOG</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-even"><td>REMARKS</td>
+<td>VARCHAR</td>
+<td>스키마에 추가한 주석</td>
+</tr>
+<tr class="row-odd"><td>TABLE_CAT_REMARKS</td>
+<td>VARCHAR</td>
+<td>데이터소스에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+<p>테이블에 대한 결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-k-table">
+<colgroup>
+<col width="31%" />
+<col width="16%" />
+<col width="53%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TABLE_CAT</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_SCHEM</td>
+<td>VARCHAR</td>
+<td>스키마 이름</td>
+</tr>
+<tr class="row-even"><td>TABLE_NAME</td>
+<td>VARCHAR</td>
+<td>테이블 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_TYPE</td>
+<td>VARCHAR</td>
+<td>테이블 타입 (TABLE, VIEW)</td>
+</tr>
+<tr class="row-even"><td>REMARKS</td>
+<td>VARCHAR</td>
+<td>테이블에 추가한 주석</td>
+</tr>
+<tr class="row-odd"><td>TABLE_CAT_REMARKS</td>
+<td>VARCHAR</td>
+<td>데이터소스에 추가한 주석</td>
+</tr>
+<tr class="row-even"><td>TABLE_SCHEM_REMARKS</td>
+<td>VARCHAR</td>
+<td>스키마에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+<p>칼럼에 대한 결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-l-table">
+<colgroup>
+<col width="31%" />
+<col width="20%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TABLE_CAT</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_SCHEM</td>
+<td>VARCHAR</td>
+<td>스키마 이름</td>
+</tr>
+<tr class="row-even"><td>TABLE_NAME</td>
+<td>VARCHAR</td>
+<td>테이블 이름</td>
+</tr>
+<tr class="row-odd"><td>COLUMN_NAME</td>
+<td>VARCHAR</td>
+<td>칼럼 이름</td>
+</tr>
+<tr class="row-even"><td>DATA_TYPE</td>
+<td>VARCHAR</td>
+<td>칼럼의 SQL 타입 (정수)</td>
+</tr>
+<tr class="row-odd"><td>TYPE_NAME</td>
+<td>VARCHAR</td>
+<td>타입 이름</td>
+</tr>
+<tr class="row-even"><td>REMARKS</td>
+<td>VARCHAR</td>
+<td>칼럼에 추가한 주석</td>
+</tr>
+<tr class="row-odd"><td>DATA_CATEGORY</td>
+<td>VARCHAR</td>
+<td>칼럼 분류</td>
+</tr>
+<tr class="row-even"><td>TABLE_CAT_REMARKS</td>
+<td>VARCHAR</td>
+<td>데이터소스에 추가한 주석</td>
+</tr>
+<tr class="row-odd"><td>TABLE_SCHEM_REMARKS</td>
+<td>VARCHAR</td>
+<td>스키마에 추가한 주석</td>
+</tr>
+<tr class="row-even"><td>TABLE_NAME_REMARKS</td>
+<td>VARCHAR</td>
+<td>테이블에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>사용자 계정에 부여된 스키마에 대한 권한 조회</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW OBJECT PRIVILEGES FOR <span class="s1">&#39;&lt;user&gt;&#39;</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>user</strong></p>
+<p>권한을 조회할 대상 계정.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW OBJECT PRIVILEGES FOR <span class="s2">&quot;octopus&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-m-table">
+<colgroup>
+<col width="14%" />
+<col width="14%" />
+<col width="72%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TABLE_CAT</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_SCHEM</td>
+<td>VARCHAR</td>
+<td>스키마 이름</td>
+</tr>
+<tr class="row-even"><td>PRIVILEGE</td>
+<td>VARCHAR</td>
+<td>사용자 계정에 부여된 스키마에 대한 권한 (쉼표 구분 리스트)</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>주석 조회</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW COMMENTS <span class="o">[</span> <span class="s1">&#39;&lt;commentPattern&gt;&#39;</span> <span class="o">}</span>
+  <span class="o">[</span> DATASOURCE <span class="s1">&#39;&lt;dataSourcePattern&gt;&#39;</span> <span class="o">]</span> <span class="o">[</span> SCHEMA <span class="s1">&#39;&lt;schemaPattern&gt;&#39;</span> <span class="o">]</span>
+  <span class="o">[</span> TABLE <span class="s1">&#39;&lt;tablePattern&gt;&#39;</span> <span class="o">]</span> <span class="o">[</span> COLUMN <span class="s1">&#39;&lt;columnPattern&gt;&#39;</span> <span class="o">]</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>commentPattern</strong></p>
+<p>조회할 주석의 패턴을 지정한다.</p>
+<p><strong>dataSourcePattern, schemaPattern, tablePattern, columnPattern</strong></p>
+<p>특정 데이터소스, 스키마, 테이블, 칼럼의 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일하며 생략할 경우 모든 대상의 주석을 조회한다.</p>
+<blockquote>
+<div><ul class="simple">
+<li>예제</li>
+</ul>
+</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre>SHOW COMMENTS <span class="s1">&#39;%average%&#39;</span> DATASOURCE <span class="s1">&#39;spark&#39;</span> TABLE <span class="s1">&#39;%stat%&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>결과 칼럼은 아래와 같다.</p>
+<table border="1" class="docutils" id="making-n-table">
+<colgroup>
+<col width="23%" />
+<col width="12%" />
+<col width="64%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">이름</th>
+<th class="head">타입</th>
+<th class="head">설명</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>OBJECT_TYPE</td>
+<td>VARCHAR</td>
+<td>대상에 따라 CATALOG, SCHEMA, TABLE, COLUMN</td>
+</tr>
+<tr class="row-odd"><td>TABLE_CAT</td>
+<td>VARCHAR</td>
+<td>데이터소스 이름</td>
+</tr>
+<tr class="row-even"><td>TABLE_SCHEM</td>
+<td>VARCHAR</td>
+<td>스키마 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_NAME</td>
+<td>VARCHAR</td>
+<td>테이블 이름</td>
+</tr>
+<tr class="row-even"><td>COLUMN_NAME</td>
+<td>VARCHAR</td>
+<td>칼럼 이름</td>
+</tr>
+<tr class="row-odd"><td>TABLE_CAT_REMARKS</td>
+<td>VARCHAR</td>
+<td>데이터소스에 추가한 주석</td>
+</tr>
+<tr class="row-even"><td>TABLE_SCHEM_REMARKS</td>
+<td>VARCHAR</td>
+<td>스키마에 추가한 주석</td>
+</tr>
+<tr class="row-odd"><td>TABLE_NAME_REMARKS</td>
+<td>VARCHAR</td>
+<td>테이블에 추가한 주석</td>
+</tr>
+<tr class="row-even"><td>COLUMN_NAME_REMARKS</td>
+<td>VARCHAR</td>
+<td>칼럼에 추가한 주석</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Connector.html" class="btn btn-neutral float-right" title="Connector" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="사용자 도구.html" class="btn btn-neutral" title="사용자 도구" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, bitnine.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+
+사용자 도구
+===========
+Octopus는 사용자 편의를 위해 CLI를 통해 SQL을 실행할 수 있도록 하는 octaline과, 처음 설치시 관리자 계정을 생성하기 위한 octopus meta 명령을 제공하고 있다. 이 절에서는 위의 기능들에 대해 알아본다.
+
+octaline
+--------
+octaline은 사용자가 CLI로 Octopus 인스턴스에 접속하여 SQL을 실행할 수 있도록 한다. bin 디렉터리에 있는 octaline 스크립트를 실행하여 octaline을 사용할 수 있다. 아래는 octaline을 실행하고, localhost에서 서비스중인 Octopus 인스턴스에 접속하여 SQL을 실행하는 예이다.
+
+.. code-block:: bash
+
+    $ octaline
+    sqlline version 1.1.9
+    sqlline> !connect jdbc:octopus://localhost
+    scan complete in 16ms
+    scan complete in 1031ms
+    Enter username for jdbc:octopus://localhost: octopus
+    Enter password for jdbc:octopus://localhost: *******
+    Error: not implemented (state=,code=0)
+    Error: not implemented (state=,code=0)
+    Error: not implemented (state=,code=0)
+    0: jdbc:octopus://localhost> !outputformat vertical
+    0: jdbc:octopus://localhost> show all users;
+    USER_NAME  octopus
+    REMARKS    
+    
+    2 rows selected (0.008 seconds)
+    0: jdbc:octopus://localhost> Closing: kr.co.bitnine.octopus.OctopusConnection
+    
+    $
+
+octaline은 실제 실행 및 동작에 sqlline(https://github.com/julianhyde/sqlline.git)을 사용한다. 기타 자세한 명령은 해당 도구의 문서를 참고하기 바란다. 그리고 접속할 때 사용한 연결 URL에 대한 자세한 설명은 5.2를 참고하기 바란다.
+
+octopus meta
+------------
+처음 Octopus를 설치하면 사용자 계정 정보가 없으므로, Octopus 인스턴스를 실행해도 접속조차 할 수 없다. 그러므로 설치 편의를 위해 관리자 계정을 생성하는 명령을 제공하고 있다. Octopus 인스턴스를 실행하기 전에 bin 디렉터리의 octopus 스크립트를 통해 관리자 계정을 생성할 수 있다. 아래 예제는 octopus라는 관리자 계정을 생성하고 암호를 bitnine로 설정한다.
+
+.. code-block:: bash
+
+    $ octopus meta
+    Usage: octopus meta COMMAND ...
+    where COMMAND is one of:
+      -superuser    create a superuser with given <username> and <password>
+    $ octopus meta –superuser octopus bitnine
+    $
+
+관리자 계정 모든 시스템 권한을 가지고 있는 계정을 말한다. 시스템 권한에 대한 자세한 내용은 4.4.2를 참고하기 바란다.
+

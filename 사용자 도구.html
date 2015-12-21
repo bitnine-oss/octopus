@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>사용자 도구 &mdash; octopus 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="octopus 0.1 documentation" href="index.html"/>
+        <link rel="next" title="SQL" href="SQL.html"/>
+        <link rel="prev" title="설치 및 운영" href="설치 및 운영.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> octopus
+          
+
+          
+            
+            <img src="_static/Octopus-logo.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="개요.html">개요</a></li>
+<li class="toctree-l1"><a class="reference internal" href="설치 및 운영.html">설치 및 운영</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">사용자 도구</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#octaline">octaline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-meta">octopus meta</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SQL.html">SQL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Connector.html">Connector</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">octopus</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>사용자 도구</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/사용자 도구.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>사용자 도구<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Octopus는 사용자 편의를 위해 CLI를 통해 SQL을 실행할 수 있도록 하는 octaline과, 처음 설치시 관리자 계정을 생성하기 위한 octopus meta 명령을 제공하고 있다. 이 절에서는 위의 기능들에 대해 알아본다.</p>
+<div class="section" id="octaline">
+<h2>octaline<a class="headerlink" href="#octaline" title="Permalink to this headline">¶</a></h2>
+<p>octaline은 사용자가 CLI로 Octopus 인스턴스에 접속하여 SQL을 실행할 수 있도록 한다. bin 디렉터리에 있는 octaline 스크립트를 실행하여 octaline을 사용할 수 있다. 아래는 octaline을 실행하고, localhost에서 서비스중인 Octopus 인스턴스에 접속하여 SQL을 실행하는 예이다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>$ octaline
+sqlline version 1.1.9
+sqlline&gt; !connect jdbc:octopus://localhost
+scan complete in 16ms
+scan complete in 1031ms
+Enter username for jdbc:octopus://localhost: octopus
+Enter password for jdbc:octopus://localhost: *******
+Error: not implemented (state=,code=0)
+Error: not implemented (state=,code=0)
+Error: not implemented (state=,code=0)
+0: jdbc:octopus://localhost&gt; !outputformat vertical
+0: jdbc:octopus://localhost&gt; show all users;
+USER_NAME  octopus
+REMARKS
+
+2 rows selected (0.008 seconds)
+0: jdbc:octopus://localhost&gt; Closing: kr.co.bitnine.octopus.OctopusConnection
+
+$
+</pre></div>
+</div>
+<p>octaline은 실제 실행 및 동작에 sqlline(<a class="reference external" href="https://github.com/julianhyde/sqlline.git">https://github.com/julianhyde/sqlline.git</a>)을 사용한다. 기타 자세한 명령은 해당 도구의 문서를 참고하기 바란다. 그리고 접속할 때 사용한 연결 URL에 대한 자세한 설명은 5.2를 참고하기 바란다.</p>
+</div>
+<div class="section" id="octopus-meta">
+<h2>octopus meta<a class="headerlink" href="#octopus-meta" title="Permalink to this headline">¶</a></h2>
+<p>처음 Octopus를 설치하면 사용자 계정 정보가 없으므로, Octopus 인스턴스를 실행해도 접속조차 할 수 없다. 그러므로 설치 편의를 위해 관리자 계정을 생성하는 명령을 제공하고 있다. Octopus 인스턴스를 실행하기 전에 bin 디렉터리의 octopus 스크립트를 통해 관리자 계정을 생성할 수 있다. 아래 예제는 octopus라는 관리자 계정을 생성하고 암호를 bitnine로 설정한다.</p>
+<div class="highlight-bash"><div class="highlight"><pre>$ octopus meta
+Usage: octopus meta COMMAND ...
+where COMMAND is one of:
+  -superuser    create a superuser with given &lt;username&gt; and &lt;password&gt;
+$ octopus meta –superuser octopus bitnine
+$
+</pre></div>
+</div>
+<p>관리자 계정 모든 시스템 권한을 가지고 있는 계정을 말한다. 시스템 권한에 대한 자세한 내용은 4.4.2를 참고하기 바란다.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="SQL.html" class="btn btn-neutral float-right" title="SQL" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="설치 및 운영.html" class="btn btn-neutral" title="설치 및 운영" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, bitnine.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
