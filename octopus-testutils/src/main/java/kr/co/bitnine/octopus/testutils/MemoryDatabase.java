@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.testutils;
 
+import java.sql.ResultSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -42,8 +43,10 @@ public final class MemoryDatabase {
     }
 
     public synchronized void start() throws SQLException {
-        if (initialConnection == null)
+        if (initialConnection == null) {
             initialConnection = DriverManager.getConnection(connectionString);
+            initialConnection.setAutoCommit(true);
+        }
     }
 
     public synchronized void stop() throws SQLException {
@@ -126,5 +129,14 @@ public final class MemoryDatabase {
         Statement stmt = initialConnection.createStatement();
         stmt.executeUpdate(sqlStmt);
         stmt.close();
+    }
+
+    public void selectFrom(String sqlStmt) throws SQLException {
+        Statement stmt = initialConnection.createStatement();
+        ResultSet rs = stmt.executeQuery(sqlStmt);
+        int size = 0;
+        while (rs.next())
+            size++;
+        System.out.println("ResultSize:" + size + " SQL:" + sqlStmt);
     }
 }

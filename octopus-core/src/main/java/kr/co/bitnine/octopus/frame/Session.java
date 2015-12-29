@@ -767,6 +767,7 @@ public final class Session implements Runnable {
         }
 
         metaContext.close();
+        queryEngine.closeAll();
 
         eventHandler.onClose(this);
     }

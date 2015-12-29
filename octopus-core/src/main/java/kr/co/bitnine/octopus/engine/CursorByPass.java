@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.engine;
 
+import java.sql.DriverManager;
 import kr.co.bitnine.octopus.frame.ConnectionManager;
 import kr.co.bitnine.octopus.frame.Session;
 import kr.co.bitnine.octopus.postgres.access.common.TupleDesc;
@@ -71,15 +72,23 @@ public final class CursorByPass extends Portal {
          *       To reduce number of copies, cache queryString.
          */
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
-        SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
-            @Override
-            public SqlNode visit(SqlIdentifier id) {
-                return id.clone(id.getParserPosition());
-            }
-        });
-        TableNameTranslator.toDSN(cloned);
-        SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
-        queryString = cloned.toSqlString(dp.getDialect()).getSql();
+        if (dataSourceName == null) {
+            /* Complex queries are processed by Calcite via Avatica JDBC driver.
+             * So they are not converted to DSN form.
+             */
+            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
+            queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
+        } else {
+            SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
+                @Override
+                public SqlNode visit(SqlIdentifier id) {
+                    return id.clone(id.getParserPosition());
+                }
+            });
+            TableNameTranslator.toDSN(cloned);
+            SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
+            queryString = cloned.toSqlString(dp.getDialect()).getSql();
+        }
     }
 
     private void prepareStatement() throws PostgresException {
@@ -92,8 +101,13 @@ public final class CursorByPass extends Portal {
         byte[][] values = getParamValues();
 
         try {
-            conn = ConnectionManager.getConnection(dataSourceName);
-            LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+            if (dataSourceName == null) { // complex query
+                conn = DriverManager.getConnection("jdbc:octopus-calcite:");
+                LOG.info("Avatica JDBC connection for session(" + sessionId + ')');
+            } else {
+                conn = ConnectionManager.getConnection(dataSourceName);
+                LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
+            }
 
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
@@ -216,7 +230,7 @@ public final class CursorByPass extends Portal {
             for (int i = 0; i < colCnt; i++) {
                 String colName = rsmd.getColumnName(i + 1);
                 int colType = rsmd.getColumnType(i + 1);
-                LOG.debug("JDBC type of column '" + colName + "' is " + colType);
+                LOG.info("JDBC type of column '" + colName + "' is " + colType);
                 PostgresType type = TypeInfo.postresTypeOfJdbcType(colType);
                 int typeInfo = -1;
                 if (type == PostgresType.VARCHAR)

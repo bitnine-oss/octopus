@@ -16,23 +16,27 @@ package kr.co.bitnine.octopus.schema;
 
 import kr.co.bitnine.octopus.meta.model.MetaColumn;
 import kr.co.bitnine.octopus.meta.model.MetaTable;
+import org.apache.calcite.adapter.java.AbstractQueryableTable;
+import org.apache.calcite.linq4j.QueryProvider;
+import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.Schema;
-import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class OctopusTable extends AbstractTable {
-    private final String name;
+public abstract class OctopusTable extends AbstractQueryableTable {
     private Schema.TableType tableType;
-    private final RelProtoDataType protoRowType;
+    private RelProtoDataType protoRowType;
     private final OctopusSchema schema;
+    private final String name;
 
     public OctopusTable(MetaTable metaTable, OctopusSchema schema) {
+        super(Object[].class);
         name = metaTable.getName();
 
         try {
@@ -59,21 +63,28 @@ public final class OctopusTable extends AbstractTable {
         this.schema = schema;
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public RelDataType getRowType(RelDataTypeFactory relDataTypeFactory) {
+    public final RelDataType getRowType(RelDataTypeFactory relDataTypeFactory) {
         return protoRowType.apply(relDataTypeFactory);
     }
 
     @Override
-    public Schema.TableType getJdbcTableType() {
+    public final Schema.TableType getJdbcTableType() {
         return tableType;
     }
 
-    public OctopusSchema getSchema() {
+    public final OctopusSchema getSchema() {
         return schema;
     }
+
+    public final RelProtoDataType getProtoRowType() {
+        return protoRowType;
+    }
+
+    @Override
+    public abstract <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schemaPlus, String tableName);
 }

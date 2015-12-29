@@ -12,27 +12,13 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.schema.jdbc;
 
-import java.util.Collection;
+import org.apache.calcite.rel.RelNode;
 
-public interface MetaDataSource {
-
-    enum DataSourceType {
-        JDBC,
-        CATALOG,
-        METAMODEL
-    }
-
-    String getName();
-
-    String getDriverName();
-
-    String getConnectionString();
-
-    String getComment();
-
-    DataSourceType getDataSourceType();
-
-    Collection<MetaSchema> getSchemas();
+/**
+ * Relational expression that uses JDBC calling convention.
+ */
+public interface JdbcRel extends RelNode {
+    JdbcImplementor.Result implement(JdbcImplementor implementor);
 }

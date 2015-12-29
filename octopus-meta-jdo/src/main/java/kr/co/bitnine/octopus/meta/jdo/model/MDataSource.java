@@ -50,6 +50,9 @@ public final class MDataSource implements MetaDataSource {
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
+    @Persistent
+    private MetaDataSource.DataSourceType dataSourceType;
+
     @Persistent(mappedBy = "dataSource", dependentElement = "true")
     private Collection<MSchema> schemas;
 
@@ -83,6 +86,15 @@ public final class MDataSource implements MetaDataSource {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    @Override
+    public MetaDataSource.DataSourceType getDataSourceType() {
+        return dataSourceType;
+    }
+
+    public void setDataSourceType(MetaDataSource.DataSourceType dataSourceType) {
+        this.dataSourceType = dataSourceType;
     }
 
     @Override

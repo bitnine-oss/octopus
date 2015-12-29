@@ -65,7 +65,7 @@ public class QueryEngineTest {
         connectionManager.init(conf);
         connectionManager.start();
 
-        schemaManager = new SchemaManager(metaStore);
+        schemaManager = SchemaManager.getSingletonInstance(metaStore);
         schemaManager.init(conf);
         schemaManager.start();
 

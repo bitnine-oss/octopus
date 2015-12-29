@@ -14,6 +14,7 @@
 
 package kr.co.bitnine.octopus.frame;
 
+import java.io.PrintWriter;
 import kr.co.bitnine.octopus.conf.OctopusConfiguration;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaStore;
@@ -25,9 +26,14 @@ import kr.co.bitnine.octopus.meta.privilege.SystemPrivilege;
 import kr.co.bitnine.octopus.schema.SchemaManager;
 import kr.co.bitnine.octopus.testutils.MemoryDatabase;
 import kr.co.bitnine.octopus.util.NetUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -42,12 +48,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Properties;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SessionServerTest {
+    private static final Log LOG = LogFactory.getLog(SchemaManager.class);
+
     private static MemoryDatabase metaMemDb;
     private static MemoryDatabase dataMemDb;
     private static MetaStoreService metaStoreService;
@@ -58,10 +70,27 @@ public class SessionServerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            LOG.info("start JUnit test: " + description.getDisplayName());
+        }
+
+        @Override
+        protected void finished(Description description) {
+            LOG.info("finished. JUnit test: " + description.getDisplayName());
+        }
+    };
 
     @BeforeClass
     public static void setUpClass() throws Exception {
         Class.forName("kr.co.bitnine.octopus.Driver");
+        //DriverManager.setLogWriter(new PrintWriter(System.out));
+    }
+
+    @Before
+    public void setUp() throws Exception {
         metaMemDb = new MemoryDatabase("meta");
         metaMemDb.start();
 
@@ -89,7 +118,7 @@ public class SessionServerTest {
         connectionManager.init(conf);
         connectionManager.start();
 
-        schemaManager = new SchemaManager(metaStore);
+        schemaManager = SchemaManager.getSingletonInstance(metaStore);
         schemaManager.init(conf);
         schemaManager.start();
 
@@ -108,10 +137,11 @@ public class SessionServerTest {
         conn.close();
     }
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         sessionServer.stop();
         schemaManager.stop();
+        connectionManager.stop();
         metaStoreService.stop();
 
         dataMemDb.stop();
@@ -292,8 +322,6 @@ public class SessionServerTest {
         rows = checkNumRows(stmt, tblName);
         assertEquals(rows, 1);
 
-        dataMemDb.runExecuteUpdate("DROP TABLE \"" + tblName + '"');
-
         stmt.close();
         conn.close();
     }
@@ -472,6 +500,50 @@ public class SessionServerTest {
 
         conn.close();
     }
+
+    /*
+     * Calcite has a problem that Connection for Data source in Octopus is not closed in a right way.
+     * This is because ResultSetEnumerator.close() is not called.
+     * So, if we test complex queries, the next test case has a problem that the Sqlite DB is not destroyed.
+     * For now, we temporarily decide not to conduct test cases for complex queries.
+     */
+    /*
+    @Test
+    public void testComplexSelect() throws Exception {
+        MemoryDatabase newMemDb = new MemoryDatabase("DATA2");
+        newMemDb.start();
+
+        newMemDb.runExecuteUpdate("CREATE TABLE \"TMP2\" (\"ID\" TEXT, \"NAME\" TEXT)");
+        newMemDb.runExecuteUpdate("INSERT INTO \"TMP2\" VALUES (1, 'bitnine')");
+        newMemDb.runExecuteUpdate("INSERT INTO \"TMP2\" VALUES (1, 'bitnine')");
+        newMemDb.runExecuteUpdate("INSERT INTO \"TMP2\" VALUES (1, 'bitnine')");
+
+        newMemDb.selectFrom("SELECT * FROM \"TMP2\"");
+
+        Connection conn = getConnection("octopus", "bitnine");
+
+        Statement stmt = conn.createStatement();
+        stmt.execute("ALTER SYSTEM ADD DATASOURCE \"" + newMemDb.name
+                + "\" CONNECT TO '" + newMemDb.connectionString
+                + "' USING '" + MemoryDatabase.DRIVER_NAME + "'");
+
+        stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "SELECT \"EM\".\"name\" " +
+                        "FROM \"employee\" \"EM\", " +
+                        "\"DATA2\".\"__DEFAULT\".\"TMP2\" \"TM\" " +
+                        "WHERE \"EM\".\"id\" = \"TM\".\"ID\"");
+
+        while (rs.next()) {
+            System.out.println(rs.getString(1));
+        }
+
+        rs.close();
+        stmt.close();
+        conn.close();
+        newMemDb.stop();
+    }
+    */
 
     @Test
     public void testUser() throws Exception {

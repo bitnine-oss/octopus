@@ -154,6 +154,17 @@ public abstract class AbstractQueryProcessor implements QueryProcessor {
         p.close();
     }
 
+    @Override
+    public final void closeAll() {
+        for (Portal p : portals.values())
+            p.close();
+        portals.clear();
+
+        for (CachedQuery cq : cachedQueries.values())
+            cq.close();
+        cachedQueries.clear();
+    }
+
     protected abstract CachedQuery processParse(String queryString, PostgresType[] paramTypes) throws PostgresException;
 
     protected abstract Portal processBind(CachedQuery cachedQuery,

@@ -12,27 +12,19 @@
  * limitations under the License.
  */
 
-package kr.co.bitnine.octopus.meta.model;
+package kr.co.bitnine.octopus.schema.jdbc;
 
-import java.util.Collection;
+import org.apache.calcite.linq4j.Enumerator;
+import org.apache.calcite.linq4j.QueryProviderImpl;
+import org.apache.calcite.linq4j.Queryable;
 
-public interface MetaDataSource {
+public final class JdbcQueryProvider extends QueryProviderImpl {
+    public static final JdbcQueryProvider INSTANCE = new JdbcQueryProvider();
 
-    enum DataSourceType {
-        JDBC,
-        CATALOG,
-        METAMODEL
+    private JdbcQueryProvider() {
     }
 
-    String getName();
-
-    String getDriverName();
-
-    String getConnectionString();
-
-    String getComment();
-
-    DataSourceType getDataSourceType();
-
-    Collection<MetaSchema> getSchemas();
+    public <T> Enumerator<T> executeQuery(Queryable<T> queryable) {
+        return null;
+    }
 }

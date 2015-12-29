@@ -22,6 +22,8 @@ import kr.co.bitnine.octopus.postgres.utils.PostgresErrorData;
 import kr.co.bitnine.octopus.postgres.utils.PostgresException;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSQLState;
 import kr.co.bitnine.octopus.postgres.utils.PostgresSeverity;
+import kr.co.bitnine.octopus.schema.jdbc.JdbcUtils;
+import kr.co.bitnine.octopus.schema.jdbc.OctopusJdbcDataSource;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -45,6 +47,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class SchemaManager extends AbstractService {
     private static final Log LOG = LogFactory.getLog(SchemaManager.class);
+    private static SchemaManager singletonInstance;
 
     private final MetaStore metaStore;
     private SchemaPlus rootSchema;
@@ -58,7 +61,7 @@ public final class SchemaManager extends AbstractService {
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    public SchemaManager(MetaStore metaStore) {
+    private SchemaManager(MetaStore metaStore) {
         super(SchemaManager.class.getName());
 
         this.metaStore = metaStore;
@@ -69,11 +72,32 @@ public final class SchemaManager extends AbstractService {
         tableMap = new HashMap<>();
     }
 
+    public static SchemaManager getSingletonInstance(MetaStore metaStore) {
+        if (singletonInstance == null) {
+            assert metaStore != null;
+            singletonInstance = new SchemaManager(metaStore);
+        }
+        return singletonInstance;
+    }
+
     @Override
     protected void serviceStart() throws Exception {
         loadMeta();
 
         super.serviceStart();
+    }
+
+    @Override
+    protected void serviceStop() throws Exception {
+        LOG.info("stop service - " + getName());
+        resetDataSourcePool();
+        singletonInstance = null;
+
+        super.serviceStop();
+    }
+
+    public void resetDataSourcePool() throws Exception {
+        JdbcUtils.DataSourcePool.INSTANCE.closeAll();
     }
 
     private void loadMeta() throws MetaException {
@@ -86,7 +110,9 @@ public final class SchemaManager extends AbstractService {
     }
 
     public void addDataSource(MetaDataSource metaDataSource) {
-        OctopusDataSource octopusDataSource = new OctopusDataSource(metaDataSource);
+        // TODO: create DataSource classes according to the type of the DataSource (eg. JDBC, Catalog, MetaModel, ...)
+        LOG.info("Add DataSource to Calcite Schema. DataSourceName: " + metaDataSource.getName());
+        OctopusDataSource octopusDataSource = new OctopusJdbcDataSource(rootSchema, metaDataSource);
         addDataSource(octopusDataSource);
     }
 

@@ -20,6 +20,8 @@ limitations under the License.
 <module name="Checker">
   <!--property name="basedir" value="${basedir}"/-->
 
+  <module name="SuppressionCommentFilter"/>
+
   <!-- http://checkstyle.sourceforge.net/config_header.html#RegexpHeader -->
   <module name="RegexpHeader">
     <property name="headerFile" value="${checkstyle.header.file}"/>
@@ -45,6 +47,8 @@ limitations under the License.
   </module>
 
   <module name="TreeWalker">
+    <module name="FileContentsHolder"/>
+
     <!-- http://checkstyle.sourceforge.net/config_annotation.html -->
     <module name="AnnotationUseStyle">
       <property name="elementStyle" value="expanded"/>

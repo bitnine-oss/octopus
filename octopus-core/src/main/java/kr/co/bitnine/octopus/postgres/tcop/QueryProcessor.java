@@ -34,4 +34,6 @@ public interface QueryProcessor {
     void closeCachedQuery(String stmtName) throws PostgresException;
 
     void closePortal(String portalName) throws PostgresException;
+
+    void closeAll();
 }
