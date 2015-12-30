@@ -1,0 +1,47 @@
+
+User tool
+=========
+For user convineance, the Octopus provide the octaline that makes running SQL by CLI and octopus meta command for creating the administrator's account when first install. in this chapter we'll explain about above function.
+
+octaline
+--------
+The octaline allows a user to connect the Octopus instance and execute the SQL in CLI. You can execute the octaline by running a octaline script which is located in bin directory. The following is an example how you can run an octaline, connect to the Octopus instance and execute SQL.
+
+.. code-block:: bash
+
+    $ octaline
+    sqlline version 1.1.9
+    sqlline> !connect jdbc:octopus://localhost
+    scan complete in 16ms
+    scan complete in 1031ms
+    Enter username for jdbc:octopus://localhost: octopus
+    Enter password for jdbc:octopus://localhost: *******
+    Error: not implemented (state=,code=0)
+    Error: not implemented (state=,code=0)
+    Error: not implemented (state=,code=0)
+    0: jdbc:octopus://localhost> !outputformat vertical
+    0: jdbc:octopus://localhost> show all users;
+    USER_NAME  octopus
+    REMARKS    
+    
+    2 rows selected (0.008 seconds)
+    0: jdbc:octopus://localhost> Closing: kr.co.bitnine.octopus.OctopusConnection
+    
+    $
+
+The octaline uses sqlline(https://github.com/julianhyde/sqlline.git) in executing and running. If you want some detail, please refer the tool's documentation. And if you want somthing information about connection URL which is used to connection, please refer to 5.2.
+
+octopus meta
+------------
+When you first install the Octopus because there is no user account information, you cannot connect to the Octopus even if you executed the Octopus. So for the purpose of convinience of the installation, the Octopus provide the command that can create the administrator's account. You can create an administrator's account before execute the Octopus instance by running an octopus script which is located in bin directory. For the example, if you want create an administrator account and set the password to that octopus and bitnine. 
+
+.. code-block:: bash
+
+    $ octopus meta
+    Usage: octopus meta COMMAND ...
+    where COMMAND is one of:
+      -superuser    create a superuser with given <username> and <password>
+    $ octopus meta –superuser octopus bitnine
+    $
+
+Administrator account refers to an account that has all the system privileges. For more information about system privileges, please refer to 4.4.2.

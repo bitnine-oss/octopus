@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html>
 <!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
@@ -9,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; octopus 0.1 documentation</title>
+  <title>octopus.io Project &mdash; octopus 0.1 documentation</title>
   
 
   
@@ -119,9 +118,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li></li>
+    <li>octopus.io Project</li>
       <li class="wy-breadcrumbs-aside">
         
+          
+            <a href="_sources/README.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -131,11 +132,45 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
+  <div class="section" id="octopus-io-project">
+<h1>octopus.io Project<a class="headerlink" href="#octopus-io-project" title="Permalink to this headline">¶</a></h1>
+<p>Octopus.io project is for octopus documentation. We use the resulting documentations for hosting the homepage of Octopus project.</p>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>This project uses a document generation tool, Sphinx (<a class="reference external" href="http://sphinx-doc.org/index.html">http://sphinx-doc.org/index.html</a>). Sphinx uses reStructuredText format and we apply sphinx_rtd_theme for appearance.</p>
+</div>
+<div class="section" id="build">
+<h2>Build<a class="headerlink" href="#build" title="Permalink to this headline">¶</a></h2>
+<p>The build process for this project is as follows:</p>
+<ol class="arabic simple">
+<li>In order to install sphinx, first you need to install easy_install. You can install it and check the installation as follows (in Centos).</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>sudo yum install python-setuptools
+<span class="nv">$ </span>easy_install --version
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>Install Sphinx using easy_install.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>sudo easy_install -U Sphinx
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Build this project using sphinx.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>git clone https://github.com/bitnine-oss/octopus.io.git
+<span class="nv">$ </span><span class="nb">cd </span>ocotpus.io
+<span class="nv">$ </span>make html
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li>You can check the build result by printing _build/html/index.html.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span><span class="nb">cd </span>_build/html/
+<span class="nv">$ </span>cat index.html
+</pre></div>
+</div>
+</div>
 </div>
 
 

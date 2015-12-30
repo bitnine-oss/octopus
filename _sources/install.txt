@@ -1,0 +1,208 @@
+
+
+Installation and Management
+===========================
+
+In this chapter we'll explain about the Octopus's installation and management.
+
+prerequisite
+------------
+
+It must satisfy the following requirements and an execution environment to execute the Octopus.
+
+execution environment
+^^^^^^^^^^^^^^^^^^^^^
+
+The Octopus is runnable in all kinds of Linux-like OS, we recommend the CentOS. In addition, all of the examples come forward to use a user account called octopus.
+
+requirement
+^^^^^^^^^^^
+
+The Octopus is running on JVM environment, needs Hadoop and database for metadata store. These are shown below.
+
+- JVM
+
+  - Java 1.7 or higher
+  - Setting JVM installation directory to ``JAVA_HOME`` parameter.
+     - Below is an example ``JAVA_HOME`` parameter settings.
+
+.. code-block:: bash
+
+    $ export JAVA_HOME=/usr/lib/jvm/java
+
+- Hadoop
+
+  - Hadoop 2.6.0 or higher (dependent on execute time).
+  - Setting Hadoop's installation directory to HADOOP_PREFIX parameter
+     - Below is an example HADOOP_PREFIX parameter.
+
+.. code-block:: bash
+
+    $ export HADOOP_PREFIX=/home/octopus/hadoop
+
+- Database for meta store
+
+  - The Octopus can use the RDBMS that is supported by DataNucleus to meta store.
+  - Adding a JDBC driver which will be used for meta store to Octopus's CLASSPATH.
+     - (Adding a JDBC driver to 2.2.3's share/octopus/ext directory)
+
+If you use the source code not the binary distribution it requires additional requirements below to install the Octopus.
+- Maven
+
+  - Maven 3.0 or higher
+  - internet connection
+
+installation
+------------
+Until now, the Octopus doesn't provide a separate binary distribution.
+
+download
+^^^^^^^^
+You can get the source code of the Octopus from the git repository below.
+
+https://github.com/bitnine-oss/octopus.git
+
+This guidance assumes you've got the source code of the Octopus with the following command.
+
+.. code-block:: bash
+
+    $ cd
+    $ git clone https://github.com/bitnine-oss/octopus.git
+
+build and installation
+^^^^^^^^^^^^^^^^^^^^^^
+You can get the Octopus's binary by running the following command in the directory that store downloaded source code of the Octopus.
+
+.. code-block:: bash
+
+    $ cd octopus
+    $ mvn package
+
+The binary is the file named octopus-x.y.z-SNAPSHOT.tar.gz which is located in octopus-asswmbly/target under source code's directory. The x.y.z presents version information, and the version of the time of this writing is 0.1.0.
+When you release the above binary files to desired location, the installation is complete.
+
+.. code-block:: bash
+
+    $ cd
+    $ tar -xzf octopus/octopus-assembly/target/octopus-0.1.0-SNAPSHOT.tar.gz
+
+directory structure
+^^^^^^^^^^^^^^^^^^^
+Directory structure after installation likes below.
+
+.. _making-a-table:
+
+====================    ======================================================
+ directory name          description
+====================    ======================================================
+bin                      Octopus and CLI(octaline) script for execution
+etc/octopus              Octopus configuration file
+libexec                  default configuration script
+logs                     execution log
+sbin                     script for daemon start/stop
+share/octopus            Octopus-related JAR files
+share/octopus/lib        JAR files that relies Octopus when you run
+share/octopus/ext        external JAR files to be used in Octopus (ex : JDBC Driver)
+====================    ======================================================
+
+management
+----------
+In this chapter, we'll explain the configuration for Octopus management and about Octopus's start/stop.
+
+configuration file
+^^^^^^^^^^^^^^^^^^
+The Octopus's configuration files are octopus-env.sh.template file which is located in configuration file directory and octopus-env.sh file which is copied from octopus-default.xml.template file and octopus-site.xml file.
+At first, the octopus-env.sh file sets the environment variables and JVM value when the Octopus is started.
+
+.. _making-b-table:
+
+====================== ==================================================================      ===========================   ===========
+variable name           description                                                                 default value               note
+====================== ==================================================================      ===========================   ===========
+JAVA_HOME                JVM path                                                               n/a                           essential
+HADOOP_PREFIX            Hadoop path                                                            n/a                           essential
+OCTOPUS_HEAPSIZE         JVM heap size (MB)                                                     1000
+OCTOPUS_IDENT_STR        String of Octopus instance                                             $USER environment variable
+OCTOPUS_PID_DIR          directory for pid file                                                 /tmp
+OCTOPUS_LOG_DIR          directory for log file                                                 $OCTOPUS_PREFIX/logs
+OCTOPUS_LOG_FILE         name of log file                                                       octopus.log
+OCTOPUS_LOG_LEVEL        logging level                                                          INFO
+OCTOPUS_STOP_TIMEOUT     delay time for kill command when the Octopus instance is stopped       5
+====================== ==================================================================      ===========================   ===========
+
+Note that if you pre-set the JAVA_HOME and HADOOP_PREFIX environment variables, you don't need to set essentially. Below is an example of creating octopus-env.sh file.
+
+.. code-block:: bash
+
+    JAVA_HOME=/usr/lib/jvm/java
+    HADOOP_PREFIX=/home/octopus/hadoop
+    OCTOPUS_HEAPSIZE=4096
+    OCTOPUS_LOG_LEVEL=DEBUG
+
+Next the Octopus-site.xml file sets the Octopus instance.
+
+.. _making-c-table:
+
+===============================================   =========================================================================        ==================================================================
+variable name                                                      description                                                          default value
+===============================================   =========================================================================        ==================================================================
+master.server.address                              Octopus instance address                                                           0.0.0.0:58000
+master.session.max                                 maximum number of session that can connect to the Octopus                                   7
+metastore.class                                    class implements the meta store of the Octopus                                       Kr.co.bitnine.octopus.meta.jdo.JDOMetaStore
+metastore.jdo.connection.drivername                JDBC Driver for the database to be used in the Octopus meta store                   n/a
+metastore.jdo.connection.URL                       URL for the database to be used in the Octopus meta store                             n/a
+metastore.jdo.connection.username                  account for the database to be used in the Octopus meta store                      n/a
+metastore.jdo.connection.password                  account's password for the database to be used in the Octopus meta store                      n/a
+===============================================   =========================================================================        ==================================================================
+
+Belows is an example for writing an Octopus-site.xml file.
+
+.. code-block:: bash
+
+    configuration>
+      <property>
+        <name>master.server.address</name>
+        <value>0.0.0.0:61958</value>
+      </property>
+      <property>
+        <name>master.session.max</name>
+        <value>256</value>
+      </property>
+      <property>
+        <name>metastore.class</name>
+        <value>kr.co.bitnine.octopus.meta.jdo.JDOMetaStore</value>
+      </property>
+      <property>
+        <name>metastore.jdo.connection.drivername</name>
+        <value>org.mariadb.jdbc.Driver</value>
+      </property>
+      <property>
+        <name>metastore.jdo.connection.URL</name>
+        <value> jdbc:mariadb://localhost/octopus</value>
+      </property>
+      <property>
+        <name>metastore.jdo.connection.username</name>
+        <value>octopus</value>
+      </property>
+      <property>
+        <name>metastore.jdo.connection.password</name>
+        <value>bitnine</value>
+      </property>
+    </configuration>
+
+start and stop
+^^^^^^^^^^^^^^
+If you have done correctly the setup process above, the starting and stopping of the Octopus can be easily handled by using start-octopus.sh and stop-octopus.sh script under sbin directory.
+
+To verify that the Octopus instance is running properly, just confirm whether there is the OctopusMaster process by using jps command. Below is an example to make sure the Octopus instance is running properly.
+
+.. code-block:: bash
+
+
+    $ jps
+    16468 Jps
+    16425 OctopusMaster
+
+
+
+

@@ -1,0 +1,75 @@
+
+Connector
+=========
+If you want to execute the query or bring the schema information in another application, you can use Octopus JDBC. So in this guidance, we'll explain how can get the Octopus JDBC driver and how can use it in application by example.
+
+Getting Octopus JDBC Driver
+---------------------------
+You can get the Octopus's JDBC driver from share/octopus directory which is located in Octopus installation base directory. You can use it by adding an octopus-jdbc-x.y.z-SNAPSHOP.jar file to CLASSPATH.
+
+Usage Octopus JDBC Driver
+-------------------------
+When you use the Octopus JDBC Driver, you'll need the JDBC Driver class and connection URL information. See below.
+
+- JDBC Driver class information
+
+    - kr.co.bitnine.octopus.Driver
+
+- Connection URL information
+
+    - jdbc:octopus://<octopus-hostname>[:<octopus-port>]
+
+      - ex) jdbc:octopus://127.0.0.1:58001
+
+.. _making-a-table:
+
+=================== =========================================== =====================
+parameter                           description                        default
+=================== =========================================== =====================
+octopus-hostname           Octopus instance's hostname              n/a (essential)
+octopus-port               Octopus instance's port number               58000
+=================== =========================================== =====================
+
+
+This is an example for using the Octopus JDBC Driver.
+
+.. code-block:: bash
+
+    public class OctopusJdbcTest {
+        public static void main(String[] args) throws Exception {
+            Class.forName("kr.co.bitnine.octopus.Driver");
+            String connectionString = "jdbc:octopus://127.0.0.1";
+    String username = "octopus";
+    String password = "bitnine";
+            Connection conn = DriverManager.getConnection(connectionString,
+    username, password);
+    Statement stmt = conn.createStatement();
+    	ResultSet rs = stmt.executeQuery("SHOW ALL USERS");
+            while (rs.next()) {
+    String name = rs.getString(1);
+                System.out.println(name);
+            }
+            rs.close();
+    stmt.close();
+            conn.close();
+        }
+    }
+
+Octopus JDBC API
+----------------
+The Octopus support the JDBC 4.2. But the Octopus doesn't provide the commit/rollback function due to the characteristics of the Octopus and in the case of DatabaseMetaData several function is provided due to limitations of implementation.
+These are the function lists which are supported in the Octopus's ''DatabaseMetaData''.
+
+.. _making-b-table:
+
+=============== ========================================
+function                description
+=============== ========================================
+getCatalogs       getting all data sources
+getColumns        getting a specific column
+getConnection     getting the current connection object
+getSchemas        getting a specific schema information
+getTables         getting a specific table information
+=============== ========================================
+
+You can get some details about result column for we've seen above in 4.4.4. Other details please refer to the Java's ''java.sql'' package documentation.

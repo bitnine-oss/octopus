@@ -10,7 +10,7 @@
  :align: left
 
 Octopus Project
-===================================
+===============
 
 .. note::
     Octopus is a unified SQL query interface for polyglot persistency system. Octopus is designed by SK Telecom and Bitnine. It is currently under implementation.
@@ -20,7 +20,7 @@ Octopus Project
     Our goal is to make users to feel like using a single database system, which actually consists of several database systems. 
 
 .. note::
-    특징
+    Features
 
     1. Subset of ANSI-SQL
 
@@ -34,15 +34,15 @@ Octopus Project
     
 
 
-목차:
+Contents:
 
 .. toctree::
  :maxdepth: 3
 
 
- 개요.rst
- 설치 및 운영.rst
- 사용자 도구.rst
+ summary.rst
+ install.rst
+ tool.rst
  SQL.rst
- Connector.rst
+ connector.rst
 

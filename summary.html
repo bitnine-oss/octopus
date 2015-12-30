@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Summary &mdash; octopus 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="octopus 0.1 documentation" href="index.html"/>
+        <link rel="next" title="Installation and Management" href="install.html"/>
+        <link rel="prev" title="Octopus Project" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> octopus
+          
+
+          
+            
+            <img src="_static/Octopus-logo.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Summary</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#about-this-manual">About this manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-summary">Octopus summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-features">Octopus features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#octopus-system-configuration">Octopus system configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#differentiate-between-octopus-and-other-systems">Differentiate between Octopus and other systems</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tool.html">User tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SQL.html">SQL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connector.html">Connector</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">octopus</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Summary</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/summary.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="summary">
+<h1>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="about-this-manual">
+<h2>About this manual<a class="headerlink" href="#about-this-manual" title="Permalink to this headline">¶</a></h2>
+<p>This manual contains guidance about installation and management of Octopus, and targets people who is user or administrator of octopus. We&#8217;ll discuss below things in this guidance.</p>
+<ul class="simple">
+<li>Chapter 1 : Basic concepts</li>
+<li>Chapter 2 : Installation &amp; management</li>
+<li>Chapter 3 : User Tools provided by octopus</li>
+<li>Chapter 4 : Detail Description of executable SQL in octopus</li>
+<li>Chapter 5 : Connector that is used to connect between application and octopus</li>
+</ul>
+</div>
+<div class="section" id="octopus-summary">
+<h2>Octopus summary<a class="headerlink" href="#octopus-summary" title="Permalink to this headline">¶</a></h2>
+<p>Recently a new type of data is spolighted and sharply increased. Nevertheless processing performance(data collection, storage, management and analysis capabilities) of RDBMS previously used have not been able to follow them. We call the &#8216;Big data&#8217; that has so large or complex data sets that traditional data management systems are inadequate and various solutions have been developed such as NoSQL, graph database to process such big data.</p>
+<p>Recently, irrespective of the shape and size of the data, there is a tendency to depart from the earnestly conventional data processing method that uses the DBMS only, and not only this, various meets the type and requirements of the data to the database using the solution, also proceed to the method of processing the big data, which is referred to Polyglot Persistence.</p>
+<p>However, in such a Polyglot Persistence environment, accompanied by the difficulty of management and integration of data that is distributed across multiple databases. Thus, we develop an integrated query system Octopus that is able to integrate and manage the data from a number of different databases through standard SQL.</p>
+</div>
+<div class="section" id="octopus-features">
+<h2>Octopus features<a class="headerlink" href="#octopus-features" title="Permalink to this headline">¶</a></h2>
+<p>The Octopus is a system for supporting a data integration and management of a number of different databases in a distributed environment using a standard SQL (data source). It aims to do real-time integrated query processing without data migration(ETL).</p>
+<ul class="simple">
+<li>Integrated schema view<ul>
+<li>Shows the schema information of the number of data sources in the schema information for a database.</li>
+</ul>
+</li>
+<li>Integrated query<ul>
+<li>can query to the multiple data sources by querying a database.</li>
+<li>can query the table which is located in a data source. (by-pass)</li>
+<li>can join queries to multiple data sources.</li>
+</ul>
+</li>
+<li>User authentication and management<ul>
+<li>Grant a privileges by user account and control access to each databases.</li>
+<li>Enhanced security through access control.</li>
+</ul>
+</li>
+<li>DDL<ul>
+<li>insert/update/delete for data source and user account.</li>
+<li>Grant a privileges for schema of user account.</li>
+<li>Write comments on the schema.</li>
+</ul>
+</li>
+<li>DML<ul>
+<li>Execute SELECT statement of standard SQL.</li>
+</ul>
+</li>
+</ul>
+<p>Here is a picture showing schematically the privileges of Octopus in the Polyglot Persistence environment.</p>
+<img alt="_images/1_1.png" src="_images/1_1.png" />
+</div>
+<div class="section" id="octopus-system-configuration">
+<h2>Octopus system configuration<a class="headerlink" href="#octopus-system-configuration" title="Permalink to this headline">¶</a></h2>
+<p>This is the Octopus system configuration.</p>
+<img alt="_images/1_2.png" src="_images/1_2.png" />
+<ul class="simple">
+<li>SQL Interface / JDBC<ul>
+<li>Octopus JDBC support using PostgreSQL client protocol.</li>
+</ul>
+</li>
+<li>Integrated schema creation<ul>
+<li>Integrated schema creation by extracting the schema information from the data source that administrator has added.</li>
+</ul>
+</li>
+<li>Meta store<ul>
+<li>Store the data sources, schema, table and column information.</li>
+<li>Store the user accounts and privileges information.</li>
+<li>Support various database through the JDO(DataNucleus).</li>
+</ul>
+</li>
+<li>Query Processing<ul>
+<li>Analyze the user&#8217;s SQL and create the logical, physical execute plan.</li>
+<li>Generate the best plan by considergin the overhead for transmitting data from the data source to the network.</li>
+<li>The results generated by running a physical execute plan.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="differentiate-between-octopus-and-other-systems">
+<h2>Differentiate between Octopus and other systems<a class="headerlink" href="#differentiate-between-octopus-and-other-systems" title="Permalink to this headline">¶</a></h2>
+<p>The Octopus manages schema information for the various data sources directly, process the required data for query processing from each data sources based on schema information, and execute integrated query. Conventional systems have adopted the following manner.</p>
+<ul class="simple">
+<li>SQL-on-Hadoop<ul>
+<li>The Hive, Tajo, Impala and Hawk support the external table function for remote storages.</li>
+</ul>
+</li>
+<li>Hadoop support of RDBMS<ul>
+<li>The Oracle, Teradata, etc. provide Hadoop connector by external table function.</li>
+</ul>
+</li>
+<li>Data federation server<ul>
+<li>The Cisco Information Server provide integrated schema.</li>
+</ul>
+</li>
+<li>Data-Hub<ul>
+<li>The Toads Bigdata World does query process by importing the data from a central server.</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="install.html" class="btn btn-neutral float-right" title="Installation and Management" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Octopus Project" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, bitnine.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

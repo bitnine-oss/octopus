@@ -84,13 +84,13 @@
             
             
                 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="개요.html">개요</a></li>
-<li class="toctree-l1"><a class="reference internal" href="설치 및 운영.html">설치 및 운영</a></li>
-<li class="toctree-l1"><a class="reference internal" href="사용자 도구.html">사용자 도구</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tool.html">User tool</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SQL.html">SQL</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Connector</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#octopus-jdbc">Octopus JDBC 드라이버 얻기</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">Octopus JDBC 드라이버 사용</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-octopus-jdbc-driver">Getting Octopus JDBC Driver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-octopus-jdbc-driver">Usage Octopus JDBC Driver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#octopus-jdbc-api">Octopus JDBC API</a></li>
 </ul>
 </li>
@@ -128,7 +128,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/Connector.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/connector.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -140,27 +140,27 @@
             
   <div class="section" id="connector">
 <h1>Connector<a class="headerlink" href="#connector" title="Permalink to this headline">¶</a></h1>
-<p>다른 프로그램에서 Octopus에 대해 질의를 수행하거나 스키마 정보 등을 가져오기 위해 Octopus JDBC 드라이버를 이용해야 한다. 그래서 Octopus JDBC 드라이버를 얻는 방법과 이 방법으로 얻은 Octopus JDBC 드라이버를 애플리케이션에서 어떻게 사용하는지에 대해 예를 들어 설명한다.</p>
-<div class="section" id="octopus-jdbc">
-<h2>Octopus JDBC 드라이버 얻기<a class="headerlink" href="#octopus-jdbc" title="Permalink to this headline">¶</a></h2>
-<p>Octopus의 JDBC 드라이버는 Octopus 설치 디렉터리 내에 있는 share/octopus 디렉터리에서 얻을 수 있다. 해당 디렉터리에 있는 octopus-jdbc-x.y.z-SNAPSHOP.jar 파일을 CLASSPATH에 추가하여 Octopus JDBC 드라이버를 사용할 수 있다.</p>
+<p>If you want to execute the query or bring the schema information in another application, you can use Octopus JDBC. So in this guidance, we&#8217;ll explain how can get the Octopus JDBC driver and how can use it in application by example.</p>
+<div class="section" id="getting-octopus-jdbc-driver">
+<h2>Getting Octopus JDBC Driver<a class="headerlink" href="#getting-octopus-jdbc-driver" title="Permalink to this headline">¶</a></h2>
+<p>You can get the Octopus&#8217;s JDBC driver from share/octopus directory which is located in Octopus installation base directory. You can use it by adding an octopus-jdbc-x.y.z-SNAPSHOP.jar file to CLASSPATH.</p>
 </div>
-<div class="section" id="id1">
-<h2>Octopus JDBC 드라이버 사용<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>Octopus JDBC 드라이버를 사용할 경우 JDBC 드라이버 클래스와 연결 URL이 필요하며, 이에 대한 정보는 다음과 같다.</p>
+<div class="section" id="usage-octopus-jdbc-driver">
+<h2>Usage Octopus JDBC Driver<a class="headerlink" href="#usage-octopus-jdbc-driver" title="Permalink to this headline">¶</a></h2>
+<p>When you use the Octopus JDBC Driver, you&#8217;ll need the JDBC Driver class and connection URL information. See below.</p>
 <ul>
-<li><p class="first">JDBC 드라이버 클래스 정보</p>
+<li><p class="first">JDBC Driver class information</p>
 <blockquote>
 <div><ul class="simple">
 <li>kr.co.bitnine.octopus.Driver</li>
 </ul>
 </div></blockquote>
 </li>
-<li><p class="first">연결 URL 정보</p>
+<li><p class="first">Connection URL information</p>
 <blockquote>
 <div><ul class="simple">
 <li><a class="reference external" href="jdbc:octopus:/">jdbc:octopus:/</a>/&lt;octopus-hostname&gt;[:&lt;octopus-port&gt;]<ul>
-<li>예) <a class="reference external" href="jdbc:octopus://127.0.0.1:58001">jdbc:octopus://127.0.0.1:58001</a></li>
+<li>ex) <a class="reference external" href="jdbc:octopus://127.0.0.1:58001">jdbc:octopus://127.0.0.1:58001</a></li>
 </ul>
 </li>
 </ul>
@@ -174,23 +174,23 @@
 <col width="25%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">인자</th>
-<th class="head">설명</th>
-<th class="head">기본값</th>
+<tr class="row-odd"><th class="head">parameter</th>
+<th class="head">description</th>
+<th class="head">default</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>octopus-hostname</td>
-<td>접속할 Octopus 인스턴스의 hostname</td>
-<td>없음 (필수)</td>
+<td>Octopus instance&#8217;s hostname</td>
+<td>n/a (essential)</td>
 </tr>
 <tr class="row-odd"><td>octopus-port</td>
-<td>접속할 Octopus 인스턴스의 port 번호</td>
+<td>Octopus instance&#8217;s port number</td>
 <td>58000</td>
 </tr>
 </tbody>
 </table>
-<p>다음은 Octopus JDBC 드라이버 사용 예제이다.</p>
+<p>This is an example for using the Octopus JDBC Driver.</p>
 <div class="highlight-bash"><div class="highlight"><pre>public class OctopusJdbcTest <span class="o">{</span>
     public static void main<span class="o">(</span>String<span class="o">[]</span> args<span class="o">)</span> throws Exception <span class="o">{</span>
         Class.forName<span class="o">(</span><span class="s2">&quot;kr.co.bitnine.octopus.Driver&quot;</span><span class="o">)</span><span class="p">;</span>
@@ -215,37 +215,37 @@ stmt.close<span class="o">()</span><span class="p">;</span>
 </div>
 <div class="section" id="octopus-jdbc-api">
 <h2>Octopus JDBC API<a class="headerlink" href="#octopus-jdbc-api" title="Permalink to this headline">¶</a></h2>
-<p>Octopus는 JDBC 4.2를 지원하고 있다. 그러나 Octopus 특성상 commit/rollback 관련 동작을 지원하지 않고 있으며, 구현상의 제약으로 DatabaseMetaData의 경우 몇 가지 함수만 지원하고 있다.</p>
-<p>아래는 Octopus의 &#8216;&#8217;DatabaseMetaData&#8217;&#8216;에서 지원하고 있는 함수 목록이다.</p>
+<p>The Octopus support the JDBC 4.2. But the Octopus doesn&#8217;t provide the commit/rollback function due to the characteristics of the Octopus and in the case of DatabaseMetaData several function is provided due to limitations of implementation.
+These are the function lists which are supported in the Octopus&#8217;s &#8216;&#8217;DatabaseMetaData&#8217;&#8216;.</p>
 <table border="1" class="docutils" id="making-b-table">
 <colgroup>
-<col width="35%" />
-<col width="65%" />
+<col width="27%" />
+<col width="73%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">함수</th>
-<th class="head">설명</th>
+<tr class="row-odd"><th class="head">function</th>
+<th class="head">description</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>getCatalogs</td>
-<td>모든 데이터소스 조회</td>
+<td>getting all data sources</td>
 </tr>
 <tr class="row-odd"><td>getColumns</td>
-<td>특정 칼럼 조회</td>
+<td>getting a specific column</td>
 </tr>
 <tr class="row-even"><td>getConnection</td>
-<td>현재 연결 객체 반환</td>
+<td>getting the current connection object</td>
 </tr>
 <tr class="row-odd"><td>getSchemas</td>
-<td>특정 스키마 정보 조회</td>
+<td>getting a specific schema information</td>
 </tr>
 <tr class="row-even"><td>getTables</td>
-<td>특정 테이블 정보 조회</td>
+<td>getting a specific table information</td>
 </tr>
 </tbody>
 </table>
-<p>위에 나열된 조회 함수에 대한 결과 칼럼은 4.4.4를 참고하기 바란다. 그 밖에 자세한 내용은 Java의 &#8216;&#8217;java.sql&#8217;&#8217; 패키지 문서를 참고하기 바란다.</p>
+<p>You can get some details about result column for we&#8217;ve seen above in 4.4.4. Other details please refer to the Java&#8217;s &#8216;&#8217;java.sql&#8217;&#8217; package documentation.</p>
 </div>
 </div>
 

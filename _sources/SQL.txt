@@ -1,16 +1,16 @@
 
 SQL
 ===
-이 장에서는 Octopus에서 지원하는 SQL에 대해 기술한다.
+In this chapter, we'll explain about the SQL that is supported by the Octopus.
 
 Data Type
-----------
-현재 Octopus에서 지원하는 데이터 타입은 아래와 같다.
+---------
+Data types supported by the current Octopus is as follows.
 
 .. _making-a-table:
 
 ===========  ============== ===================================================================================================
-SQL type        크기(bytes)         범위
+SQL type      size(bytes)         range
 ===========  ============== ===================================================================================================
 INTEGER         4                    -231 (-2,147,483,648) ~ 231 - 1 (2,147,483,647)
 BIGINT          8                    -263 (-9,223,372,036,854,775,808) ~ 263 - 1 (9,223,372,036,854,775,807)
@@ -19,15 +19,15 @@ REAL            4                    -3.4E+38 ~ 3.4E+38
 DOUBLE          8                    -1.7E–308 ~ 1.7E+308
 NUMERIC         -                    -
 VARCHAR         -                    -
-DATE            -                    YYYY-mm-dd 형식
-TIMESTAMP       -                    YYYY-mm-dd HH:MM:SS[.NNNNNNNNN] 형식
+DATE            -                    YYYY-mm-dd
+TIMESTAMP       -                    YYYY-mm-dd HH:MM:SS[.NNNNNNNNN]
 ===========  ============== ===================================================================================================
 
 Data Definition Language
----------------------------
+------------------------
 ALTER SYSTEM ADD DATASOURCE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Octopus에서 관리할 데이터소스를 추가한다. JDBC 연결을 지원하는 데이터소스만 추가할 수 있다.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add the data sources to be managed by the Octopus. You can add only data source that supports JDBC connection.
 
 .. code-block:: bash
 
@@ -37,17 +37,17 @@ Octopus에서 관리할 데이터소스를 추가한다. JDBC 연결을 지원�
 
 **dataSourceName**
 
-추가할 데이터소스의 이름을 지정.
+Specify the name fo the data source you want to add.
 
 **jdbcConnectionString**
 
-데이터소스의 JDBC 연결 주소.
+JDBC connection Address for the data source.
 
 **jdbcDriverName**
 
-데이터소스 연결에 사용할 JDBC 드라이버 이름.
+JDBC driver name for the data source connection.
 
-- 예제
+- example
 
 .. code-block:: bash
 
@@ -56,8 +56,9 @@ Octopus에서 관리할 데이터소스를 추가한다. JDBC 연결을 지원�
       USING 'org.apache.hive.JDBC' ;
 
 ALTER SYSTEM UPDATE DATASOURCE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Octopus에서 관리중인 데이터소스의 스키마 정보가 변경되었을 경우, 이를 Octopus의 메타스토어에 반영한다. 데이터소스 전체, 특정 스키마만, 특정 테이블만 갱신할 수 있도록 다양한 문법을 지원한다.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If the schema information for the data source is changed that have being managed by the Octopus, apply it to the meta store of the Octopus. 
+This statement provides a variety of grammar to be updated only full data source, only specific schemes or only specific tables.
 
 .. code-block:: bash
 
@@ -67,13 +68,13 @@ Octopus에서 관리중인 데이터소스의 스키마 정보가 변경되었�
 
 **dataSourceName**
 
-갱신할 데이터소스의 이름을 지정.
+Specify the name fo the data source you want to update.
 
 **schemaPattern, tablePattern**
 
-갱신할 스키마, 테이블 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일.
+Specify the schema and table pattern to be updated. The pattern is the same as in SQL's LIKE pattern.
 
-- 예제
+- example
 
 .. code-block:: bash
 
@@ -82,8 +83,8 @@ Octopus에서 관리중인 데이터소스의 스키마 정보가 변경되었�
     ALTER SYSTEM UPDATE TABLE "spark".'%'.'%stat%';
 
 ALTER SYSTEM DROP DATASOURCE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Octopus의 메타스토어에서 데이터소스를 삭제한다. 삭제된 데이터소스에 대한 스키마 정보 조회와 질의 처리를 더 이상 할 수 없다.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete the data source from the meta-Store of the Octopus. You can't get schema information and query processing any more to deleted data source.
 
 .. code-block:: bash
 
@@ -91,17 +92,17 @@ Octopus의 메타스토어에서 데이터소스를 삭제한다. 삭제된 데�
 
 **dataSourceName**
 
-삭제할 데이터소스의 이름을 지정.
+Specify the name of the data source that you want to delete.
 
-- 예제
+- example
 
 .. code-block:: bash
 
     ALTER SYSTEM DROP DATASOURCE "spark";
 
 Data Manipulation Language
------------------------------
-Octopus는 여러 데이터소스에 대한 SELECT 질의만 지원하며 INSERT, UPDATE, DELETE는 지원하지 않는다. Octopus는 아래와 같은 SELECT 문을 지원한다. 단, by-pass 질의의 경우 Octopus의 특성상 데이터 소스가 지원하지 않는 문법은 처리할 수 없다.
+--------------------------
+The Octopus is supported only for SELECT queries across multiple data sources and INSERT, UPDATE, DELETE is not supported. The Octopus supports the SELECT statement as follows. However, in the case of by-pass query, the Octopus can not process the grammar that is not supported by such data sources because of the nature of the Octopus.
 
 .. code-block:: bash
 
@@ -163,82 +164,88 @@ Octopus는 여러 데이터소스에 대한 SELECT 질의만 지원하며 INSERT
 
 **count, start**
 
-몇 개의 결과를 가져올지, 몇 번째 결과부터 가져올지 지정 (0 이상의 정수)
+How many returns you want to get, or specify fetch some first results from (an integer of 0 or more).
 
 **withName, withColumn**
 
-WITH 절의 이름과 결과 칼럼 이름을 지정 (식별자 형식)
+Specify the WITH clause and result column's name (identifier format).
 
 **columnAlias, tableAlias**
 
-칼럼, 테이블의 별칭을 지정 (식별자 형식)
+Specify the alias name of columns and tables (identifier format).
 
 **dataSourceName, schemaName, tableName**
 
-데이터소스, 스키마, 테이블의 이름을 지정 (식별자 형식)
+Specify the datasource's, scheme's, table's name (identifier format).
 
 - expression
 
-산술 표현식, 비교 표현식, 혹은 논리 표현식이 올 수 있다. 표현식에서 사용하는 값은 특정 칼럼의 값을 해당 칼럼의 식별자로 얻어오거나, 상수를 직접 입력할 수 있다. Octopus에서는 아래와 같은 산술 연산자, 비교 연산자들을 지원하며, 각 표현식에서 사용할 수 있다.
+Arithmetic expressions, comparison expressions, or logical expressions can come.
+The value used in expression can get the specific column value as that column's identifier or directly input to the constant.
+The Octopus support the arithmetic expression, comparison expression like below, and you can use it in each expression.
 
 .. _making-b-table:
 
-========================= ========================================= ===================
-산술 연산자                     설명                                     결과
-========================= ========================================= ===================
-numeric1 + numeric2           numeric1과 numeric2의 합               numeric
-numeric1 - numeric2           numeric1에서 numeric2를 뺌               numeric
-numeric1 * numeric2           numeric1과 numeric2의 곱               numeric
-numeric1 / numeric2           numeric1을 numeric2로 나눈 몫         numeric
-========================= ========================================= ===================
+========================= ======================================================= ===================
+arithmetic expression                    description                                     result
+========================= ======================================================= ===================
+numeric1 + numeric2           add numeric1 and numeric2                                  numeric
+numeric1 - numeric2         Subtract the numeric2 on the numeric1                        numeric
+numeric1 * numeric2           product numeric1 and numeric2                              numeric
+numeric1 / numeric2       quotient obtained by dividing the numeric1 to numeric2         numeric
+========================= ======================================================= ===================
 
 .. _making-c-table:
 
-============================ ==========================================   =================================
-비교 연산자                     설명                                        결과
-============================ ==========================================   =================================
-value1 = value2               같음                                        boolean
-value1 <> value2              같지 않음                                     boolean
-value1 > value2               큼                                             boolean
-value1 >= value2              크거나 같음                                     boolean
-value1 < value2               작음                                            boolean
-value1 <= value2              작거나 같음                                     boolean
-value IS NULL                 value가 NULL                                   boolean
-value IS NOT NULL             value가 NULL이 아님                            boolean
-string1 LIKE string2          string1이 패턴 string2와 맞음                boolean
-string1 NOT LIKE string2      string1이 패턴 string2와 맞지 않음          boolean
-============================ ==========================================   =================================
+============================ ========================================================     =================================
+comparison expression                     description                                            result
+============================ ========================================================     =================================
+value1 = value2               equal                                                              boolean
+value1 <> value2              not equal                                                          boolean
+value1 > value2               bigger                                                             boolean
+value1 >= value2              bigger or equal                                                    boolean
+value1 < value2               smaller                                                            boolean
+value1 <= value2              smaller or equal                                                   boolean
+value IS NULL                 value is NULL                                                      boolean
+value IS NOT NULL             value is not NULL                                                  boolean
+string1 LIKE string2          string1's pattern and string2's pattern are matched                boolean
+string1 NOT LIKE string2      string1's pattern and string2's pattern are not matched            boolean
+============================ ========================================================     =================================
 
-- booleanExpression (논리 표현식)
+- booleanExpression (logical expression)
 
-논리 연산자들의 AND, OR 조합으로 이루어진 표현식이다. Octopus에서는 아래와 같은 논리 연산자들을 지원한다.
+It is an expression consisting of AND, OR combination of logic operators. In the Octopus supports below logical operators. 
 
 .. _making-d-table:
 
-========================== ============================================================= ===========================
-연산자                        설명                                                             결과
-========================== ============================================================= ===========================
-boolean1 OR boolean2          boolean1 혹은 boolean2가 참                                boolean
-boolean1 AND boolean2         boolean2 그리고 booelan2가 참                                boolean
-NOT boolean                   boolean이 참이 아님; boolean이 UNKNOWN이면 UNKNOWN              boolean
-boolean IS FALSE              boolean이 거짓; boolean이 UNKNOWN이면 거짓                     boolean
-boolean IS NOT FALSE          boolean이 거짓이 아님; boolean이 UNKNOWN이면 참                        boolean
-boolean IS TRUE               boolean이 참; boolean이 UNKNOWN이면 거짓                       boolean
-boolean IS NOT TRUE           boolean이 참이 아님; boolean이 UNKNOWN이면 참                      boolean
-boolean IS UNKNOWN            boolean이 UNKNOWN                                           boolean
-boolean IS NOT UNKNOWN        boolean이 UNKNOWN이 아님                                        boolean
-========================== ============================================================= ===========================
+========================== ======================================================================= ===========================
+operator                        description                                                                    result
+========================== ======================================================================= ===========================
+boolean1 OR boolean2          boolean1 or boolean2 is(are) true                                                boolean
+boolean1 AND boolean2         boolean2 and boolean2 are true                                                   boolean
+NOT boolean                   boolean is not true; if the boolean is UNKNOWN, it would be UNKNOWN              boolean
+boolean IS FALSE              boolean is false; if the boolean is UNKNOWN, it would be false                    boolean
+boolean IS NOT FALSE          boolean is not false; if the boolean is UNKNOWN, it would be true                  boolean
+boolean IS TRUE               boolean is true; if the boolean is UNKNOWN, it would be false                      boolean
+boolean IS NOT TRUE           boolean is not true; if the boolean is UNKNOWN, it would be true                      boolean
+boolean IS UNKNOWN            boolean is UNKNOWN                                                                    boolean
+boolean IS NOT UNKNOWN        boolean is not UNKNOWN                                                              boolean
+========================== ======================================================================= ===========================
 
 Octopus Administration Statements
 ---------------------------------
-Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특정 스키마에 대한 접근 권한이 있는지 확인하고, 접근 권한을 부여할 수 있도록 하는 접근 제어 기능을 제공한다. 그리고 특정 스키마 정보에 주석을 추가할 수 있다. 마지막으로 각종 정보들을 조회할 수 있는 기능을 제공한다. 이 절에서는 이와 같은 Octopus 관리에 필요한 문장들에 대해 살펴본다.
+The Octopus has a user account concept.
+Also ensure that the user account has access to the specified scheme, and provides access control that allows to grant access.
+And it can also add some comments to the specific scheme information.
+Finally, it provides the ability to retrieve the various information.
+This chapther we explain the statement that is used in management of the Octopus.
 
-사용자 계정
-^^^^^^^^^^^
+User account
+^^^^^^^^^^^^
 
-- 사용자 계정 생성 및 수정
+- Creating and modifying user accounts.
 
-아래 두 문장은 각각 새로운 Octopus 사용자 계정을 생성 및 수정한다. 생성된 계정은 어떠한 권한도 가지고 있지 않는다.
+The following two sentences each create and modify the Octopus user account. The account have been created just now does not have any privileges.
 
 .. code-block:: bash
 
@@ -248,13 +255,14 @@ Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특�
 
 **user**
 
-생성/수정할 계정 이름을 지정.
+Specify the account's name to create/modify.
 
 **password**
 
-새로운 계정의 암호 혹은 수정할 암호 지정.
+Create password of the new account or modify password of the exist account
 
-    - 예제
+
+    - example
 
 .. code-block:: bash
 
@@ -262,7 +270,7 @@ Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특�
     
     ALTER USER "octopus" IDENTIFIED BY 'squid';
 
-- 사용자 계정 삭제
+- drop the user account.
 
 .. code-block:: bash
 
@@ -270,17 +278,17 @@ Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특�
 
 **user**
 
-삭제할 계정을 지정.
+Specify the account to be deleted.
 
-    - 예제
+    - example
 
 .. code-block:: bash
     
     DROP USER "octopus";
 
-권한
-^^^^
-먼저 시스템 권한을 부여하고 제거하는 문장에 대해 알아본다.
+privileges
+^^^^^^^^^^
+First, find out about the sentences that grant or revoke the system privileges. 
 
 .. code-block:: bash
 
@@ -294,29 +302,29 @@ Octopus에는 사용자 계정 개념이 있다. 또한 사용자 계정이 특�
 
 **user**
 
-권한을 부여 받을 대상 계정.
+The account to be granted privileges.
 
 **systemPrivilege**
 
-아래 표에 있는 시스템 권한들을 지원한다.
+The Octopus support the privileges as below.
 
 .. _making-e-table:
 
-=============================== ====================================================
-권한                               설명
-=============================== ====================================================
-ALTER SYSTEM                      ALTER SYSTEM 문장 실행 권한
-SELECT ANY TABLE                  모든 테이블에 대한 SELECT 질의 권한
-CREATE USER                       사용자 계정 생성 권한
-ALTER USER                        사용자 계정 수정 권한
-DROP USER                         사용자 계정 삭제 권한
-COMMENT ANY                       모든 대상에 대한 주석 및 칼럼 분류 추가 권한
-GRANT ANY OBJECT PRIVILEGE        객체 권한 부여 권한
-GRANT ANY PRIVILEGE               시스템 권한 부여 권한
-ALL PRIVILEGES                    위의 모든 시스템 권한
-=============================== ====================================================
+=============================== ====================================================================
+privilege                               description
+=============================== ====================================================================
+ALTER SYSTEM                      privilege for executing ALTER SYSTEM statement
+SELECT ANY TABLE                  privilege for executing SELECT statement to any table
+CREATE USER                       privilege for creating user account
+ALTER USER                        privilege for modifying user account
+DROP USER                         privilege for deleting user account
+COMMENT ANY                       privilege for adding comment and column category to any target
+GRANT ANY OBJECT PRIVILEGE        privilege for granting privilege for object
+GRANT ANY PRIVILEGE               privilege for granting privilege for system
+ALL PRIVILEGES                    all of the above system privileges
+=============================== ====================================================================
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
@@ -325,7 +333,7 @@ ALL PRIVILEGES                    위의 모든 시스템 권한
     
     REVOKE ALTER SYSTEM FROM "octopus";
 
-다음으로 객체 권한을 부여하고 제거하는 문장에 대해 알아본다.
+Next, find out about the sentences to grant or revoke the object privilege.
 
 .. code-block:: bash
     
@@ -338,23 +346,23 @@ ALL PRIVILEGES                    위의 모든 시스템 권한
 
 **dataSourceName, schemaName**
 
-부여할 권한을 지정한 스키마에 국한.
+The limited privileges for the specified scheme.
 
 **objectPrivilege**
 
-아래 표에 있는 객체 권한들을 지원한다.
+The Octopus provides object privileges as below.
 
 .. _making-f-table:
 
-===================== =====================================================================
-권한                    설명
-===================== =====================================================================
-SELECT                   특정 스키마에 속한 테이블들에 대한 SELECT 질의 권한
-COMMENT                  특정 스키마에 속한 테이블과 칼럼에 대한 주석 및 칼럼 분류 추가 권한
-ALL [ PRIVILEGES ]       위의 모든 객체 권한
-===================== =====================================================================
+===================== =============================================================================================================
+privilege                   description
+===================== =============================================================================================================
+SELECT                 privilege for executing SELECT statement to table that is in specified scheme
+COMMENT                privilege for adding comments and column category to table and column that is in specified scheme
+ALL [ PRIVILEGES ]     all of the above system privileges
+===================== =============================================================================================================
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
@@ -362,11 +370,12 @@ ALL [ PRIVILEGES ]       위의 모든 객체 권한
     
     REVOKE COMMENT ON "spark"."default" FROM "anon";
 
-주석 및 칼럼 분류
-^^^^^^^^^^^^^^^^^
-Octopus는 수많은 데이터소스, 스키마, 테이블, 칼럼, 사용자 계정에 대한 관리 용이를 위해 각 대상에 주석을 추가할 수 있는 기능을 제공하고 있다. 또한 칼럼이 어떤 내용을 담고 있는지에 대한 분류를 추가할 수 있는 기능도 제공하고 있다. 그리고 이렇게 추가한 주석과 칼럼 분류를 대상의 이름으로 조회할 수 있다. 먼저 주석과 칼럼 분류를 추가하는 문장을 알아보고, 조회하는 문장은 4.4.4의 SHOW 명령에서 알아보도록 한다.
+comment and column category
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Octopus provides the function that can add comments on many data sources, schemas, tables, columns, user accounts for the conviniece of managing them. And also provides adding comments for column category that represent what is the contents of the column. And you can retrieve by using comments and column category that was added by user. First, we'll discuss the statements for adding comment or column category, and we'll discuss again the SHOW statements for retrieving in 4.4.4.
 
-- 주석 추가
+
+- add comment
 
 .. code-block:: bash
 
@@ -380,20 +389,20 @@ Octopus는 수많은 데이터소스, 스키마, 테이블, 칼럼, 사용자 �
 
 **dataSourceName, schemaName, tableName, columnName, user**
 
-주석을 추가할 데이터소스, 스키마, 테이블, 칼럼, 사용자 계정을 지정.
+Specify the data source, scheme, table, column and user account to be comment added.
 
 **comment**
 
-대상에 추가할 주석 문자열.
+Comment string to add to the target.
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
     COMMENT ON USER "octopus" IS 'super user';
     COMMENT ON TABLE "spark"."default"."stat" IS 'basic statistics';
 
-- 칼럼 분류 추가
+- add the column category
 
 .. code-block:: bash
 
@@ -404,42 +413,42 @@ Octopus는 수많은 데이터소스, 스키마, 테이블, 칼럼, 사용자 �
 
 **dataSourceName, schemaName, tableName, columnName**
 
-칼럼 분류를 추가할 칼럼을 지정.
+Specify the column to add a column category.
 
 **category**
 
-칼럼 분류 문자열.
+Column category string.
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
     SET DATACATEGORY ON COLUMN "spark"."account"."vip"."ssn" IS 'private';
 
-SHOW 명령
-^^^^^^^^^
-이 절에서는 사용자 계정 정보, 스키마 정보, 권한 정보, 주석, 칼럼 분류를 조회할 수 있는 기능을 제공한다.
+SHOW statement
+^^^^^^^^^^^^^^
+In this chapter, we'll discuss about the function for retrieving user account information, scheme information, privilege information, comment and column category.
 
-- 사용자 계정 조회
+- Retrieve the user account.
 
 .. code-block:: bash
 
     SHOW ALL USERS ;
 
-결과 칼럼은 아래와 같다.
+Result column is like below.
 
 .. _making-g-table:
 
-============= ============== =================================
-이름             타입              설명
-============= ============== =================================
-USER_NAME      VARCHAR        사용자 계정 이름
-REMARKS        VARCHAR        사용자 계정에 추가한 주석
-============= ============== =================================
+============= ============== ==================================
+name             type              description
+============= ============== ==================================
+USER_NAME      VARCHAR        User account name
+REMARKS        VARCHAR        Comment added to the user account
+============= ============== ==================================
 
-- 데이터소스, 스키마, 테이블, 칼럼 조회
+- Retrieve data source, schema, table and column.
 
-아래 문장은 차례로 데이터소스, 스키마, 테이블, 칼럼 정보를 조회한다. 
+The following statements query the data source, schema, table and column information in order.
 
 .. code-block:: bash
 
@@ -455,80 +464,80 @@ REMARKS        VARCHAR        사용자 계정에 추가한 주석
 
 **dataSourceName**
 
-정보를 조회할 데이터소스 이름
+Data source name to retrieve information.
 
 **schemaPattern, tablePattern, columnPattern**
 
-정보를 조회할 특정 스키마, 테이블, 칼럼의 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일하며 생략할 경우 모든 대상을 조회한다.
+Specify the particular schema, table, column pattern to retrieve information. The pattern is the same as SQL's LIKE pattern and if you omit all of the targets will be retrieved.
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
     SHOW TABLES DATASOURCE "spark" TABLE '%stat%';
 
-데이터소스에 대한 결과 칼럼은 아래와 같다.
+The results columns to the data source are as follows.
 
 .. _making-h-table:
 
-=========== ============= ===============================
-이름             타입          설명
-=========== ============= ===============================
-TABLE_CAT      VARCHAR     데이터소스 이름
-REMARKS        VARCHAR     데이터소스에 추가한 주석
-=========== ============= ===============================
+=========== ============= ================================
+name             type          description
+=========== ============= ================================
+TABLE_CAT      VARCHAR     data source name
+REMARKS        VARCHAR     comment added to a data source
+=========== ============= ================================
 
-스키마에 대한 결과 칼럼은 아래와 같다.
+The results columns to the scheme are as follows.
 
 .. _making-j-table:
 
-==================== ============ ============================
-이름                   타입             설명
-==================== ============ ============================
-TABLE_SCHEM          VARCHAR         스키마 이름
-TABLE_CATALOG        VARCHAR         데이터소스 이름
-REMARKS              VARCHAR         스키마에 추가한 주석
-TABLE_CAT_REMARKS    VARCHAR         데이터소스에 추가한 주석
-==================== ============ ============================
+==================== ============ ====================================
+name                   type             description
+==================== ============ ====================================
+TABLE_SCHEM          VARCHAR         schema name
+TABLE_CATALOG        VARCHAR         data source name
+REMARKS              VARCHAR         comment added to the scheme
+TABLE_CAT_REMARKS    VARCHAR         comment added to the data source
+==================== ============ ====================================
 
-테이블에 대한 결과 칼럼은 아래와 같다.
+The results columns to the table are as follows.
 
 .. _making-k-table:
 
-====================== =========== =====================================
-이름                      타입                설명
-====================== =========== =====================================
-TABLE_CAT                VARCHAR        데이터소스 이름
-TABLE_SCHEM              VARCHAR        스키마 이름
-TABLE_NAME               VARCHAR        테이블 이름
-TABLE_TYPE               VARCHAR        테이블 타입 (TABLE, VIEW)
-REMARKS                  VARCHAR        테이블에 추가한 주석
-TABLE_CAT_REMARKS        VARCHAR        데이터소스에 추가한 주석
-TABLE_SCHEM_REMARKS      VARCHAR        스키마에 추가한 주석
-====================== =========== =====================================
+====================== =========== =======================================
+name                      type                description
+====================== =========== =======================================
+TABLE_CAT                VARCHAR        data source name
+TABLE_SCHEM              VARCHAR        scheme name
+TABLE_NAME               VARCHAR        table name
+TABLE_TYPE               VARCHAR        table type (TABLE, VIEW)
+REMARKS                  VARCHAR        comment added to the table
+TABLE_CAT_REMARKS        VARCHAR        comment added to the data source
+TABLE_SCHEM_REMARKS      VARCHAR        comment added to the schema
+====================== =========== =======================================
 
-칼럼에 대한 결과 칼럼은 아래와 같다.
+The results columns to the column are as follows. 
 
 .. _making-l-table:
 
 
 ======================= =============== =====================================
-이름                            타입                설명
+name                         type                description
 ======================= =============== =====================================
-TABLE_CAT                  VARCHAR           데이터소스 이름
-TABLE_SCHEM                VARCHAR           스키마 이름
-TABLE_NAME                 VARCHAR           테이블 이름
-COLUMN_NAME                VARCHAR           칼럼 이름
-DATA_TYPE                  VARCHAR           칼럼의 SQL 타입 (정수)
-TYPE_NAME                  VARCHAR           타입 이름
-REMARKS                    VARCHAR           칼럼에 추가한 주석
-DATA_CATEGORY              VARCHAR           칼럼 분류
-TABLE_CAT_REMARKS          VARCHAR           데이터소스에 추가한 주석
-TABLE_SCHEM_REMARKS        VARCHAR           스키마에 추가한 주석
-TABLE_NAME_REMARKS         VARCHAR           테이블에 추가한 주석
+TABLE_CAT                  VARCHAR           data source name
+TABLE_SCHEM                VARCHAR           scheme name
+TABLE_NAME                 VARCHAR           table name
+COLUMN_NAME                VARCHAR           column name
+DATA_TYPE                  VARCHAR           column's SQL type (integer)
+TYPE_NAME                  VARCHAR           type name
+REMARKS                    VARCHAR           comment added to the column
+DATA_CATEGORY              VARCHAR           column category
+TABLE_CAT_REMARKS          VARCHAR           comment added to the data source
+TABLE_SCHEM_REMARKS        VARCHAR           comment added to the scheme
+TABLE_NAME_REMARKS         VARCHAR           comment added to the table
 ======================= =============== =====================================
 
-- 사용자 계정에 부여된 스키마에 대한 권한 조회
+- Retrieve the privilege for the scheme that is granted to user account.
 
 .. code-block:: bash
 
@@ -536,28 +545,28 @@ TABLE_NAME_REMARKS         VARCHAR           테이블에 추가한 주석
 
 **user**
 
-권한을 조회할 대상 계정.
+The target user account to retrieve the privilege.
 
-    - 예제
+    - example
 
 .. code-block:: bash
 
     SHOW OBJECT PRIVILEGES FOR "octopus";
 
-결과 칼럼은 아래와 같다.
+The results columns are as follows. 
 
 .. _making-m-table:
 
 
-============== ============== =======================================================================
-이름                타입                   설명
-============== ============== =======================================================================
-TABLE_CAT         VARCHAR           데이터소스 이름 
-TABLE_SCHEM       VARCHAR           스키마 이름
-PRIVILEGE         VARCHAR           사용자 계정에 부여된 스키마에 대한 권한 (쉼표 구분 리스트)
-============== ============== =======================================================================
+============== ============== ============================================================================
+name                type                   description
+============== ============== ============================================================================
+TABLE_CAT         VARCHAR           data source name 
+TABLE_SCHEM       VARCHAR           scheme name
+PRIVILEGE         VARCHAR           granted privilege for the scheme to user account (Separated by commas)
+============== ============== ============================================================================
 
-- 주석 조회
+- Retrieve comments.
 
 .. code-block:: bash
 
@@ -567,32 +576,31 @@ PRIVILEGE         VARCHAR           사용자 계정에 부여된 스키마에 �
 
 **commentPattern**
 
-조회할 주석의 패턴을 지정한다.
+Specify the comment of the pattern to be queried.
 
 **dataSourcePattern, schemaPattern, tablePattern, columnPattern**
 
-특정 데이터소스, 스키마, 테이블, 칼럼의 패턴을 지정. 패턴은 SQL의 LIKE 패턴과 동일하며 생략할 경우 모든 대상의 주석을 조회한다.
-
-    - 예제
+Specify the pattern of the particular data source, scheme, table and column. The pattern is the same as SQL's LIKE pattern and if you omit all of the targets will be retrieved.
+    - example
 
 .. code-block:: bash
 
     SHOW COMMENTS '%average%' DATASOURCE 'spark' TABLE '%stat%';
 
-결과 칼럼은 아래와 같다.
+The results columns are as follows.
 
 .. _making-n-table:
 
 ======================= ============ ===============================================================
-이름                         타입             설명
+name                       type             description
 ======================= ============ ===============================================================
-OBJECT_TYPE             VARCHAR           대상에 따라 CATALOG, SCHEMA, TABLE, COLUMN
-TABLE_CAT               VARCHAR           데이터소스 이름
-TABLE_SCHEM             VARCHAR           스키마 이름
-TABLE_NAME              VARCHAR           테이블 이름
-COLUMN_NAME             VARCHAR           칼럼 이름
-TABLE_CAT_REMARKS       VARCHAR           데이터소스에 추가한 주석
-TABLE_SCHEM_REMARKS     VARCHAR           스키마에 추가한 주석
-TABLE_NAME_REMARKS      VARCHAR           테이블에 추가한 주석
-COLUMN_NAME_REMARKS     VARCHAR        칼럼에 추가한 주석
+OBJECT_TYPE             VARCHAR          depending on the destination CATALOG, SCHEMA, TABLE, COLUMN
+TABLE_CAT               VARCHAR          data source name
+TABLE_SCHEM             VARCHAR          scheme name
+TABLE_NAME              VARCHAR          table name
+COLUMN_NAME             VARCHAR          column name
+TABLE_CAT_REMARKS       VARCHAR          comment added to the data source
+TABLE_SCHEM_REMARKS     VARCHAR          comment added to the scheme
+TABLE_NAME_REMARKS      VARCHAR          comment added to the table
+COLUMN_NAME_REMARKS     VARCHAR          comment added to the column
 ======================= ============ ===============================================================
