@@ -69,8 +69,8 @@ public final class OctopusSql {
         @Override
         public void exitAddDataSourceClause(OctopusSqlParser.AddDataSourceClauseContext ctx) {
             String dataSourceName = ctx.dataSourceName().getText();
-            String jdbcConnectionString = ctx.jdbcConnectionString().getText();
-            String jdbcDriverName = ctx.jdbcDriverName().getText();
+            String jdbcConnectionString = ctx.connectionString().getText();
+            String jdbcDriverName = ctx.driverName().getText();
             commands.add(new OctopusSqlAddDataSource(dataSourceName, jdbcConnectionString, jdbcDriverName));
         }
 

@@ -33,14 +33,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.service.AbstractService;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import kr.co.bitnine.octopus.schema.metamodel.OctopusMetaModelDataSource;
+
 
 /**
  * Constructs in-memory schema from metadata in MetaStore
@@ -112,7 +115,13 @@ public final class SchemaManager extends AbstractService {
     public void addDataSource(MetaDataSource metaDataSource) {
         // TODO: create DataSource classes according to the type of the DataSource (eg. JDBC, Catalog, MetaModel, ...)
         LOG.info("Add DataSource to Calcite Schema. DataSourceName: " + metaDataSource.getName());
-        OctopusDataSource octopusDataSource = new OctopusJdbcDataSource(rootSchema, metaDataSource);
+
+        OctopusDataSource octopusDataSource;
+        if ("metamodel".equalsIgnoreCase(metaDataSource.getDriverName())) {
+            octopusDataSource = new OctopusMetaModelDataSource(metaDataSource);
+        } else {
+            octopusDataSource = new OctopusJdbcDataSource(rootSchema, metaDataSource);
+        }
         addDataSource(octopusDataSource);
     }
 

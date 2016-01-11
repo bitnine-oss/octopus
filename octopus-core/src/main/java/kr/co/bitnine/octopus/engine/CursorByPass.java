@@ -63,22 +63,23 @@ public final class CursorByPass extends Portal {
         sessionId = Session.currentSession().getId();
         this.dataSourceName = dataSourceName;
 
-        /*
-         * NOTE: Deep-copy validatedQuery because TableNameTranslator.toDSN()
-         *       changes identifiers of validatedQuery itself.
-         *       When this Portal runs again without copied one,
-         *       the by-pass test in processBind() which uses the validatedQuery
-         *       will produce an error.
-         *       To reduce number of copies, cache queryString.
-         */
         CachedStatement cStmt = (CachedStatement) getCachedQuery();
         if (dataSourceName == null) {
-            /* Complex queries are processed by Calcite via Avatica JDBC driver.
+            /*
+             * Complex or MetaModel queries are processed by Calcite via Avatica JDBC driver.
              * So they are not converted to DSN form.
              */
             SqlDialect.DatabaseProduct dp = SqlDialect.DatabaseProduct.POSTGRESQL;
             queryString = cStmt.getValidatedQuery().toSqlString(dp.getDialect()).getSql();
         } else {
+            /*
+             * NOTE: Deep-copy validatedQuery because TableNameTranslator.toDSN()
+             *       changes identifiers of validatedQuery itself.
+             *       When this Portal runs again without copied one,
+             *       the by-pass test in processBind() which uses the validatedQuery
+             *       will produce an error.
+             *       To reduce number of copies, cache queryString.
+             */
             SqlNode cloned = cStmt.getValidatedQuery().accept(new SqlShuttle() {
                 @Override
                 public SqlNode visit(SqlIdentifier id) {

@@ -89,7 +89,9 @@ public final class ConnectionManager extends AbstractService {
             throws ClassNotFoundException {
         LOG.debug("register connection pool of the data source '" + dataSourceName + '"');
 
-        Class.forName(driverName);
+        if (!driverName.toLowerCase().equals("metamodel")) {
+            Class.forName(driverName);
+        }
         ObjectPool<PoolableConnection> connectionPool =
                 createPool(connectionString);
         poolingDriver.registerPool(dataSourceName, connectionPool);

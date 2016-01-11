@@ -71,7 +71,7 @@ alterSystem
     ;
 
 addDataSourceClause
-    : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_TO jdbcConnectionString K_USING jdbcDriverName
+    : K_ADD K_DATASOURCE dataSourceName K_CONNECT K_TO connectionString K_USING driverName
     ;
 
 updateDataSourceClause
@@ -92,11 +92,11 @@ dataSourceName
     : IDENTIFIER
     ;
 
-jdbcConnectionString
+connectionString
     : STRING_LITERAL
     ;
 
-jdbcDriverName
+driverName
     : STRING_LITERAL
     ;
 

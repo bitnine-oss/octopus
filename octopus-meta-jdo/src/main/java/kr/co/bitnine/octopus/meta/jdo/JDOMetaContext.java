@@ -28,6 +28,8 @@ import java.util.TreeSet;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
+
+import com.datastax.driver.core.Cluster;
 import kr.co.bitnine.octopus.meta.MetaContext;
 import kr.co.bitnine.octopus.meta.MetaException;
 import kr.co.bitnine.octopus.meta.logs.UpdateLogger;
@@ -54,10 +56,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.metamodel.DataContext;
 import org.apache.metamodel.DataContextFactory;
-import org.apache.metamodel.schema.Column;
 import org.apache.metamodel.schema.Schema;
 import org.apache.metamodel.schema.Table;
 import org.apache.metamodel.schema.TableType;
+import org.apache.metamodel.schema.ColumnType;
+import org.apache.metamodel.schema.Column;
+import org.apache.metamodel.schema.ColumnTypeImpl;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 public final class JDOMetaContext implements MetaContext {
     private static final Log LOG = LogFactory.getLog(JDOMetaContext.class);
@@ -223,10 +232,10 @@ public final class JDOMetaContext implements MetaContext {
 
             tx.begin();
 
-            MDataSource mDataSource = new MDataSource(name, 0, driverName, connectionString);
+            MDataSource mDataSource = new MDataSource(name, driverName, connectionString, MetaDataSource.DataSourceType.JDBC);
             pm.makePersistent(mDataSource);
 
-            addJdbcDataSourceInternal(dc, mDataSource);
+            addDataSourceInternal(dc, mDataSource);
 
             tx.commit();
 
@@ -242,6 +251,105 @@ public final class JDOMetaContext implements MetaContext {
                     conn.close();
                 } catch (SQLException ignore) { }
             }
+            if (tx.isActive())
+                tx.rollback();
+        }
+    }
+
+    private DataContext createElasticSearchDataContext(JSONObject jsonObject) {
+        DataContext dc;
+        String host = (String) jsonObject.get("host");
+        String port = (String) jsonObject.get("port");
+        String database = (String) jsonObject.get("database");
+
+        Client client = new TransportClient()
+                        .addTransportAddress(new InetSocketTransportAddress(host, Integer.parseInt(port)));
+        dc = DataContextFactory.createElasticSearchDataContext(client, database);
+        return dc;
+    }
+
+    private DataContext createMongoDbDataContext(JSONObject jsonObject) {
+        DataContext dc;
+        String host = (String) jsonObject.get("host");
+        String port = (String) jsonObject.get("port");
+        String database = (String) jsonObject.get("database");
+        String userName = (String) jsonObject.get("user");
+        String password = (String) jsonObject.get("password");
+
+        dc = DataContextFactory.createMongoDbDataContext(host, Integer.parseInt(port),
+                database, userName, password.toCharArray());
+        return dc;
+    }
+
+    private DataContext createCouchDbDataContext(JSONObject jsonObject) {
+        DataContext dc;
+        String host = (String) jsonObject.get("host");
+        String port = (String) jsonObject.get("port");
+        String userName = (String) jsonObject.get("user");
+        String password = (String) jsonObject.get("password");
+
+        dc = DataContextFactory.createCouchDbDataContext(host, Integer.parseInt(port),
+                userName, password);
+        return dc;
+    }
+
+    private DataContext createCassandraDataContext(JSONObject jsonObject) {
+        DataContext dc;
+        String host = (String) jsonObject.get("host");
+        String port = (String) jsonObject.get("port");
+        String database = (String) jsonObject.get("database");
+
+        Cluster cluster = Cluster.builder().withPort(Integer.parseInt(port)).addContactPoint(host).build();
+        dc = DataContextFactory.createCassandraDataContext(cluster, database);
+        return dc;
+    }
+
+    @Override
+    public MetaDataSource addMetaModelDataSource(String driverName, String connectionString, String name) throws MetaException {
+        if (dataSourceExists(name))
+            throw new MetaException("data source '" + name + "' already exists");
+
+        Transaction tx = pm.currentTransaction();
+        try {
+            JSONParser jsonParser = new JSONParser();
+            JSONObject jsonObject = (JSONObject) jsonParser.parse(connectionString);
+            String metaModelType = jsonObject.get("type").toString().toLowerCase();
+
+            DataContext dc;
+
+            switch (metaModelType) {
+            case "elasticsearch" :
+                dc = createElasticSearchDataContext(jsonObject);
+                break;
+            case "mongodb" :
+                dc = createMongoDbDataContext(jsonObject);
+                break;
+            case "couchdb" :
+                dc = createCouchDbDataContext(jsonObject);
+                break;
+            case "cassandra" :
+                dc = createCassandraDataContext(jsonObject);
+                break;
+            default:
+                throw new MetaException("invalid MetaModel type: " + metaModelType);
+            }
+
+            tx.begin();
+
+            MDataSource mDataSource = new MDataSource(name, driverName, connectionString, MetaDataSource.DataSourceType.METAMODEL);
+            pm.makePersistent(mDataSource);
+
+            addDataSourceInternal(dc, mDataSource);
+
+            tx.commit();
+
+            LOG.debug("complete addMetaModelDataSource");
+            return mDataSource;
+        } catch (MetaException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new MetaException("failed to add data source '" + name + "' - " + e.getMessage(), e);
+        } finally {
             if (tx.isActive())
                 tx.rollback();
         }
@@ -266,10 +374,21 @@ public final class JDOMetaContext implements MetaContext {
 
     private void addColumn(Column rawColumn, MTable mTable) {
         String columnName = rawColumn.getName();
-        int jdbcType = rawColumn.getType().getJdbcType();
+        ColumnType columnType = rawColumn.getType();
+        if (ColumnType.STRING.getName().equalsIgnoreCase(columnType.getName())) {
+            columnType = ColumnTypeImpl.convertColumnType(Types.VARCHAR);
+        }
+        int jdbcType = columnType.getJdbcType();
         int typeInfo = -1;
-        if (jdbcType == Types.VARCHAR)
-            typeInfo = rawColumn.getColumnSize();
+        if (jdbcType == Types.VARCHAR) {
+            Integer columnSize = rawColumn.getColumnSize();
+            if (columnSize == null) {
+                // FIXME: what is the proper length value?
+                typeInfo = 128;
+            } else {
+                typeInfo = columnSize;
+            }
+        }
 
         LOG.debug("add column. columnName=" + columnName + ", jdbcType=" + jdbcType + ", typeInfo=" + typeInfo);
         MColumn mColumn = new MColumn(columnName, jdbcType, typeInfo, mTable);
@@ -305,11 +424,13 @@ public final class JDOMetaContext implements MetaContext {
         }
     }
 
-    private void addJdbcDataSourceInternal(DataContext dc, MDataSource mDataSource) throws MetaException {
+    private void addDataSourceInternal(DataContext dc, MDataSource mDataSource) throws MetaException {
         for (Schema rawSchema : dc.getSchemas()) {
             String schemaName = rawSchema.getName();
             if (schemaName == null)
                 schemaName = "__DEFAULT";
+            if ("information_schema".equalsIgnoreCase(schemaName))
+                continue;
 
             LOG.debug("add schema. schemaName=" + schemaName);
             MSchema mSchema = new MSchema(schemaName, mDataSource);

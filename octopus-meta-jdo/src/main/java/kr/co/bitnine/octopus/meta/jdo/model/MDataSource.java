@@ -36,31 +36,29 @@ public final class MDataSource implements MetaDataSource {
     @Column(length = MetaConstants.IDENTIFIER_MAX)
     private String name;
 
-    private int type;
-
     @Persistent
     @Column(length = MetaConstants.CLASSNAME_MAX)
-    private String jdbcDriverName;
+    private String driverName;
 
     @Persistent
     @Column(length = MetaConstants.CONNECTION_STRING_MAX)
-    private String jdbcConnectionString;
+    private String connectionString;
+
+    @Persistent
+    private MetaDataSource.DataSourceType dataSourceType;
 
     @Persistent
     @Column(length = MetaConstants.COMMENT_MAX)
     private String comment;
 
-    @Persistent
-    private MetaDataSource.DataSourceType dataSourceType;
-
     @Persistent(mappedBy = "dataSource", dependentElement = "true")
     private Collection<MSchema> schemas;
 
-    public MDataSource(String name, int type, String jdbcDriverName, String jdbcConnectionString) {
+    public MDataSource(String name, String driverName, String connectionString, DataSourceType dataSourceType) {
         this.name = name;
-        this.type = type;
-        this.jdbcDriverName = jdbcDriverName;
-        this.jdbcConnectionString = jdbcConnectionString;
+        this.driverName = driverName;
+        this.connectionString = connectionString;
+        this.dataSourceType = dataSourceType;
         comment = "";
     }
 
@@ -71,12 +69,17 @@ public final class MDataSource implements MetaDataSource {
 
     @Override
     public String getDriverName() {
-        return jdbcDriverName;
+        return driverName;
     }
 
     @Override
     public String getConnectionString() {
-        return jdbcConnectionString;
+        return connectionString;
+    }
+
+    @Override
+    public MetaDataSource.DataSourceType getDataSourceType() {
+        return dataSourceType;
     }
 
     @Override
@@ -86,15 +89,6 @@ public final class MDataSource implements MetaDataSource {
 
     public void setComment(String comment) {
         this.comment = comment;
-    }
-
-    @Override
-    public MetaDataSource.DataSourceType getDataSourceType() {
-        return dataSourceType;
-    }
-
-    public void setDataSourceType(MetaDataSource.DataSourceType dataSourceType) {
-        this.dataSourceType = dataSourceType;
     }
 
     @Override

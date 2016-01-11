@@ -54,6 +54,8 @@ public interface MetaContext {
 
     MetaDataSource addJdbcDataSource(String driverName, String connectionString, String name) throws MetaException;
 
+    MetaDataSource addMetaModelDataSource(String driverName, String connectionString, String name) throws MetaException;
+
     void dropJdbcDataSource(String name) throws MetaException;
 
     MetaDataSource updateJdbcDataSource(String dataSourceName, final String schemaRegex, final String tableRegex) throws MetaException;

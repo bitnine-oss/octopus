@@ -309,19 +309,17 @@ public final class QueryEngine extends AbstractQueryProcessor {
         String connectionString = null;
         String dataSourceName = null;
 
-        if (dsNames.size() > 1) { // complex query: by-pass to Calcite
-            LOG.debug("complex query: " + validatedQuery.toString());
-            connectionString = "jdbc:octopus-calcite:";
-        } else { // by-pass
-            if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
-                checkSelectPrivilegeThrow(validatedQuery);
-
-            LOG.debug("by-pass query: " + validatedQuery.toString());
-
-            dataSourceName = dsNames.get(0);
+        // FIXME: temporarily block queries for data sources of type MetaModel
+        for (String dsName : dsNames) {
             try {
-                MetaDataSource dataSource = metaContext.getDataSource(dataSourceName);
-                connectionString = dataSource.getConnectionString();
+                MetaDataSource dataSource = metaContext.getDataSource(dsName);
+                if (dataSource.getDataSourceType() == MetaDataSource.DataSourceType.METAMODEL) {
+                    PostgresErrorData edata = new PostgresErrorData(
+                            PostgresSeverity.ERROR,
+                            PostgresSQLState.FEATURE_NOT_SUPPORTED,
+                            "queries for data sources of type MetaModel is unavailable");
+                    throw new PostgresException(edata);
+                }
             } catch (MetaException e) {
                 PostgresErrorData edata = new PostgresErrorData(
                         PostgresSeverity.ERROR,
@@ -330,6 +328,34 @@ public final class QueryEngine extends AbstractQueryProcessor {
             }
         }
 
+        if (dsNames.size() > 1) { // complex query: by-pass to Calcite
+            LOG.debug("complex query: " + validatedQuery.toString());
+            connectionString = "jdbc:octopus-calcite:";
+        } else {
+            if (!checkSystemPrivilege(SystemPrivilege.SELECT_ANY_TABLE))
+                checkSelectPrivilegeThrow(validatedQuery);
+
+            LOG.debug("by-pass query: " + validatedQuery.toString());
+
+            dataSourceName = dsNames.get(0);
+            try {
+                MetaDataSource dataSource = metaContext.getDataSource(dataSourceName);
+                if (dataSource.getDataSourceType() == MetaDataSource.DataSourceType.METAMODEL) {
+                    /*
+                     * FIXME: `dataSourceName` should not be used to distinguish query type
+                     * refactor related codes (CursorByPass)
+                     */
+                    dataSourceName = null;
+                }
+
+                connectionString = dataSource.getConnectionString();
+            } catch (MetaException e) {
+                PostgresErrorData edata = new PostgresErrorData(
+                        PostgresSeverity.ERROR,
+                        "failed to get DataSource");
+                throw new PostgresException(edata, e);
+            }
+        }
 
         LOG.info("create portal '" + portalName + "' for by-pass (session=" + Session.currentSession().getId() + ')');
         Portal p;
@@ -454,13 +480,18 @@ public final class QueryEngine extends AbstractQueryProcessor {
         }
 
         @Override
-        public void addDataSource(String dataSourceName, String jdbcConnectionString, String jdbcDriverName) throws Exception {
+        public void addDataSource(String dataSourceName, String connectionString, String driverName) throws Exception {
             checkSystemPrivilegeThrow(SystemPrivilege.ALTER_SYSTEM);
 
             // FIXME: all or nothing
-            MetaDataSource dataSource = metaContext.addJdbcDataSource(jdbcDriverName, jdbcConnectionString, dataSourceName);
-            connectionManager.registerPool(dataSourceName,
-                    jdbcDriverName, jdbcConnectionString);
+            MetaDataSource dataSource;
+            if ("metamodel".equalsIgnoreCase(driverName)) {
+                dataSource = metaContext.addMetaModelDataSource(driverName, connectionString, dataSourceName);
+            } else {
+                dataSource = metaContext.addJdbcDataSource(driverName, connectionString, dataSourceName);
+                connectionManager.registerPool(dataSourceName,
+                        driverName, connectionString);
+            }
             schemaManager.addDataSource(dataSource);
         }
 

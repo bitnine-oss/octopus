@@ -17,7 +17,6 @@ package kr.co.bitnine.octopus.meta.model;
 import java.util.Collection;
 
 public interface MetaDataSource {
-
     enum DataSourceType {
         JDBC,
         CATALOG,
@@ -30,9 +29,9 @@ public interface MetaDataSource {
 
     String getConnectionString();
 
-    String getComment();
-
     DataSourceType getDataSourceType();
+
+    String getComment();
 
     Collection<MetaSchema> getSchemas();
 }
