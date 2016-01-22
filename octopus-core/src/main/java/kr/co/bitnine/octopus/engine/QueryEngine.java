@@ -309,6 +309,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
         String connectionString = null;
         String dataSourceName = null;
 
+        /*
         // FIXME: temporarily block queries for data sources of type MetaModel
         for (String dsName : dsNames) {
             try {
@@ -327,6 +328,7 @@ public final class QueryEngine extends AbstractQueryProcessor {
                 throw new PostgresException(edata, e);
             }
         }
+        */
 
         if (dsNames.size() > 1) { // complex query: by-pass to Calcite
             LOG.debug("complex query: " + validatedQuery.toString());

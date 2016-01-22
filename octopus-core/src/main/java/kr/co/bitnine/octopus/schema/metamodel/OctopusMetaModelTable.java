@@ -35,6 +35,7 @@ public final class OctopusMetaModelTable extends OctopusTable
         implements TranslatableTable {
     private static final Log LOG = LogFactory.getLog(OctopusMetaModelTable.class);
     private OctopusMetaModelDataSource dataSource;
+    private OctopusMetaModelTableScan octopusMetaModelTableScan;
 
     public OctopusMetaModelTable(MetaTable metaTable, OctopusMetaModelSchema schema) {
         super(metaTable, schema);
@@ -57,7 +58,8 @@ public final class OctopusMetaModelTable extends OctopusTable
 
     @Override
     public RelNode toRel(RelOptTable.ToRelContext context, RelOptTable relOptTable) {
-        return new OctopusMetaModelTableScan(context.getCluster(), relOptTable);
+        octopusMetaModelTableScan = new OctopusMetaModelTableScan(context.getCluster(), relOptTable);
+        return octopusMetaModelTableScan;
     }
 
     public Expression getExpression(SchemaPlus schema, String tableName,
@@ -68,7 +70,7 @@ public final class OctopusMetaModelTable extends OctopusTable
     public Enumerable<Object> project() {
         return new AbstractEnumerable<Object>() {
             public Enumerator<Object> enumerator() {
-                return new OctopusMetaModelEnumerator(dataSource, getName());
+                return new OctopusMetaModelEnumerator(dataSource, getName(), octopusMetaModelTableScan);
             }
         };
     }

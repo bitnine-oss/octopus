@@ -77,6 +77,6 @@ public final class OctopusMetaModelTableScan extends TableScan implements Enumer
                 physType,
                 Blocks.toBlock(
                         Expressions.call(table.getExpression(OctopusMetaModelTable.class),
-                                "project", Expressions.constant(table.getRowType().getFieldCount()))));
+                                "project")));
     }
 }

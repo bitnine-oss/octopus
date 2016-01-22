@@ -28,9 +28,6 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.metamodel.schema.ColumnTypeImpl;
-
-import java.sql.Types;
 
 public abstract class OctopusTable extends AbstractQueryableTable {
     private Schema.TableType tableType;
@@ -53,13 +50,8 @@ public abstract class OctopusTable extends AbstractQueryableTable {
         RelDataTypeFactory.FieldInfoBuilder fieldInfo = typeFactory.builder();
         for (MetaColumn metaColumn : metaTable.getColumns()) {
             String columnName = metaColumn.getName();
-            int jdbcType;
-            if ("string".equalsIgnoreCase(columnName.toString())) {
-                jdbcType = ColumnTypeImpl.convertColumnType(Types.VARCHAR).getJdbcType();
-            } else {
-                //int jdbcType = metaColumn.getType().getJdbcType();
-                jdbcType = metaColumn.getType(); //FIXME
-            }
+            //int jdbcType = metaColumn.getType().getJdbcType();
+            int jdbcType = metaColumn.getType(); //FIXME
             SqlTypeName typeName = SqlTypeName.getNameForJdbcType(jdbcType);
             RelDataType sqlType = typeFactory.createSqlType(typeName);
 

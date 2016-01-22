@@ -33,6 +33,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlShuttle;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -109,6 +110,8 @@ public final class CursorByPass extends Portal {
                 conn = ConnectionManager.getConnection(dataSourceName);
                 LOG.info("borrow connection to " + dataSourceName + " for session(" + sessionId + ')');
             }
+
+            LOG.info("By Pass Query: " + queryString);
 
             stmt = conn.prepareStatement(queryString);
             if (types.length > 0) {
@@ -287,8 +290,8 @@ public final class CursorByPass extends Portal {
         if (stmt != null) {
             try {
                 stmt.cancel();
-            } catch (SQLException e) {
-                LOG.error("failed to cancel statement for session(" + sessionId + ')');
+            } catch (SQLException | UnsupportedOperationException e) {
+                LOG.error("failed to cancel statement for session(" + sessionId + ")\n" + ExceptionUtils.getStackTrace(e));
             } finally {
                 try {
                     stmt.close();
