@@ -20,4 +20,6 @@ Our goal is to make users to feel like using a single database system, which act
 
 
 **Note**
+========
+
 For more information, see [Octopus docs](https://bitnine-oss.github.io/octopus/index.html) 
