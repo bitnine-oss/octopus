@@ -17,3 +17,7 @@ Our goal is to make users to feel like using a single database system, which act
 3. SQL-based authorization
 4. User authentication
 5. Unified schema view over various kinds of databases
+
+
+**Note**
+For more information, see [Octopus docs](https://bitnine-oss.github.io/octopus/index.html) 
